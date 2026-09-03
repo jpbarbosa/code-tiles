@@ -32,6 +32,7 @@ const READ = `(() => {
     })(),
     titlebar: box(titlebar),
     statusbar: box(statusbar),
+    auxiliarybar: box(document.querySelector('.part.auxiliarybar')),
     activitybarTop: box(document.querySelector('.part.activitybar'))?.y ?? null,
     menubarBox: box(document.querySelector('.part.activitybar .menubar')),
     sheetPresent: Boolean(sheet),

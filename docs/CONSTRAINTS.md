@@ -55,6 +55,15 @@ the view's session partition, not in the server's user data directory. One share
 therefore needs the same origin *and* the same partition for every tile, which is why the port
 is persisted and reused. *[inherited]*
 
+**A window's layout is remembered per workspace, in the partition, and outranks a setting.**
+`workbench.auxiliaryBar.hidden` and its siblings live in an IndexedDB database per workspace
+(`vscode-web-state-db-<workspace>-<profile>`) inside the tile partition, not in the server's user
+data directory and not in `workspaceStorage`. A settings entry such as
+`workbench.secondarySideBar.defaultVisibility` therefore sets the default for a workspace that has
+nothing stored, and a workspace opened before that setting existed keeps what it stored. A layout
+switch added later needs its stale key dropped once; drop that key alone, because the GitHub
+session lives in the same partition. **[checked]**
+
 **Injected CSS lands before the workbench's own styles.** `webContents.insertCSS` cannot be
 made to land after them, which is what forced `!important` on every rule in the previous
 tree. A `<style>` element the runtime appends to `<head>` and keeps last does not have that
