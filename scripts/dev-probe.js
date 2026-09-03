@@ -22,6 +22,14 @@ const READ = `(() => {
   return {
     url: location.href,
     workbench: Boolean(workbench),
+    // VS Code appends the profile's name to the title whenever it is not the default one, so
+    // this is the window's own answer to "which profile am I", not the host's.
+    title: document.title,
+    // What the window actually loaded, rather than what the mirror asked for: an extension that
+    // contributes nothing to the activity bar will not show, but a missing one never does.
+    activityBar: [...document.querySelectorAll('.part.activitybar .composite-bar .action-item')]
+      .map((item) => item.querySelector('.action-label')?.getAttribute('aria-label') || item.title)
+      .filter(Boolean),
     workbenchClasses: workbench ? workbench.className.split(' ').filter((c) => c.startsWith('no') || c.includes('floating') || c.startsWith('modern')).join(' ') : null,
     themeKind: workbench ? ['vs-dark', 'hc-black', 'hc-light', 'vs'].find((kind) => workbench.classList.contains(kind)) ?? null : null,
     documentColorScheme: getComputedStyle(document.documentElement).colorScheme,

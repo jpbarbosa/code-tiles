@@ -86,6 +86,42 @@ every document of every frame from the first byte, it owns its `<style>` element
 it wherever the cascade needs it, and it observes the workbench directly instead of being
 told about it.
 
+## Profiles and extensions
+
+code-server is a Code-OSS build with no `configurationSync.store`, so no account will ever pull
+your setup down into it. It is reproduced instead, on every start, from the VS Code you already
+have - which is read and never written to.
+
+```
+src/main/desktop.js      reads your install: which profiles exist, what each enables, which
+                         folder uses which. Pure, no side effects, no Electron.
+src/main/extensions.js   ONE extensions directory for the app, holding the union of every
+                         profile's set. Installs what is missing, prunes what nothing wants.
+src/main/profiles.js     the mirror on the server's disk: one directory per profile, holding
+                         settings, keybindings, snippets and an extension subset.
+src/main/registry.js     the other half of a profile, which is browser state.
+```
+
+The ordering is the whole thing, and each step is load-bearing:
+
+1. **Install and prune before the server is spawned.** It scans the extensions directory as it
+   boots and will not notice an arrival until a window reloads.
+2. **Write the mirror**, merging the seams' settings over each profile's own. A profile inherits
+   nothing from the default one, so this is the only copy of them a tile will read.
+3. **Start the server**, then **seed the registry** on its origin - before the first tile, because
+   a tile that names an unregistered profile renders blank. If the seed throws, every tile falls
+   back to the default profile rather than to a broken one.
+
+A tile then names its profile in the URL (`?folder=…&payload=[["profile","Laravel"]]`), so the
+app says which profile a window is on every load rather than depending on an association having
+survived somewhere. Which profile a folder gets is derived from your desktop's own association,
+the same way a project's name and hue are derived from its path.
+
+Two deliberate one-way streets. Files are **copied**, never linked back: a window may save
+whatever it likes into a mirrored profile and the worst outcome is that the next start
+overwrites it. And an extension installed from inside a tile is pruned unless a desktop profile
+claims it - the desktop is where you add one.
+
 ## Geometry
 
 Layout is a pure function, `src/main/layout.js`:
@@ -137,6 +173,10 @@ src/main/window.js     the BrowserWindow and the shell page
 src/main/tiles.js      WebContentsView per project: create, place, focus, destroy
 src/main/layout.js     pure geometry
 src/main/projects.js   the project list and its ordering
+src/main/desktop.js    your VS Code install, read-only: profiles, associations, extension ids
+src/main/extensions.js the one shared extensions directory: install, prune
+src/main/profiles.js   the profile mirror on the server's disk, and keeping it alive
+src/main/registry.js   seeding the profile registry into the tiles' partition
 src/main/store.js      persistence
 src/main/ipc.js        the command table
 src/main/menu.js       the menu and every accelerator
@@ -149,5 +189,5 @@ src/shell/preload.cjs  contextBridge: window.ct
 src/guest/manifest.js  the seam list. Adding a seam means adding a line here.
 src/guest/runtime.cjs  the preload: loads seams, owns the style element, owns the context
 src/guest/seams/*.js   one seam per file
-src/guest/disk/        what has to be on disk before the server starts (settings, profiles)
+src/guest/disk/        the seams' settings, merged into the server's file and every profile's
 ```

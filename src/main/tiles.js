@@ -1,8 +1,6 @@
 import { WebContentsView, shell } from 'electron';
 
-import { files } from './paths.js';
-
-const PARTITION = 'persist:projects';   // one partition for every tile: one GitHub login
+import { PARTITION, files } from './paths.js';
 
 // The views, and the only place that creates, moves or destroys one. Callers hand it the whole
 // desired state and it reconciles; there is no create-then-place-then-focus sequence to get
@@ -73,7 +71,7 @@ export class Tiles {
 
     this.#views.set(project.folder, view);
     this.#window.contentView.addChildView(view);
-    view.webContents.loadURL(this.#server.urlFor(project.folder));
+    view.webContents.loadURL(this.#server.urlFor(project.folder, project.profile));
     return view;
   }
 }

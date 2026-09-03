@@ -7,9 +7,11 @@ import { hueFor } from './hue.js';
 // folder and there is no field to migrate when a rule changes.
 export class Projects {
   #store;
+  #profileFor;
 
-  constructor(store) {
+  constructor(store, profileFor = () => null) {
     this.#store = store;
+    this.#profileFor = profileFor;
     this.#write(this.#entries().filter((entry) => fs.existsSync(entry.folder)));
   }
 
@@ -22,9 +24,9 @@ export class Projects {
   }
 
   get focused() {
-    const open = this.open();
+    const open = this.#entries().filter((entry) => entry.open);
     const wanted = this.#store.state.focusedFolder;
-    if (open.some((project) => project.folder === wanted)) return wanted;
+    if (open.some((entry) => entry.folder === wanted)) return wanted;
     return open.length ? open[0].folder : null;
   }
 
@@ -35,26 +37,26 @@ export class Projects {
   // Everything ever opened here, in project order: the picker's list.
   all() {
     const focused = this.focused;
-    return this.#entries().map((entry) => ({
-      folder: entry.folder,
-      name: path.basename(entry.folder),
-      hue: hueFor(entry.folder),
-      open: Boolean(entry.open),
-      focused: entry.folder === focused,
-    }));
+    return this.#entries().map((entry) => this.#describe(entry, focused));
   }
 
   // The tiles, in the same order.
   open() {
-    return this.#entries()
-      .filter((entry) => entry.open)
-      .map((entry) => ({
-        folder: entry.folder,
-        name: path.basename(entry.folder),
-        hue: hueFor(entry.folder),
-        open: true,
-        focused: entry.folder === this.#store.state.focusedFolder,
-      }));
+    const focused = this.focused;
+    return this.#entries().filter((entry) => entry.open).map((entry) => this.#describe(entry, focused));
+  }
+
+  #describe(entry, focused) {
+    return {
+      folder: entry.folder,
+      name: path.basename(entry.folder),
+      hue: hueFor(entry.folder),
+      // Which of your VS Code profiles this folder belongs to. Derived from the same place the
+      // name and the hue are - the path - so nothing here can fall out of step with the desktop.
+      profile: this.#profileFor(entry.folder),
+      open: Boolean(entry.open),
+      focused: entry.folder === focused,
+    };
   }
 
   add(folder) {

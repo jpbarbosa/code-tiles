@@ -23,8 +23,14 @@ export class CodeServer {
     return this.#port;
   }
 
-  urlFor(folder) {
-    return `http://127.0.0.1:${this.#port}/?folder=${encodeURIComponent(folder)}`;
+  // A window resolves its profile from the `profile` entry of the URL's payload, before any
+  // stored folder association is consulted - so the app says which profile a tile is, on every
+  // load, rather than hoping the right association survived somewhere. Naming a profile the
+  // registry has not been seeded with renders the window blank, so this stays null until it has.
+  urlFor(folder, profile) {
+    const url = `http://127.0.0.1:${this.#port}/?folder=${encodeURIComponent(folder)}`;
+    if (!profile) return url;
+    return `${url}&payload=${encodeURIComponent(JSON.stringify([['profile', profile]]))}`;
   }
 
   async start(preferredPort) {

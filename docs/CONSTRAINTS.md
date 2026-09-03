@@ -64,6 +64,38 @@ nothing stored, and a workspace opened before that setting existed keeps what it
 switch added later needs its stale key dropped once; drop that key alone, because the GitHub
 session lives in the same partition. **[checked]**
 
+**A profile does not inherit the default profile's settings.** It reads its own
+`settings.json` or it is handed an EMPTY model - `useDefaultFlags` is ignored by the web build.
+So anything the app needs true in a window has to be written into every profile it mirrors, not
+just into the server's own settings file, and every fallback a profile declares has to be
+resolved into a real file before the window asks. **[checked]**
+
+**A real `settings.json` is JSONC, and failing to read one is silent and total.** Comments and a
+trailing comma before the last brace are both legal and both make `JSON.parse` throw; the throw
+becomes an empty object, and the window comes up with none of your settings rather than with an
+error. `src/guest/disk/settings.js` walks the text instead, and `test/settings.test.js` holds the
+shapes that broke it. **[checked]**
+
+**The list of which profiles exist is browser state, not a file.** It lives in `userDataProfiles`
+in the tiles' partition, so it is seeded by loading the server's origin in a throwaway window
+before any tile loads. Three things follow, and each one is a dead window rather than a warning:
+a tile naming a profile the registry does not know tries to CREATE it, writes before the remote
+filesystem provider exists, and renders blank; the stored `location` must be a URI object with
+**no authority**, because a plain string throws inside `dirname` and an authority-bearing one
+compares unequal to everything; and the workbench deletes every directory under `profilesHome`
+that no registered profile claims, in every window, so a registry that goes missing takes the
+mirror with it. **[checked]**
+
+**Workspace trust disables extensions without saying so.** An extension declaring
+`untrustedWorkspaces.supported: false` - Claude Code is one - is simply absent from a window
+whose folder was never trusted, and the prompt that would fix it is a modal in a window with no
+title bar to raise it from. The `trust` seam is why every tile has its extensions. **[checked]**
+
+**Electron quits when the last window closes unless something is listening.** Not subscribing to
+`window-all-closed` is not the same as ignoring it, and the profile registry's throwaway window
+is opened before the real one exists - so an unsubscribed app ends during its own startup, with
+no error anywhere. **[checked]**
+
 **Injected CSS lands before the workbench's own styles.** `webContents.insertCSS` cannot be
 made to land after them, which is what forced `!important` on every rule in the previous
 tree. A `<style>` element the runtime appends to `<head>` and keeps last does not have that
