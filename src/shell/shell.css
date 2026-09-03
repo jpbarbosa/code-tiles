@@ -1,0 +1,198 @@
+/* One flat ground: strip, gutters and the space behind every tile are the same colour, so a
+   tile's edge never shows a step. --bg is a placeholder until a seam reports the theme's own
+   shell colour back and main hands it over. */
+:root {
+  --bg: #1b1b1d;
+  --ink: #d6d6d8;
+  --ink-quiet: #8b8b90;
+  --strip: 36px;
+  --chip-radius: 7px;
+  --accent: #4a8cff;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font: 12px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+}
+
+/* The strip is the window's title bar, so it is also the drag region. Every control in it opts
+   back out, or the window moves instead of the button being pressed. */
+#strip {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: var(--strip);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 10px;
+  -webkit-app-region: drag;
+}
+
+#strip button,
+#strip nav,
+#strip #view-control,
+#strip #usage { -webkit-app-region: no-drag; }
+
+#lights { width: 72px; flex: 0 0 auto; }
+
+#view-control {
+  display: flex;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.segment {
+  width: 26px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink-quiet);
+  cursor: default;
+}
+
+.segment svg { width: 13px; height: 13px; fill: currentColor; }
+.segment:hover { background: rgb(255 255 255 / 0.07); }
+.segment[aria-pressed="true"] { background: rgb(255 255 255 / 0.12); color: var(--ink); }
+
+#chips[hidden] { display: none; }
+
+#chips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* A chip is a pill floating in the strip, not a panel notched into it: the gap between two is
+   what separates them, so there is no divider anywhere in this row. */
+.chip {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--chip-radius);
+  background: color-mix(in oklab, var(--bg) 88%, oklch(0.6 0.14 var(--hue)) 12%);
+  color: var(--ink-quiet);
+  max-width: 210px;
+  cursor: default;
+}
+
+.chip .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip .ring {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: oklch(0.68 0.15 var(--hue));
+}
+
+/* Focused is a FILLED pill: the same hue the tile's ground and glow are wearing, so the eye
+   matches the chip to the window without a second cue. */
+.chip[aria-current="true"] {
+  background: oklch(0.42 0.09 var(--hue));
+  color: #fff;
+}
+
+.chip .close {
+  opacity: 0;
+  width: 15px;
+  height: 15px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: default;
+}
+
+.chip:hover .close { opacity: 0.65; }
+.chip .close:hover { opacity: 1; background: rgb(255 255 255 / 0.16); }
+
+/* The one filled control in the row, because it is the action you take when the row is empty. */
+#add {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  line-height: 1;
+  cursor: default;
+}
+
+#usage {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 46px;
+  opacity: 0.5;
+}
+
+#usage .bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.14);
+}
+
+#stage {
+  position: fixed;
+  inset: var(--strip) 0 0 0;
+}
+
+/* The focus mark that lives OUTSIDE the tile. The view paints over the middle of this element,
+   so only the halo in the gutter is ever seen; it is drawn at half the alpha the window's own
+   ground carries, or the light looks cut off at the tile's edge. */
+#glow {
+  position: absolute;
+  border-radius: 10px;
+  pointer-events: none;
+  transition: left 0.12s ease, top 0.12s ease, width 0.12s ease, height 0.12s ease;
+  background: oklch(0.45 0.09 var(--hue));
+  box-shadow: 0 0 22px 6px oklch(0.45 0.09 var(--hue) / 0.55);
+}
+
+#empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  color: var(--ink-quiet);
+}
+
+#empty[hidden] { display: none; }
+
+#empty-add {
+  border: 0;
+  border-radius: 7px;
+  padding: 7px 14px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  cursor: default;
+}

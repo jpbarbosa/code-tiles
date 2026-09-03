@@ -1,0 +1,17 @@
+{
+  "name": "code-tiles-next",
+  "productName": "Code Tiles Next",
+  "version": "0.1.0",
+  "description": "Several VS Code projects as live tiles in one macOS window, on one shared code-server.",
+  "private": true,
+  "type": "module",
+  "main": "src/main/index.js",
+  "scripts": {
+    "start": "electron .",
+    "fetch-code-server": "bash scripts/fetch-code-server.sh",
+    "test": "node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "electron": "^44.1.1"
+  }
+}

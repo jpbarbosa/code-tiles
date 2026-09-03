@@ -1,0 +1,51 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+const VERSION = 1;
+
+const EMPTY = {
+  version: VERSION,
+  entries: [],        // [{ folder, open, lastOpened }] - order IS the project order
+  focusedFolder: null,
+  mode: 'grid',       // 'grid' | 'single'
+  serverPort: null,   // reused so the origin, and so the login, is stable
+};
+
+// One file, written whole, replaced atomically. Small enough that a diff would cost more than
+// it saves, and a half-written state file is the one failure that loses every project.
+export class Store {
+  #file;
+  #state;
+
+  constructor(file) {
+    this.#file = file;
+    this.#state = this.#load();
+  }
+
+  get state() {
+    return this.#state;
+  }
+
+  update(patch) {
+    this.#state = { ...this.#state, ...patch, version: VERSION };
+    this.#flush();
+    return this.#state;
+  }
+
+  #load() {
+    try {
+      const raw = JSON.parse(fs.readFileSync(this.#file, 'utf8'));
+      if (raw.version !== VERSION) return { ...EMPTY };
+      return { ...EMPTY, ...raw };
+    } catch {
+      return { ...EMPTY };
+    }
+  }
+
+  #flush() {
+    const tmp = `${this.#file}.${process.pid}.tmp`;
+    fs.mkdirSync(path.dirname(this.#file), { recursive: true });
+    fs.writeFileSync(tmp, JSON.stringify(this.#state, null, 2));
+    fs.renameSync(tmp, this.#file);
+  }
+}

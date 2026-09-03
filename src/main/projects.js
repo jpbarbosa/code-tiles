@@ -1,0 +1,111 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { hueFor } from './hue.js';
+
+// A project IS its folder. No generated id, no stored name, no stored colour: everything a
+// project has is either the path or derived from it, so nothing can fall out of step with the
+// folder and there is no field to migrate when a rule changes.
+export class Projects {
+  #store;
+
+  constructor(store) {
+    this.#store = store;
+    this.#write(this.#entries().filter((entry) => fs.existsSync(entry.folder)));
+  }
+
+  get mode() {
+    return this.#store.state.mode;
+  }
+
+  set mode(mode) {
+    this.#store.update({ mode });
+  }
+
+  get focused() {
+    const open = this.open();
+    const wanted = this.#store.state.focusedFolder;
+    if (open.some((project) => project.folder === wanted)) return wanted;
+    return open.length ? open[0].folder : null;
+  }
+
+  set focused(folder) {
+    this.#store.update({ focusedFolder: folder });
+  }
+
+  // Everything ever opened here, in project order: the picker's list.
+  all() {
+    const focused = this.focused;
+    return this.#entries().map((entry) => ({
+      folder: entry.folder,
+      name: path.basename(entry.folder),
+      hue: hueFor(entry.folder),
+      open: Boolean(entry.open),
+      focused: entry.folder === focused,
+    }));
+  }
+
+  // The tiles, in the same order.
+  open() {
+    return this.#entries()
+      .filter((entry) => entry.open)
+      .map((entry) => ({
+        folder: entry.folder,
+        name: path.basename(entry.folder),
+        hue: hueFor(entry.folder),
+        open: true,
+        focused: entry.folder === this.#store.state.focusedFolder,
+      }));
+  }
+
+  add(folder) {
+    const resolved = fs.realpathSync(folder);
+    const entries = this.#entries();
+    const existing = entries.find((entry) => entry.folder === resolved);
+    if (existing) existing.open = true;
+    else entries.push({ folder: resolved, open: true });
+    this.#write(entries);
+    this.focused = resolved;
+    return resolved;
+  }
+
+  close(folder) {
+    const entries = this.#entries();
+    const entry = entries.find((item) => item.folder === folder);
+    if (entry) entry.open = false;
+    this.#write(entries);
+    if (this.#store.state.focusedFolder === folder) this.focused = this.focused;
+    return this.open();
+  }
+
+  forget(folder) {
+    this.#write(this.#entries().filter((entry) => entry.folder !== folder));
+  }
+
+  // Single view's gesture: the dragged project lands at an index and the rest shift along.
+  move(folder, index) {
+    const entries = this.#entries();
+    const from = entries.findIndex((entry) => entry.folder === folder);
+    if (from < 0) return;
+    const [entry] = entries.splice(from, 1);
+    entries.splice(Math.max(0, Math.min(entries.length, index)), 0, entry);
+    this.#write(entries);
+  }
+
+  // The grid's gesture: two tiles trade slots and nothing else moves.
+  swap(a, b) {
+    const entries = this.#entries();
+    const i = entries.findIndex((entry) => entry.folder === a);
+    const j = entries.findIndex((entry) => entry.folder === b);
+    if (i < 0 || j < 0) return;
+    [entries[i], entries[j]] = [entries[j], entries[i]];
+    this.#write(entries);
+  }
+
+  #entries() {
+    return this.#store.state.entries.map((entry) => ({ ...entry }));
+  }
+
+  #write(entries) {
+    this.#store.update({ entries });
+  }
+}

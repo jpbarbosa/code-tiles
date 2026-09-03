@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Code Tiles</title>
+  <link rel="stylesheet" href="shell.css" />
+</head>
+<body>
+  <header id="strip">
+    <div id="lights"></div>
+    <div id="view-control" role="group" aria-label="View">
+      <button class="segment" data-mode="grid" aria-pressed="true" title="Grid (⌃⌘G)">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.5"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.5"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.5"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.5"/></svg>
+      </button>
+      <button class="segment" data-mode="single" aria-pressed="false" title="Single project (⌃⌘E)">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" rx="2"/></svg>
+      </button>
+    </div>
+    <nav id="chips" aria-label="Projects"></nav>
+    <button id="add" title="Open a project (⌃⌘O)" aria-label="Open a project">+</button>
+    <div id="usage" title="Claude usage: not connected"><span class="bar"></span><span class="bar"></span></div>
+  </header>
+
+  <main id="stage">
+    <div id="glow" hidden></div>
+    <section id="empty">
+      <p>No projects open.</p>
+      <button id="empty-add">Open a project</button>
+    </section>
+  </main>
+
+  <script type="module" src="shell.js"></script>
+</body>
+</html>
