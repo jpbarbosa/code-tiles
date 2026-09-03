@@ -14,7 +14,9 @@ export function createWindow() {
     // else, which is why it is 36px and why nothing else may claim that row.
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 13, y: (METRICS.strip - 14) / 2 },
-    backgroundColor: '#1b1b1d',
+    // The dark theme's own titleBar.activeBackground, so the window behind the tiles matches
+    // the ground a window reports the moment it has one and nothing steps in between.
+    backgroundColor: '#191a1b',
     webPreferences: {
       preload: files.shellPreload,
       contextIsolation: true,

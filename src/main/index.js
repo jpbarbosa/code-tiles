@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { app, dialog } from 'electron';
+import { app, dialog, nativeTheme } from 'electron';
 
 import { CodeServer } from './server.js';
 import { Desk } from './desk.js';
@@ -17,6 +17,11 @@ if (!app.requestSingleInstanceLock()) app.quit();
 let server = null;
 
 app.whenReady().then(async () => {
+  // The app's half of dark: the traffic lights, the file dialog and every guest's
+  // prefers-color-scheme, none of which a setting inside the editor reaches. The editor's half
+  // is the `dark` seam.
+  nativeTheme.themeSource = 'dark';
+
   const paths = userPaths();
   fs.mkdirSync(paths.serverData, { recursive: true });
 

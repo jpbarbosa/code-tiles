@@ -1,8 +1,8 @@
 /* One flat ground: strip, gutters and the space behind every tile are the same colour, so a
-   tile's edge never shows a step. --bg is a placeholder until a seam reports the theme's own
-   shell colour back and main hands it over. */
+   tile's edge never shows a step. --bg is the dark theme's own ground, held until a seam
+   reports the running theme's back and main hands it over. */
 :root {
-  --bg: #1b1b1d;
+  --bg: #191a1b;
   --ink: #d6d6d8;
   --ink-quiet: #8b8b90;
   --strip: 36px;

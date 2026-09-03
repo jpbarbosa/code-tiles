@@ -22,7 +22,14 @@ const READ = `(() => {
   return {
     url: location.href,
     workbench: Boolean(workbench),
-    workbenchClasses: workbench ? workbench.className.split(' ').filter((c) => c.startsWith('no') || c.includes('floating')).join(' ') : null,
+    workbenchClasses: workbench ? workbench.className.split(' ').filter((c) => c.startsWith('no') || c.includes('floating') || c.startsWith('modern')).join(' ') : null,
+    themeKind: workbench ? ['vs-dark', 'hc-black', 'hc-light', 'vs'].find((kind) => workbench.classList.contains(kind)) ?? null : null,
+    documentColorScheme: getComputedStyle(document.documentElement).colorScheme,
+    editorBackground: workbench ? getComputedStyle(workbench).getPropertyValue('--vscode-editor-background').trim() : null,
+    sidebarRadius: (() => {
+      const el = document.querySelector('.part.sidebar');
+      return el ? getComputedStyle(el).borderRadius : null;
+    })(),
     titlebar: box(titlebar),
     statusbar: box(statusbar),
     activitybarTop: box(document.querySelector('.part.activitybar'))?.y ?? null,

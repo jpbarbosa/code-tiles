@@ -10,7 +10,10 @@ What the tree does today, what comes next, and what to check when the server is 
 - One `WebContentsView` per project on one partition, placed by main from pure geometry.
 - Grid and single view, focus, open, close, project order, all persisted.
 - The shell: strip, chips, view control, the focused tile's glow, the empty state.
-- Four seams, verified in a live window rather than from a screenshot:
+- Six seams, verified in a live window rather than from a screenshot:
+  `dark` (the dark theme, auto-detect off, and the document's own colour scheme - web's default
+  theme is the light one),
+  `modern` (the editor's rounded design, so a tile's parts are cards on the shell colour),
   `chrome` (title bar and status bar gone through the editor's own settings, no dead band),
   `ground` (the theme's shell colour reported back so the app's ground matches it),
   `tint` (the project's hue mixed into the parts, and into the focused window's ground),
