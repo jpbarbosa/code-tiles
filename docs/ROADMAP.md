@@ -52,7 +52,8 @@ What the tree does today, what comes next, and what to check when the server is 
   active tab, and into the focused window's ground - which the activity bar wears too, being
   shell rather than a part; the terminal takes the same colour from a `lighten` overlay, its
   canvas having taken its own at construction and letting no stylesheet in; and the activity
-  bar's resting icons are re-derived over that ground, which a theme's own grey is 1.3:1 against;
+  bar's resting icons are re-derived over that ground, which a theme's own grey is 1.3:1 against -
+  the same ink the side bar's title row wears;
   and a webview under a part - the Claude panel - gets the same mix again inside its own document,
   on every background the theme wrote there rather than the three, its canvas being the surface it
   actually shows),

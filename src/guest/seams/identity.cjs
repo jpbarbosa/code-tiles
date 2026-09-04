@@ -27,14 +27,17 @@ ${context.icon ? `
   border-radius: 3px;
 }` : ''}
 
-.monaco-workbench .part.sidebar .composite.title .title-label h2::before {
-  content: ${JSON.stringify(`${context.name} ·`)};
-  /* Mixed into the row's own foreground rather than set from the hue alone: on a light theme a
-     bright tint of the hue is invisible against the band it sits on. */
-  color: color-mix(in oklab,
-    var(--vscode-sideBarTitle-foreground, var(--vscode-foreground)) 55%,
-    oklch(0.62 0.15 ${context.hue}));
-  margin-right: 6px;
+/* The row wears the ink the activity bar's icons wear - a colour derived from the ground rather
+   than mixed into the theme's own foreground, which on a light theme washes the hue out.
+   !important because the composite writes the theme's title foreground INLINE on this node from
+   JS, which no stylesheet outranks otherwise; the name inherits it from here. */
+.monaco-workbench .part.sidebar .composite.title .title-label h2 {
+  color: var(--ct-ink) !important;
+
+  &::before {
+    content: ${JSON.stringify(`${context.name} ·`)};
+    margin-right: 6px;
+  }
 }
 `,
 };

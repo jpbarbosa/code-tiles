@@ -126,6 +126,14 @@ ${tokens(context.hue)}
   --ct-source-panel: var(--vscode-panel-background);
   --ct-source-icon: var(--vscode-activityBar-foreground, var(--vscode-foreground));
 
+  /* What a mark ON the ground is worth, worn by the activity bar's icons and by the name on the
+     side bar's title row. A theme picks its foregrounds for its own near-black surfaces, and on
+     the ground focus puts there they measure 1.3:1 - a smudge rather than a glyph; walking from
+     that ground back toward the theme's own icon colour lands the right way up in a light theme
+     too, and the hue arrives at a chroma low enough to read as a wash. */
+  --ct-ink: oklch(from color-mix(in oklab, var(--ct-source-icon) 80%, var(--modern-ui-shell-background))
+    l 0.05 ${context.hue});
+
   & > * {
     --vscode-sideBar-background: ${veiled('--ct-source-sidebar')};
     --vscode-editor-background: ${veiled('--ct-source-editor')};
@@ -203,16 +211,11 @@ ${context.focused ? `
   --modern-ui-shell-background:
     color-mix(in oklab, var(--vscode-titleBar-activeBackground) 62%, var(--ct-brand)) !important;
 
-  /* The activity bar's icons follow the ground for the same reason the bar does: a theme picks
-     its inactive foreground for its own near-black bar, and on the ground focus puts there that
-     colour measures 1.3:1 - a grey smudge rather than an icon. Re-derived by walking from that
-     ground toward the theme's OWN icon colour, which keeps it dimmer than the one a checked view
-     wears and lands the right way up in a light theme, then given the project's hue at a chroma
-     low enough to read as a wash. */
+  /* The activity bar's icons follow the ground for the same reason the bar does, and the ink is
+     dimmer than the colour a checked view wears, so the view you are in stays the brightest
+     thing in the column. */
   & > * {
-    --vscode-activityBar-inactiveForeground:
-      oklch(from color-mix(in oklab, var(--ct-source-icon) 80%, var(--modern-ui-shell-background))
-        l 0.05 ${context.hue});
+    --vscode-activityBar-inactiveForeground: var(--ct-ink);
   }
 
   /* That variable reaches the menubar's glyph and nothing else, because every view's icon is
