@@ -17,7 +17,7 @@ const SWEEP_MS = 1000;
 let context = readContext();
 const contextListeners = new Set();
 const documentListeners = new Set();
-const watchedDocuments = new WeakSet();
+const watchedRoots = new WeakSet();
 const wiredFrames = new WeakSet();
 
 function readContext() {
@@ -74,9 +74,15 @@ function sweep(document) {
 // The two halves of "the moment it exists": a frame is announced by the document that appends
 // it, and the document it will actually hold is announced by the frame. Only an iframe is worth
 // a sweep, and no seam appends one, so the observer cannot answer its own writes.
+//
+// Kept against the ROOT rather than the document, because a webview rewrites itself with
+// document.open(): the document object survives and its documentElement does not, so an observer
+// remembered against the document is left watching a detached tree - and the frames appended to
+// the live one, which is where a webview puts its content, are announced by nothing.
 function watch(document) {
-  if (watchedDocuments.has(document) || !document.documentElement) return;
-  watchedDocuments.add(document);
+  const root = document.documentElement;
+  if (!root || watchedRoots.has(root)) return;
+  watchedRoots.add(root);
   const observer = new MutationObserver((records) => {
     for (const record of records) {
       for (const node of record.addedNodes) {
@@ -85,7 +91,7 @@ function watch(document) {
       }
     }
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(root, { childList: true, subtree: true });
 }
 
 // Navigating replaces a frame's document, and with it everything a seam wrote into the one

@@ -44,3 +44,26 @@ test('a seam declares only the parts a seam has', () => {
     assert.deepEqual(extra, [], `${seam.name} declares ${extra.join(', ')}`);
   }
 });
+
+// A webview rewrites its own document with document.open(), which keeps the Document OBJECT and
+// takes every listener registered on it. A seam that remembers having been inside a document
+// therefore goes deaf in exactly the frame the Claude panel lives in, and the tile stops
+// claiming focus when you click into its chat. So: said again on every sweep, not once.
+test('the focus seam registers on every sweep, not once per document', () => {
+  const focus = seams.find((seam) => seam.name === 'focus');
+  const registered = [];
+  const document = {
+    addEventListener: (type, listener, capture) => registered.push({ type, listener, capture }),
+  };
+  focus.init({
+    context: { focused: false },
+    send: () => {},
+    eachDocument: (callback) => { callback(document); callback(document); },
+  });
+
+  assert.equal(registered.length, 2, 'the same document was visited twice and hooked once');
+  assert.deepEqual(registered.map((entry) => entry.type), ['pointerdown', 'pointerdown']);
+  // The DOM only drops the repeat when type, callback AND capture all match.
+  assert.equal(registered[0].listener, registered[1].listener);
+  assert.deepEqual(registered.map((entry) => entry.capture), [true, true]);
+});

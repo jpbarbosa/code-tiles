@@ -12,15 +12,16 @@
 module.exports = {
   name: 'focus',
   init(api) {
-    const hooked = new WeakSet();
     const claim = () => {
       if (!api.context.focused) api.send('focus');
     };
 
     api.eachDocument((document) => {
-      if (hooked.has(document)) return;
-      hooked.add(document);
-      // Capture: a handler that stops the press cannot hide it from us.
+      // Said again on every sweep rather than once per document, because a webview's own
+      // document.open() wipes every listener on it while keeping the document OBJECT - so a
+      // seam that remembers having hooked it never comes back, and the panel goes deaf. The
+      // repeat is free: the DOM drops a second registration of the same type, callback and
+      // capture flag.
       document.addEventListener('pointerdown', claim, true);
     });
   },

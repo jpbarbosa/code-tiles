@@ -271,6 +271,18 @@ document and sets it there. That canvas is also the whole SURFACE a panel shows,
 behind one: neither the editor nor the Claude panel's own page paints a background on `body` or
 its root, so a webview has to be given the theme's colour rather than only its scheme. **[checked]**
 
+**A webview REWRITES its own document, which wipes every listener a seam put on it.** The frame's
+`document.open()` keeps the Document OBJECT and replaces its `documentElement`, and the spec has it
+remove every event listener registered on the document with it. Measured on the Claude panel's outer
+frame: the document appears at 1098 ms of the tile's load and its `documentElement` is a different
+element by 1138 ms, the object unchanged throughout. So a seam that remembers having been inside a
+document - a `WeakSet` keyed by the document - registers once, 40 ms before the wipe, and is deaf
+for the rest of the window's life while the sweep goes on visiting that document (41 times in one
+20 s run) and finding nothing to do. The seam that hooks it says its piece on EVERY sweep instead;
+the DOM drops a repeat whose type, callback and capture flag all match, so the repeat costs nothing.
+Nothing announces the rewrite, and nothing about the failure is visible: the panel simply stops
+claiming focus. **[checked]**
+
 **A frame's own `load` is the FIRST moment its document can be reached, and it paints before that.**
 The runtime takes a frame at its append and at its load; the append is the `about:blank` the real
 document replaces, so the write dies with it, and nothing between the two announces anything. On a
