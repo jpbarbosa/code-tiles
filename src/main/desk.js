@@ -93,6 +93,14 @@ export class Desk {
     this.#tiles.focus(folder);
   }
 
+  // A click inside a window. The native focus is already there, so only the app's own idea of it
+  // has to catch up - focusing the view back would be a loop.
+  adoptFocus(folder) {
+    if (folder === this.#projects.focused) return;
+    this.#projects.focused = folder;
+    this.render();
+  }
+
   focusByIndex(index) {
     const open = this.#projects.open();
     if (index >= 0 && index < open.length) this.focus(open[index].folder);

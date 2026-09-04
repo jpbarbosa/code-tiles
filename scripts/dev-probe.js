@@ -45,6 +45,21 @@ const READ = `(() => {
       panel: !workbench.classList.contains('nopanel'),
       secondarySideBar: !workbench.classList.contains('noauxiliarybar'),
     } : null,
+    // The focus seam's reach: every document a press could land in, walked the way the seam
+    // walks it. A window with a webview open - the Claude panel - has more than one.
+    reachableDocuments: (() => {
+      let count = 0;
+      const walk = (doc) => {
+        count += 1;
+        let frames;
+        try { frames = doc.querySelectorAll('iframe'); } catch { return; }
+        for (const frame of frames) {
+          try { if (frame.contentDocument) walk(frame.contentDocument); } catch { /* cross-origin */ }
+        }
+      };
+      walk(document);
+      return count;
+    })(),
     titlebar: box(titlebar),
     statusbar: box(statusbar),
     auxiliarybar: box(document.querySelector('.part.auxiliarybar')),

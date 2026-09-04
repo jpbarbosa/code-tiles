@@ -12,4 +12,5 @@ module.exports = [
   require('./seams/tint.cjs'),
   require('./seams/identity.cjs'),
   require('./seams/layout.cjs'),
+  require('./seams/focus.cjs'),
 ];

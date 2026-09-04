@@ -28,8 +28,8 @@ window with it.
 
 ## Focus
 
-Exactly one project is focused, in both views, and focus is shown by **colour on the ground,
-never by a border**:
+Exactly one project is focused, in both views. **Clicking into a tile focuses it**, as do the
+chip and the keyboard, and focus is shown by **colour on the ground, never by a border**:
 
 - The focused tile's shell takes the project's hue: its margins and the gaps between its own
   panels turn that colour, while every panel inside it stays exactly as the theme painted it.

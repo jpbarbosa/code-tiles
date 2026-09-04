@@ -8,6 +8,8 @@ export function installIpc({ desk, usage, popover }) {
   const commands = {
     'state': () => { desk.render(); usage.publish(); },
     'ground': ({ ground }) => desk.setGround(ground),
+    // A window saying it was clicked into. Its own focus is already there.
+    'focus': (_payload, folder) => desk.adoptFocus(folder),
     // A window saying what its own parts are doing; the strip choosing for every window at once.
     'layout': ({ parts }, folder) => desk.reportParts(folder, parts),
     'layout:set': ({ part, visible }) => desk.setLayout(part, visible),

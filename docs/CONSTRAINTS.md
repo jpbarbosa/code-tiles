@@ -50,6 +50,22 @@ anything that must appear inside a tile is a seam; the shell draws only in the g
 strip; and a drag that starts inside a tile (the badge) is started by the guest and mediated
 by main, never tracked by the shell over the tiles. **[checked]**
 
+**Adding a `WebContentsView` takes the window's focus, and reports it late.** `addChildView`
+moves the native focus to the new view, and the `focus` event on its `webContents` arrives after
+the reconcile that created it, so a run of them leaves the LAST view holding the keyboard whatever
+the app believes. `Tiles.sync` focuses the app's focused project again whenever it
+created anything. A click into a tile is reported by the `focus` seam instead, because that same
+event cannot tell a click from this steal. **[checked]**
+
+**A press inside a webview is invisible to the workbench around it.** The Claude panel, a
+preview and a notebook are each an iframe holding a SANDBOXED iframe, and a press in there
+reaches the workbench's document as no press, no focus and no blur - measured by injecting a
+click over the panel and counting what the `focus` seam sent: one message for a press on the
+workbench, none for a press in the panel. The sandbox carries `allow-same-origin`, which is how
+the editor's own wrapper reaches in, so the seam walks `contentDocument` and registers on every
+document it can reach. The walk repeats on a timer because those frames are built and rebuilt as
+panels open, and the press has to find the listener already there. **[checked]**
+
 **code-server keeps the GitHub session browser-side**, in IndexedDB keyed by origin, inside
 the view's session partition, not in the server's user data directory. One shared login
 therefore needs the same origin *and* the same partition for every tile, which is why the port

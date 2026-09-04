@@ -23,7 +23,7 @@ What the tree does today, what comes next, and what to check when the server is 
 - Your VS Code, mirrored: every desktop profile reproduced on the server, its extensions
   installed from Open VSX into one shared directory, and each tile opened on the profile your
   desktop already associates with that folder.
-- Eight seams, verified in a live window rather than from a screenshot:
+- Nine seams, verified in a live window rather than from a screenshot:
   `dark` (the dark theme, auto-detect off, and the document's own colour scheme - web's default
   theme is the light one),
   `modern` (the editor's rounded design, so a tile's parts are cards on the shell colour),
@@ -35,7 +35,10 @@ What the tree does today, what comes next, and what to check when the server is 
   `tint` (the project's hue mixed into the parts, and into the focused window's ground),
   `identity` (the project's name on the side bar's title row),
   `layout` (the three parts the strip's layout control flips, through the editor's own
-  keybindings, acting on a change of instruction rather than on every render).
+  keybindings, acting on a change of instruction rather than on every render),
+  `focus` (a press inside a window claims focus for its project, since a view paints above the
+  shell's page and the shell never sees that press - registered on every document in the window,
+  because a press in the Claude panel lands two frames down in a webview).
 
 ## Next, in order
 

@@ -19,13 +19,19 @@ export class Tiles {
     const wanted = new Set(projects.map((project) => project.folder));
     for (const folder of [...this.#views.keys()]) if (!wanted.has(folder)) this.destroy(folder);
 
+    let added = false;
     projects.forEach((project, index) => {
+      added ||= !this.#views.has(project.folder);
       const view = this.#ensure(project);
       const rect = rects[index];
       view.setVisible(rect.visible);
       if (rect.visible) view.setBounds({ x: rect.x, y: rect.y, width: rect.width, height: rect.height });
       this.setContext(project.folder, project);
     });
+
+    // Adding a view takes the window's focus, so the last one added would hold the keyboard
+    // while the glow sits on another tile. Put it back where the app says focus is.
+    if (added) this.focus(projects.find((project) => project.focused)?.folder);
   }
 
   focus(folder) {
