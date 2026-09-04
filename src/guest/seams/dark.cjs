@@ -31,12 +31,31 @@ module.exports = {
   // workbench config rather than here, and the setting above closes the only other branch.
   //
   // Unpatched, a profile's first window blinks light. [code-server 4.135.0]
-  patch: {
+  patch: [{
     file: 'lib/vscode/out/vs/workbench/workbench.web.main.internal.js',
     marker: 'ct:dark-first',
     find: /getPreferredColorScheme\(\)\?\?\([A-Za-z_$][\w$]*\?"light":"dark"\)/,
     replace: 'getPreferredColorScheme()??("dark"/* ct:dark-first */)',
-  },
+  }, {
+    // The webview's own outer frame, which is the panel's whole surface while it loads. The init
+    // below reaches it when the frame's `load` fires, and the frame paints before that: measured
+    // against a warm partition, the Claude panel's rect is Chromium's white canvas from 1092ms to
+    // 1129ms of the tile's load - 37ms of white over a fifth of the tile, with the workbench
+    // around it already painted and themed.
+    //
+    // Nothing in the document can be earlier, because the document is the thing arriving: a write
+    // at the iframe's append lands on the about:blank it replaces, and no event announces the new
+    // one before its resources are in. This file is served from disk, so the scheme can simply be
+    // there from the first paint.
+    //
+    // Unpatched, every webview frame flashes white for as long as its page takes to load.
+    // [code-server 4.135.0]
+    file: 'lib/vscode/out/vs/workbench/contrib/webview/browser/pre/index.html',
+    marker: 'ct:webview-dark',
+    find: /<html lang="en" style="width: 100%; height: 100%;">/,
+    replace: '<html lang="en" style="width: 100%; height: 100%; color-scheme: dark;'
+      + '/* ct:webview-dark */">',
+  }],
   css: () => `
 :root {
   color-scheme: dark;

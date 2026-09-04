@@ -12,7 +12,7 @@ import seams from '../manifest-settings.js';
 // bookkeeping, so a version bump - which replaces the tree - is patched again on the next start
 // and nothing has to remember that it happened.
 export function patchServer(bin) {
-  const patches = seams.filter((seam) => seam.patch);
+  const patches = declaredPatches(seams);
   if (!patches.length) return [];
 
   const root = path.resolve(fs.realpathSync(bin), '../..');
@@ -40,4 +40,12 @@ export function patchServer(bin) {
     done.push(name);
   }
   return done;
+}
+
+// A seam declares one patch or several - `dark` owns two, the bundle's light-first fallback and
+// the webview frame's own canvas - and they are applied the same way either way.
+export function declaredPatches(list) {
+  return list.flatMap((seam) => [seam.patch].flat()
+    .filter(Boolean)
+    .map((patch) => ({ name: seam.name, patch })));
 }

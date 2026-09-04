@@ -13,13 +13,15 @@ what a seam wants, the seam uses it. A setting reflows the layout the way the pr
 intends; CSS that fakes the same result leaves a dead band and a measurement to maintain.
 Hiding the status bar is one line of `settings`; the previous version measured and clipped it.
 
-**A `patch` is for a switch that exists and cannot be reached.** Two so far. The side bar's
+**A `patch` is for a switch that exists and cannot be reached.** Four so far. The side bar's
 footer: the editor keeps the concept, sizes it and relayouts around it, and offers no way in from
 the DOM. The welcome page's walkthrough list: the editor lays the empty state out properly and
 reaches it only by hiding each card in turn, which is a user's choice, stored per profile and
-offered back as a link a seam would have to keep fighting. A patch is declared by the seam that
-needs it, matched by SHAPE rather than by any minified name, refuses rather than shipping
-half-applied, and says in the seam what the seam degrades to on a server that was never patched.
+offered back as a link a seam would have to keep fighting. And `dark`'s two, which are both a
+FIRST PAINT: nothing in a document can act before the document exists. A patch is declared by the
+seam that needs it - one seam may own several - matched by SHAPE rather than by any minified name,
+refuses rather than shipping half-applied, and says in the seam what the seam degrades to on a
+server that was never patched.
 
 **One place per seam, and a name.** Every change to an editor window is one file with one
 name, listed in `src/guest/manifest.js`. If a change needs a rule here and a rule there and a
@@ -265,11 +267,20 @@ paints Chromium's white base behind it. The Claude panel is where that shows: it
 the panel and as a bright arc where the rounded design clips it. Nothing outside the frame
 decides this - not `color-scheme` on the workbench document, not on the iframe element, not the
 view's `setBackgroundColor`, none of which propagate in - so the `dark` seam walks to each
-document and sets it there. Reaching a frame a tick late is a visible blink rather than a late
-correction: a new one measured 997 ms of white waiting for a 1 s sweep, and 6 ms once its append
-and its load announced it. That canvas is also the whole SURFACE a panel shows, not a fallback
+document and sets it there. That canvas is also the whole SURFACE a panel shows, not a fallback
 behind one: neither the editor nor the Claude panel's own page paints a background on `body` or
 its root, so a webview has to be given the theme's colour rather than only its scheme. **[checked]**
+
+**A frame's own `load` is the FIRST moment its document can be reached, and it paints before that.**
+The runtime takes a frame at its append and at its load; the append is the `about:blank` the real
+document replaces, so the write dies with it, and nothing between the two announces anything. On a
+warm partition the Claude panel's outer frame committed at 1089 ms of the tile's load and turned
+dark at 1120 ms - 31 ms in which a fifth of the tile was Chromium's white canvas, with the workbench
+around it already painted and themed. Measured at 21% of the tile's pixels over 200 luminance,
+twice, and 0% with the same partition patched. So a frame that is SERVED from disk takes its scheme
+from the file - `dark` patches the webview's `pre/index.html` - and the seam's walk is left to the
+documents no file reaches: the inner frame, which the editor keeps hidden until it is ready and
+which therefore never shows its own 145 ms. **[checked]**
 
 **The web build's placeholder theme is LIGHT, and only the bundle can change it.** Until a
 profile has a theme in storage the service falls through `fromStorageData` and the workbench's
