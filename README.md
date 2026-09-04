@@ -47,8 +47,9 @@ chip and the keyboard, and focus is shown by **colour on the ground, never by a 
 ## Identity
 
 Every project carries its own hue, derived from its path, so it is stable across restarts and
-never stored. The hue appears in four places and nowhere else: the chip, the focused tile's
-ground and glow, the sidebar title row inside the window, and the identity badge.
+never stored. The hue appears in five places and nowhere else: the chip, the focused tile's
+ground and glow, the sidebar title row inside the window, the branch pills under its file tree,
+and the ring around the identity badge.
 
 The **identity badge** sits at the top of the activity bar, inside the window, where the
 editor's own title bar used to be. It is the project's favicon, or a monogram, and it is what
@@ -143,7 +144,8 @@ What the app changes about a stock editor is small, deliberate, and listed in on
 - **The window is tinted** with the project's hue: the parts wear it, the ground does not.
 - **The identity badge and its ring** are drawn in the activity bar.
 - **The branch is put where it can be seen**, under the file tree, since the status bar that
-  used to carry it is gone.
+  used to carry it is gone. It is the editor's own entry off that bar, mirrored into a pill the
+  side bar makes real room for, so clicking it still checks out or syncs.
 - **Terminals are tabbed along the panel header** rather than listed down its right edge,
   which costs width in every tile at once.
 

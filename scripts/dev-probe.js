@@ -47,7 +47,7 @@ const READ = `(() => {
     } : null,
     // What the runtime's sweep reaches, walked the way it walks: every document a press could
     // land in for the focus seam, and what each one paints its canvas with for the dark seam. A
-    // window with a webview open - the Claude panel - has more than one, and a `normal` in this
+    // window with a webview open - the Claude panel - has more than one, and a "normal" in this
     // list is a white column waiting to show through.
     documentColorSchemes: (() => {
       const schemes = [];
@@ -61,6 +61,28 @@ const READ = `(() => {
       };
       walk(document);
       return schemes;
+    })(),
+    // The identity seam's badge: the project's favicon in place of the hamburger's glyph. The
+    // whole data URL IS the icon, so only its head is worth reading back.
+    badge: (() => {
+      const el = document.querySelector('.part.activitybar .menubar .menubar-menu-button > .menubar-menu-title');
+      if (!el) return null;
+      const before = getComputedStyle(el, '::before');
+      return { size: [before.width, before.height], image: before.backgroundImage.slice(0, 34) };
+    })(),
+    // The branch seam: what the pills say, and whether the side bar gave them real room - the
+    // pane area ending above them is the whole difference between a footer and an overlay.
+    branch: (() => {
+      const footer = document.querySelector('.part.sidebar > .ct-footer');
+      const content = document.querySelector('.part.sidebar > .content');
+      if (!footer) return { pills: [], adopted: null };
+      return {
+        pills: [...footer.children].map((el) => el.textContent.trim()),
+        adopted: footer.classList.contains('footer'),
+        clear: content
+          ? Math.round(content.getBoundingClientRect().bottom) <= Math.round(footer.getBoundingClientRect().top)
+          : null,
+      };
     })(),
     titlebar: box(titlebar),
     statusbar: box(statusbar),

@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import test from 'node:test';
+
+import seams from '../src/guest/manifest-settings.js';
+
+// Not src/main/paths.js: that one imports electron, which a plain node test cannot resolve.
+const ROOT = new URL('../', import.meta.url).pathname;
+
+const patches = seams.filter((seam) => seam.patch);
+
+// The bundle as it is written today, minus the 18MB either side: the shape a patch matches, in
+// the source order the build emits it in.
+const PART_CREATE = 'class Part extends Component{'
+  + 'create(e,t){this.parent=e,this.titleArea=this.createTitleArea(e,t),'
+  + 'this.contentArea=this.createContentArea(e,t),'
+  + 'this.partLayout=new PartLayout(this.options,this.contentArea,this.layoutService),'
+  + 'this.updateStyles()}}';
+
+test('every patch rewrites its shape once, into code that parses', () => {
+  for (const { name, patch } of patches) {
+    const hits = PART_CREATE.match(new RegExp(patch.find.source, 'g')) || [];
+    assert.equal(hits.length, 1, `${name}: matched ${hits.length} times in the shape it targets`);
+
+    const patched = PART_CREATE.replace(patch.find, patch.replace);
+    assert.ok(patched.includes(patch.marker), `${name}: patched source carries no marker`);
+    assert.doesNotThrow(() => new Function(patched), `${name}: patched source does not parse`);
+    // Idempotence is the marker's job, and the marker has to survive its own patch.
+    assert.ok(patched.includes(patch.marker) && !PART_CREATE.includes(patch.marker));
+  }
+});
+
+// The one check a version bump actually needs: the shape is still in the bundle that ships.
+// Skipped when nothing is vendored, since the server is a dependency and not part of the tree.
+const bundles = patches.map(({ patch }) => path.join(ROOT, 'vendor/code-server', patch.file));
+test('the vendored bundle still has the shape', { skip: !bundles.every((file) => fs.existsSync(file)) }, () => {
+  patches.forEach(({ name, patch }, index) => {
+    const source = fs.readFileSync(bundles[index], 'utf8');
+    const hits = source.match(new RegExp(patch.find.source, 'g')) || [];
+    assert.equal(hits.length + (source.includes(patch.marker) ? 1 : 0), 1,
+      `${name}: matched ${hits.length} times in the vendored bundle`);
+  });
+});

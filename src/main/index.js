@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { app, dialog, nativeTheme } from 'electron';
+import { app, dialog, nativeTheme, session } from 'electron';
 
 import { CodeServer } from './server.js';
 import { Desk } from './desk.js';
@@ -15,7 +15,8 @@ import { installIpc } from './ipc.js';
 import { installMenu } from './menu.js';
 import { readDesktop } from './desktop.js';
 import { seedProfileRegistry } from './registry.js';
-import { desktopPaths, resolveCodeServer, userPaths } from './paths.js';
+import { PARTITION, desktopPaths, resolveCodeServer, userPaths } from './paths.js';
+import { patchServer } from '../guest/disk/patch.js';
 import { writeSettings } from '../guest/disk/settings.js';
 
 if (!app.requestSingleInstanceLock()) app.quit();
@@ -52,6 +53,16 @@ app.whenReady().then(async () => {
   // already the shape the product wants. Written every start: the manifest is the source. The
   // mirror writes the same seams into each profile, which does not inherit this file.
   writeSettings(paths.settings);
+  // The rarer half of the same idea: what a seam needs the server's own bundle to do. Before the
+  // spawn, so no window ever loads the unpatched one.
+  const patched = patchServer(bin);
+  if (patched.length) {
+    console.log(`[patch] ${patched.join(', ')}`);
+    // The bundle is served for a year under a URL keyed on the server's COMMIT, not on its
+    // contents, so a window that already holds it would go on running the unpatched one. The
+    // HTTP cache only: the login and every window's layout live in this partition's storage.
+    await session.fromPartition(PARTITION).clearCache();
+  }
   mirror = new ProfileMirror({ home: paths.profiles, profiles: desktop.profiles, extensions });
   mirror.write();
 

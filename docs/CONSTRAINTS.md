@@ -13,6 +13,12 @@ what a seam wants, the seam uses it. A setting reflows the layout the way the pr
 intends; CSS that fakes the same result leaves a dead band and a measurement to maintain.
 Hiding the status bar is one line of `settings`; the previous version measured and clipped it.
 
+**A `patch` is for a switch that exists and cannot be reached.** The side bar's footer is the
+only one so far: the editor keeps the concept, sizes it and relayouts around it, and offers no
+way in from the DOM. A patch is declared by the seam that needs it, matched by SHAPE rather than
+by any minified name, refuses rather than shipping half-applied, and says in the seam what the
+seam degrades to on a server that was never patched.
+
 **One place per seam, and a name.** Every change to an editor window is one file with one
 name, listed in `src/guest/manifest.js`. If a change needs a rule here and a rule there and a
 tweak in the host, that is one seam whose parts happen to live in different layers, and it
@@ -124,6 +130,34 @@ title bar to raise it from. The `trust` seam is why every tile has its extension
 `window-all-closed` is not the same as ignoring it, and the profile registry's throwaway window
 is opened before the real one exists - so an unsubscribed app ends during its own startup, with
 no error anywhere. **[checked]**
+
+**A hidden status bar keeps its entries alive.** `workbench.statusBar.visible: false` leaves the
+part in the grid at 0x0 with its items still rendered and still updated by their extensions, and
+a `click()` on one still runs its command - `status.scm.0` opened Checkout Branch/Tag from a part
+with no size at all. So the branch pills MIRROR those entries rather than reading git, and the
+editor keeps owning the label, the tooltip, the command, and whether they exist at all. **[checked]**
+
+**A part's footer is real room, and only JS can ask for it.** `PartLayout` subtracts a footer's
+height (32px under the modern design, 35 without it) from the content area, so a footer shortens
+the pane view instead of covering it - and the panes inside are placed from JS-written heights,
+which is why a stylesheet can only ever overlay them. The flag is set by `Part.setFooterArea`, and
+the one setting that calls it - `workbench.activityBar.location: bottom` - moves the whole activity
+bar into that footer, taking the badge's row with it. So `branch`'s patch teaches `Part.create` to
+adopt a `.ct-footer` the guest puts in its parent: the editor then does the classes, the height and
+the relayout, and takes the room back when the element goes. **[checked]**
+
+**A codicon's glyph is set by the product icon theme, with `!important`.** Not by the
+`.codicon-*` class a seam would think to outrank: the menu button's is
+`content: var(--vscode-icon-menu-content) !important` on `.menubar.compact .toolbar-toggle-more`,
+so a plain `content: ""` loses and the glyph paints on top of whatever the seam drew - a hamburger
+across the badge's favicon. Any seam replacing an icon pays one `!important` for this, and says so.
+**[checked]**
+
+**The workbench bundle is cached for a year, under a URL keyed on the server's commit.**
+`Cache-Control: public, max-age=31536000`, no ETag, and the path carries the code-server commit -
+so patching that file changes nothing for a window whose partition already fetched it, and the
+patch would look like it had failed. The start that applies one clears the partition's HTTP cache,
+and only that: the login and every window's layout live in the same partition's storage. **[checked]**
 
 **The workbench says which parts it is showing, on itself.** `nosidebar`, `nopanel` and
 `noauxiliarybar` are classes on the workbench container, so a seam reads the layout from one

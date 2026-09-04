@@ -100,6 +100,9 @@ function contextOf(project) {
     folder: project.folder,
     name: project.name,
     hue: project.hue,
+    // The project's own favicon, or null. Meaning, like the name and the hue: which project this
+    // window is, said in the one place inside it that a glance lands on.
+    icon: project.icon || null,
     focused: Boolean(project.focused),
     claudeState: project.claudeState || 'idle',
     // Which parts the app wants every window showing. A part nobody has chosen for is null, and

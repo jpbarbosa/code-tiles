@@ -25,7 +25,7 @@ What the tree does today, what comes next, and what to check when the server is 
 - Your VS Code, mirrored: every desktop profile reproduced on the server, its extensions
   installed from Open VSX into one shared directory, and each tile opened on the profile your
   desktop already associates with that folder.
-- Nine seams, verified in a live window rather than from a screenshot:
+- Ten seams, verified in a live window rather than from a screenshot:
   `dark` (the dark theme, auto-detect off, and the colour scheme of every document the window
   holds - web's default theme is the light one, and a webview that says nothing shows Chromium's
   white canvas through every pixel its own page leaves uncovered),
@@ -36,7 +36,12 @@ What the tree does today, what comes next, and what to check when the server is 
   Claude Code - is simply absent),
   `ground` (the theme's shell colour reported back so the app's ground matches it),
   `tint` (the project's hue mixed into the parts, and into the focused window's ground),
-  `identity` (the project's name on the side bar's title row),
+  `identity` (the project's name on the side bar's title row, and its favicon in place of the
+  hamburger's glyph at the top of the activity bar - the button underneath is still the editor's,
+  so it still opens the menu),
+  `branch` (the branch and its sync as two pills at the bottom of the side bar, mirrored from the
+  status bar entries that hiding the bar leaves alive, so a click still checks out or syncs - in
+  a footer the side bar is taught to give REAL room to rather than an overlay over the tree),
   `layout` (the three parts the strip's layout control flips, through the editor's own
   keybindings, acting on a change of instruction rather than on every render),
   `focus` (a press inside a window claims focus for its project, since a view paints above the
@@ -45,10 +50,11 @@ What the tree does today, what comes next, and what to check when the server is 
 
 ## Next, in order
 
-1. **Identity badge and Claude ring.** The badge belongs at the top of the activity bar, on the
-   hamburger band the compact menu bar leaves at `y=0`. It has to be a real element rather than
-   a pseudo-element, because it is also the grid's drag handle, so this is the first seam with
-   an `init` that owns a node: one node, kept by an observer, removed with the seam.
+1. **The badge's ring, and its drag.** The icon is drawn: `identity` swaps the hamburger's own
+   glyph for the project's favicon, on the band the compact menu bar leaves at `y=0`. The ring
+   and the grid's drag handle are more than a pseudo-element can carry, so that is the step where
+   the badge becomes a node: one node, kept by an observer, removed with the seam. The monogram a
+   project with no favicon should wear belongs to the same step; today it keeps the hamburger.
 2. **Claude state.** Hooks in `~/.claude/settings.json` write a marker per project; main watches
    and pushes `claudeState` into the context. The ring is CSS on the badge, four behaviours, one
    hue.
@@ -60,8 +66,7 @@ What the tree does today, what comes next, and what to check when the server is 
    an extension whose desktop version moves on.
 5. **Chat titles.** The active chat's name per project, read by a seam from the editor tab it
    already lives on, reported like the ground.
-6. **The rest of the window**: terminals along the panel header, the branch under the file tree,
-   the trimmed Welcome page.
+6. **The rest of the window**: terminals along the panel header, the trimmed Welcome page.
 7. **Packaging**: a signed `.app`, and a fetch of the pinned server into `vendor/`.
 
 ## Not doing
@@ -80,5 +85,9 @@ The pinned version is in `scripts/fetch-code-server.sh`. After a bump, in this o
    added there rather than a look.
 2. `chrome` is the seam most likely to break: it depends on the workbench deciding that nothing
    needs a title bar. If a new feature claims that row, the setting for it goes in the seam.
-3. Try deleting a workaround. Each one names the version it was written against; a bump is the
+3. `npm test` is the gate on the one patch: `branch` teaches `Part.create` to adopt the footer it
+   draws, matched by SHAPE because every name in that bundle is minified. A shape that no longer
+   matches is re-derived from `setFooterArea`, never guessed at. The fetch script re-extracts the
+   tree, so the next start patches the new bundle and nothing has to remember that it happened.
+4. Try deleting a workaround. Each one names the version it was written against; a bump is the
    only moment anyone will ever check.

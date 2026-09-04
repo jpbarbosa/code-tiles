@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { hueFor } from './hue.js';
+import { iconFor } from './icon.js';
 
 // A project IS its folder. No generated id, no stored name, no stored colour: everything a
 // project has is either the path or derived from it, so nothing can fall out of step with the
@@ -61,6 +62,7 @@ export class Projects {
       folder: entry.folder,
       name: path.basename(entry.folder),
       hue: hueFor(entry.folder),
+      icon: iconFor(entry.folder),
       // Which of your VS Code profiles this folder belongs to. Derived from the same place the
       // name and the hue are - the path - so nothing here can fall out of step with the desktop.
       profile: this.#profileFor(entry.folder),

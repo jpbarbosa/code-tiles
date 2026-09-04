@@ -21,7 +21,7 @@ const documentListeners = new Set();
 function readContext() {
   const prefix = '--ct-context=';
   const argument = process.argv.find((value) => value.startsWith(prefix));
-  if (!argument) return { folder: '', name: '', hue: 0, claudeState: 'idle', focused: false };
+  if (!argument) return { folder: '', name: '', hue: 0, icon: null, claudeState: 'idle', focused: false };
   return JSON.parse(decodeURIComponent(argument.slice(prefix.length)));
 }
 

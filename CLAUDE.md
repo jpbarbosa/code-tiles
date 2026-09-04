@@ -31,7 +31,8 @@ own page: strip, gutters, glow), `src/guest/` (everything inside an editor windo
 
 Adding a change inside a window: one file in `src/guest/seams/`, one line in
 `src/guest/manifest.cjs`, and a row in `docs/ROADMAP.md` if it is worth knowing about. Prefer a
-`settings` entry over CSS, and CSS over an `init`.
+`settings` entry over CSS, and CSS over an `init`. A `patch` - the server's own bundle, rewritten
+before it starts - is the last door, for a thing the editor has and exposes no way into.
 
 ## Module systems
 

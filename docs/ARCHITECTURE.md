@@ -53,6 +53,7 @@ optional, and most seams have one.
 export default {
   name: 'identity',
   settings: { 'workbench.statusBar.visible': false },   // written to disk before the server starts
+  patch: { file, marker, find, replace },               // the server's own bundle, same moment
   css: (ctx) => `...`,                                  // one stylesheet, appended last
   init: (ctx, api) => { ... },                          // runs in the guest, after the workbench
 };
@@ -62,6 +63,10 @@ export default {
   you want, take the switch: it reflows the layout properly and it survives version bumps.
   Seams collect their settings in the manifest and `src/guest/disk/settings.js` merges them
   into the server's `settings.json` once, before it starts.
+- **`patch`** is the last door, and there is one. What a seam needs the server's own BUNDLE to
+  do, for the case where the editor has the thing and offers no way in: it is matched by shape,
+  applied by `src/guest/disk/patch.js` before the server starts, and refused rather than
+  half-applied. A seam that declares one says what it degrades to without it.
 - **`css(ctx)`** returns plain CSS. The runtime concatenates every seam's CSS into ONE
   `<style>` element and keeps that element **last in `<head>`**, so our rules win on cascade
   order rather than on `!important`. `!important` in a seam is a smell and should carry a
@@ -70,7 +75,7 @@ export default {
   badge, forwarding a click. It runs in the preload's isolated world with DOM access, and it
   is handed `api.onContext`, `api.send` and `api.whenReady`.
 
-`ctx` is the project context: `{ folder, name, hue, claudeState, focused, layout }`. It arrives
+`ctx` is the project context: `{ folder, name, hue, icon, claudeState, focused, layout }`. It arrives
 before the first paint (through `additionalArguments`) and is updated by IPC. A seam reads it
 and re-renders; it never asks main for it.
 
@@ -203,5 +208,6 @@ src/shell/preload.cjs  contextBridge: window.ct
 src/guest/manifest.js  the seam list. Adding a seam means adding a line here.
 src/guest/runtime.cjs  the preload: loads seams, owns the style element, owns the context
 src/guest/seams/*.js   one seam per file
-src/guest/disk/        the seams' settings, merged into the server's file and every profile's
+src/guest/disk/        the seams' parts that land before the server starts: their settings, merged
+                       into its file and every profile's, and the one patch to its bundle
 ```
