@@ -50,7 +50,8 @@ What the tree does today, what comes next, and what to check when the server is 
   `tint` (the project's hue mixed into the parts' own surfaces and their chrome, into every
   active tab, and into the focused window's ground - which the activity bar wears too, being
   shell rather than a part; the terminal takes the same colour from a `lighten` overlay, its
-  canvas having taken its own at construction and letting no stylesheet in),
+  canvas having taken its own at construction and letting no stylesheet in; and the activity
+  bar's resting icons are re-derived over that ground, which a theme's own grey is 1.3:1 against),
   `identity` (the project's name on the side bar's title row, and its favicon in place of the
   hamburger's glyph at the top of the activity bar - the button underneath is still the editor's,
   so it still opens the menu),

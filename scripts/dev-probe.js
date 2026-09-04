@@ -143,6 +143,17 @@ const READ = `(() => {
       return fill ? getComputedStyle(fill).backgroundColor : null;
     })(),
     shellGround: workbench ? getComputedStyle(workbench).getPropertyValue('--modern-ui-shell-background').trim() : null,
+    // The activity bar's icons, which are written inline from JS and so are read off the label
+    // rather than off a variable. On the focused window every unchecked one carries the hue; the
+    // checked one is the theme's, and a column of identical colours means the tie was lost.
+    activityBarIcons: [...document.querySelectorAll('.part.activitybar .monaco-action-bar .action-item')]
+      .map((item) => {
+        const label = item.querySelector('.action-label');
+        if (!label) return null;
+        const style = getComputedStyle(label);
+        return [item.classList.contains('checked') ? 'checked' : 'resting',
+          label.classList.contains('uri-icon') ? style.backgroundColor : style.color];
+      }).filter(Boolean),
     // Which theme actually landed, now that the dark seam only DEFAULTS one: a theme-scoped
     // colorCustomizations block shows up in this one.
     terminalBackground: workbench ? getComputedStyle(workbench).getPropertyValue('--vscode-terminal-background').trim() : null,

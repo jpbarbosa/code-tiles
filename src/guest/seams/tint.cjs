@@ -29,6 +29,7 @@ module.exports = {
   --ct-source-sidebar: var(--vscode-sideBar-background);
   --ct-source-editor: var(--vscode-editor-background);
   --ct-source-panel: var(--vscode-panel-background);
+  --ct-source-icon: var(--vscode-activityBar-foreground, var(--vscode-foreground));
 
   & > * {
     --vscode-sideBar-background: color-mix(in oklab, var(--ct-source-sidebar) var(--ct-veil), var(--ct-brand));
@@ -106,6 +107,30 @@ ${context.focused ? `
 .monaco-workbench {
   --modern-ui-shell-background:
     color-mix(in oklab, var(--vscode-titleBar-activeBackground) 62%, var(--ct-brand)) !important;
+
+  /* The activity bar's icons follow the ground for the same reason the bar does: a theme picks
+     its inactive foreground for its own near-black bar, and on the ground focus puts there that
+     colour measures 1.3:1 - a grey smudge rather than an icon. Re-derived by walking from that
+     ground toward the theme's OWN icon colour, which keeps it dimmer than the one a checked view
+     wears and lands the right way up in a light theme, then given the project's hue at a chroma
+     low enough to read as a wash. */
+  & > * {
+    --vscode-activityBar-inactiveForeground:
+      oklch(from color-mix(in oklab, var(--ct-source-icon) 80%, var(--modern-ui-shell-background))
+        l 0.05 ${context.hue});
+  }
+
+  /* That variable reaches the menubar's glyph and nothing else, because every view's icon is
+     written INLINE on its label from JS: a codicon paints with color, and an extension's own
+     icon is a mask that paints with background-color. Held at (0,7,0), below the editor's own
+     checked and hover rules, so those two states stay the theme's - which is what keeps the
+     view you are in the brightest thing in the column. */
+  & .part.activitybar .monaco-action-bar .action-item {
+    & .action-label.codicon { color: var(--vscode-activityBar-inactiveForeground) !important; }
+    & .action-label.uri-icon {
+      background-color: var(--vscode-activityBar-inactiveForeground) !important;
+    }
+  }
 }` : ''}
 `,
 };

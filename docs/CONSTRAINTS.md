@@ -204,6 +204,13 @@ pixel brighter than a 7% hue over a near-black byte-identical. Rewriting one of 
 has to CAPTURE it on an ancestor first: a custom property cannot reference itself on one element,
 that is a cycle, and it computes to nothing. **[checked]**
 
+**An activity bar icon is written INLINE on its label from JS**, by `CompositeBarActionViewItem`,
+so no variable reaches the resting ones - only `!important` does. A codicon paints with `color`;
+an extension's own icon is a mask and paints with `background-color`, so both are needed. Keep the
+rule at (0,7,0): the editor's own checked and hover rules sit at (0,9,0), and out-ranking those
+takes the theme's colour off the view you are in. `activityBar.inactiveForeground` still reaches
+the menubar's glyph as a variable, since that one is CSS. **[checked]**
+
 **The workbench says which parts it is showing, on itself.** `nosidebar`, `nopanel` and
 `noauxiliarybar` are classes on the workbench container, so a seam reads the layout from one
 attribute and observes all three with one `MutationObserver` on `class`. There is nothing to
