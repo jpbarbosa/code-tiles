@@ -13,11 +13,13 @@ what a seam wants, the seam uses it. A setting reflows the layout the way the pr
 intends; CSS that fakes the same result leaves a dead band and a measurement to maintain.
 Hiding the status bar is one line of `settings`; the previous version measured and clipped it.
 
-**A `patch` is for a switch that exists and cannot be reached.** The side bar's footer is the
-only one so far: the editor keeps the concept, sizes it and relayouts around it, and offers no
-way in from the DOM. A patch is declared by the seam that needs it, matched by SHAPE rather than
-by any minified name, refuses rather than shipping half-applied, and says in the seam what the
-seam degrades to on a server that was never patched.
+**A `patch` is for a switch that exists and cannot be reached.** Two so far. The side bar's
+footer: the editor keeps the concept, sizes it and relayouts around it, and offers no way in from
+the DOM. The welcome page's walkthrough list: the editor lays the empty state out properly and
+reaches it only by hiding each card in turn, which is a user's choice, stored per profile and
+offered back as a link a seam would have to keep fighting. A patch is declared by the seam that
+needs it, matched by SHAPE rather than by any minified name, refuses rather than shipping
+half-applied, and says in the seam what the seam degrades to on a server that was never patched.
 
 **One place per seam, and a name.** Every change to an editor window is one file with one
 name, listed in `src/guest/manifest.js`. If a change needs a rule here and a rule there and a
@@ -166,6 +168,12 @@ the same empty slot with nothing to blame: `codicon-panel-restore` resolves
 `--vscode-icon-panel-restore-content` to nothing at all, so the `maximize` seam wears
 `screen-normal` - the same `\eb4d` - for its lit half. Read the variable before taking a name.
 **[checked]**
+
+**The workbench's product name is a code-server FLAG, not its `product.json`.** `--app-name` is
+served to the page as `nameShort` and `nameLong`, so one flag names the welcome page's heading, the
+document title and the About dialog at once - while the file on disk still reads code-server, which
+is what makes the name look unreachable from anywhere but a patch. Its own help text mentions only
+the title bar and the login page. **[checked]**
 
 **The workbench bundle is cached for a year, under a URL keyed on the server's commit.**
 `Cache-Control: public, max-age=31536000`, no ETag, and the path carries the code-server commit -

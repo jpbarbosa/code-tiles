@@ -44,6 +44,12 @@ export class CodeServer {
       '--bind-addr', `127.0.0.1:${this.#port}`,
       '--disable-telemetry',
       '--disable-update-check',
+      // What a window calls the thing it is: code-server serves this flag to the workbench as
+      // its `nameLong`, so it names the welcome page, the document title and the About dialog
+      // at once. The `welcome` seam is the rest of that page.
+      '--app-name', 'Code Tiles',
+      // Coder's own "Next Up" panel on the welcome page, which advertises their hosted product.
+      '--disable-getting-started-override',
       '--user-data-dir', this.#paths.serverData,
       '--extensions-dir', this.#paths.extensions,
     ], { detached: true, stdio: ['ignore', 'pipe', 'pipe'] });

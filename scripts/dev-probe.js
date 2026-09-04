@@ -23,7 +23,8 @@ const READ = `(() => {
     url: location.href,
     workbench: Boolean(workbench),
     // VS Code appends the profile's name to the title whenever it is not the default one, so
-    // this is the window's own answer to "which profile am I", not the host's.
+    // this is the window's own answer to "which profile am I", not the host's. Its last segment
+    // is the product name, which is the half of the welcome seam a closed welcome tab still says.
     title: document.title,
     // What the window actually loaded, rather than what the mirror asked for: an extension that
     // contributes nothing to the activity bar will not show, but a missing one never does.
@@ -142,6 +143,14 @@ const READ = `(() => {
       return fill ? getComputedStyle(fill).backgroundColor : null;
     })(),
     shellGround: workbench ? getComputedStyle(workbench).getPropertyValue('--modern-ui-shell-background').trim() : null,
+    // The welcome seam: the page's own two columns, Start and Recent, with no walkthrough list
+    // under one and no ad above the other. Null in a window whose welcome tab is closed.
+    welcome: (() => {
+      const container = document.querySelector('.gettingStartedCategoriesContainer');
+      if (!container) return null;
+      return [...container.querySelectorAll('.categories-column')]
+        .map((column) => [...column.children].map((element) => element.className));
+    })(),
   };
 })()`;
 

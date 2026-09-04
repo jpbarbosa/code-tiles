@@ -63,7 +63,7 @@ export default {
   you want, take the switch: it reflows the layout properly and it survives version bumps.
   Seams collect their settings in the manifest and `src/guest/disk/settings.js` merges them
   into the server's `settings.json` once, before it starts.
-- **`patch`** is the last door, and there is one. What a seam needs the server's own BUNDLE to
+- **`patch`** is the last door, and there are two. What a seam needs the server's own BUNDLE to
   do, for the case where the editor has the thing and offers no way in: it is matched by shape,
   applied by `src/guest/disk/patch.js` before the server starts, and refused rather than
   half-applied. A seam that declares one says what it degrades to without it.

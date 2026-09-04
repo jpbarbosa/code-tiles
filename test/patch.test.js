@@ -10,24 +10,33 @@ const ROOT = new URL('../', import.meta.url).pathname;
 
 const patches = seams.filter((seam) => seam.patch);
 
-// The bundle as it is written today, minus the 18MB either side: the shape a patch matches, in
-// the source order the build emits it in.
-const PART_CREATE = 'class Part extends Component{'
-  + 'create(e,t){this.parent=e,this.titleArea=this.createTitleArea(e,t),'
-  + 'this.contentArea=this.createContentArea(e,t),'
-  + 'this.partLayout=new PartLayout(this.options,this.contentArea,this.layoutService),'
-  + 'this.updateStyles()}}';
+// The bundle as it is written today, minus the 18MB either side: the shape each patch matches,
+// in the source order the build emits it in. A patch with no shape here is a patch nobody can
+// re-derive, so the loop below fails rather than skipping it.
+const SHAPES = {
+  branch: 'class Part extends Component{'
+    + 'create(e,t){this.parent=e,this.titleArea=this.createTitleArea(e,t),'
+    + 'this.contentArea=this.createContentArea(e,t),'
+    + 'this.partLayout=new PartLayout(this.options,this.contentArea,this.layoutService),'
+    + 'this.updateStyles()}}',
+  welcome: 'class GettingStartedPage extends EditorPane{'
+    + 'buildGettingStartedWalkthroughsList(){'
+    + 'const list=this.gettingStartedList.value=new Index({klass:"getting-started",limit:5});'
+    + 'return list.setEntries(this.gettingStartedCategories),list}}',
+};
 
 test('every patch rewrites its shape once, into code that parses', () => {
   for (const { name, patch } of patches) {
-    const hits = PART_CREATE.match(new RegExp(patch.find.source, 'g')) || [];
+    const shape = SHAPES[name];
+    assert.ok(shape, `${name}: no shape to rewrite - add the one the bundle carries`);
+    const hits = shape.match(new RegExp(patch.find.source, 'g')) || [];
     assert.equal(hits.length, 1, `${name}: matched ${hits.length} times in the shape it targets`);
 
-    const patched = PART_CREATE.replace(patch.find, patch.replace);
+    const patched = shape.replace(patch.find, patch.replace);
     assert.ok(patched.includes(patch.marker), `${name}: patched source carries no marker`);
     assert.doesNotThrow(() => new Function(patched), `${name}: patched source does not parse`);
     // Idempotence is the marker's job, and the marker has to survive its own patch.
-    assert.ok(patched.includes(patch.marker) && !PART_CREATE.includes(patch.marker));
+    assert.ok(patched.includes(patch.marker) && !shape.includes(patch.marker));
   }
 });
 

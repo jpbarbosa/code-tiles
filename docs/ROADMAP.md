@@ -30,7 +30,7 @@ What the tree does today, what comes next, and what to check when the server is 
 - Your VS Code, mirrored: every desktop profile reproduced on the server, its extensions
   installed from Open VSX into one shared directory, and each tile opened on the profile your
   desktop already associates with that folder.
-- Thirteen seams, verified in a live window rather than from a screenshot:
+- Fourteen seams, verified in a live window rather than from a screenshot:
   `dark` (the dark theme, auto-detect off, and the colour scheme of every document the window
   holds - web's default theme is the light one, and a webview that says nothing shows Chromium's
   white canvas through every pixel its own page leaves uncovered),
@@ -39,6 +39,10 @@ What the tree does today, what comes next, and what to check when the server is 
   left unpainted over a transparent view, so what is in them is the shell's ground and its glow),
   `chrome` (title bar, status bar and the chat panel gone through the editor's own settings,
   no dead band),
+  `welcome` (the welcome page saying Code Tiles rather than code-server, without Coder's ad for
+  their hosted product and without the walkthrough list - the first two are the server's own
+  switches, taken at the spawn, and the third is a patch that hands the page no walkthroughs so
+  the editor's own empty state moves Recent into the column they had),
   `trust` (restricted mode off, without which an extension that refuses untrusted workspaces -
   Claude Code - is simply absent),
   `ground` (the theme's shell colour reported back so the app's ground matches it),
@@ -81,8 +85,7 @@ What the tree does today, what comes next, and what to check when the server is 
    an extension whose desktop version moves on.
 5. **Chat titles.** The active chat's name per project, read by a seam from the editor tab it
    already lives on, reported like the ground.
-6. **The rest of the window**: the trimmed Welcome page.
-7. **Packaging**: a signed `.app`, and a fetch of the pinned server into `vendor/`.
+6. **Packaging**: a signed `.app`, and a fetch of the pinned server into `vendor/`.
 
 ## Not doing
 
@@ -100,9 +103,11 @@ The pinned version is in `scripts/fetch-code-server.sh`. After a bump, in this o
    added there rather than a look.
 2. `chrome` is the seam most likely to break: it depends on the workbench deciding that nothing
    needs a title bar. If a new feature claims that row, the setting for it goes in the seam.
-3. `npm test` is the gate on the one patch: `branch` teaches `Part.create` to adopt the footer it
-   draws, matched by SHAPE because every name in that bundle is minified. A shape that no longer
-   matches is re-derived from `setFooterArea`, never guessed at. The fetch script re-extracts the
-   tree, so the next start patches the new bundle and nothing has to remember that it happened.
+3. `npm test` is the gate on both patches, each matched by SHAPE because every name in that
+   bundle is minified: `branch` teaches `Part.create` to adopt the footer it draws, and `welcome`
+   hands the welcome page an empty walkthrough list. A shape that no longer matches is re-derived
+   from the code around it - `setFooterArea`, `buildGettingStartedWalkthroughsList` - never
+   guessed at. The fetch script re-extracts the tree, so the next start patches the new bundle
+   and nothing has to remember that it happened.
 4. Try deleting a workaround. Each one names the version it was written against; a bump is the
    only moment anyone will ever check.
