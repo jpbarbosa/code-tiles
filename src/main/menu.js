@@ -25,6 +25,7 @@ export function installMenu(desk) {
       submenu: [
         { label: 'Grid', accelerator: 'Control+Command+G', click: () => desk.setMode('grid') },
         { label: 'Single Project', accelerator: 'Control+Command+E', click: () => desk.setMode('single') },
+        { label: 'Reset Tile Sizes', accelerator: 'Control+Command+0', click: () => desk.resetGrid() },
         { type: 'separator' },
         { label: 'Reload Shell', accelerator: 'Shift+Command+R', click: () => desk.reloadShell() },
         { role: 'toggleDevTools' },

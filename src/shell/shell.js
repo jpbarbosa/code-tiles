@@ -8,8 +8,10 @@ const glow = document.getElementById('glow');
 const empty = document.getElementById('empty');
 const stage = document.getElementById('stage');
 const usage = document.getElementById('usage');
+const splitters = document.getElementById('splitters');
 
-let state = { projects: [], rects: [], mode: 'grid', focused: null, strip: 36, parts: {} };
+let state = { projects: [], rects: [], splitters: [], mode: 'grid', focused: null, strip: 36, parts: {} };
+let drag = null;
 
 const call = (type, payload) => window.ct.call(type, payload).catch((error) => console.error(error));
 
@@ -17,6 +19,7 @@ function render() {
   const open = state.projects.filter((project) => project.open);
   renderChips(open);
   renderGlow(open);
+  renderSplitters();
   empty.hidden = open.length > 0;
   for (const segment of document.querySelectorAll('.segment')) {
     segment.setAttribute('aria-pressed', String(segment.dataset.mode === state.mode));
@@ -88,6 +91,75 @@ function renderGlow(open) {
   glow.style.width = `${rect.width + bleed * 2}px`;
   glow.style.height = `${rect.height + bleed * 2}px`;
 }
+
+// The handles are REPLACED only when the grid changes shape, never while one is being dragged:
+// a rebuilt element is a lost pointer capture, and the shape cannot change under a drag anyway.
+function renderSplitters() {
+  const wanted = state.splitters || [];
+  const signature = wanted.map((splitter) => `${splitter.axis}${splitter.index}`).join(',');
+  if (signature !== splitters.dataset.signature) {
+    splitters.dataset.signature = signature;
+    splitters.replaceChildren(...wanted.map((splitter) => {
+      const handle = document.createElement('div');
+      handle.className = 'splitter';
+      handle.dataset.axis = splitter.axis;
+      handle.dataset.index = splitter.index;
+      handle.title = splitter.axis === 'cols'
+        ? 'Drag to resize columns, double-click to even them'
+        : 'Drag to resize rows, double-click to even them';
+      return handle;
+    }));
+  }
+  [...splitters.children].forEach((handle, index) => {
+    const splitter = wanted[index];
+    handle.style.left = `${splitter.x}px`;
+    handle.style.top = `${splitter.y - state.strip}px`;
+    handle.style.width = `${splitter.width}px`;
+    handle.style.height = `${splitter.height}px`;
+  });
+}
+
+// Delegated, so a rebuild between two grids never drops the listeners. The pointer's position is
+// all that is reported: main owns every rect, here and in the views.
+splitters.addEventListener('pointerdown', (event) => {
+  const handle = event.target.closest('.splitter');
+  if (!handle || event.button !== 0) return;
+  event.preventDefault();
+  handle.setPointerCapture(event.pointerId);
+  handle.dataset.dragging = '';
+  document.body.dataset.resizing = '';
+  drag = { handle, axis: handle.dataset.axis, index: Number(handle.dataset.index), position: null, frame: 0 };
+});
+
+splitters.addEventListener('pointermove', (event) => {
+  if (!drag) return;
+  drag.position = drag.axis === 'cols' ? event.clientX : event.clientY;
+  // One call per frame at most. The pending one reads the latest position when it fires, so
+  // nothing queues up behind a hand moving faster than the views can follow.
+  if (drag.frame) return;
+  drag.frame = requestAnimationFrame(() => {
+    drag.frame = 0;
+    call('grid:resize', { axis: drag.axis, index: drag.index, position: drag.position });
+  });
+});
+
+for (const kind of ['pointerup', 'pointercancel']) {
+  splitters.addEventListener(kind, () => {
+    if (!drag) return;
+    if (drag.frame) cancelAnimationFrame(drag.frame);
+    if (drag.position !== null) {
+      call('grid:resize', { axis: drag.axis, index: drag.index, position: drag.position });
+    }
+    delete drag.handle.dataset.dragging;
+    delete document.body.dataset.resizing;
+    drag = null;
+  });
+}
+
+splitters.addEventListener('dblclick', (event) => {
+  const handle = event.target.closest('.splitter');
+  if (handle) call('grid:reset', { axis: handle.dataset.axis });
+});
 
 chips.addEventListener('click', (event) => {
   const chip = event.target.closest('.chip');

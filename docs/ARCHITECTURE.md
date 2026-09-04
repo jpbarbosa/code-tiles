@@ -127,13 +127,19 @@ claims it - the desktop is where you add one.
 Layout is a pure function, `src/main/layout.js`:
 
 ```
-layout({ width, height, count, mode, strip, gap, frame }) -> Rect[]
+tileRects({ width, height, count, mode, focusedIndex, sizes })     -> Rect[]
+gridSplitters({ width, height, count, mode, sizes })               -> Handle[]
+gridResize({ width, height, count, sizes, axis, index, position }) -> sizes
 ```
 
 No DOM, no Electron, no measurement of a guest. Main calls it on resize and on any change to
 the project list or view mode, and applies the rects to the views. The shell page is told the
-same rects so it can draw the glow around the focused one, which is the only reason it knows
-them.
+same rects so it can draw the glow around the focused one, and the handles so it can put a
+cursor on each gutter - which is the only reason it knows either.
+
+`sizes` is the one thing about the grid that is a choice rather than a derivation: a share per
+column and per row, summing to one. A gutter drag sends main the POINTER's position, never a
+rect; `gridResize` turns it into shares, and only the two either side of that gutter move.
 
 Nothing measures across the boundary in either direction. That deletes an entire class of bug
 the old version lived with: guest CSS pixels and host CSS pixels differ when a window sits on

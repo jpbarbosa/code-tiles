@@ -1,6 +1,6 @@
 import { dialog } from 'electron';
 
-import { METRICS, tileRects } from './layout.js';
+import { METRICS, gridResize, gridSplitters, shapeKey, tileRects } from './layout.js';
 
 // The parts the strip's layout control flips, and what a window shows before anyone has chosen:
 // the editor's own defaults, once the chrome seam has had its say on the secondary side bar.
@@ -35,13 +35,9 @@ export class Desk {
     const focusedIndex = Math.max(0, open.findIndex((project) => project.folder === focused));
     const [width, height] = this.#window.getContentSize();
 
-    const rects = tileRects({
-      width,
-      height,
-      count: open.length,
-      mode: this.#projects.mode,
-      focusedIndex,
-    });
+    const shape = { width, height, count: open.length, mode: this.#projects.mode };
+    const sizes = this.#sizes(open.length);
+    const rects = tileRects({ ...shape, focusedIndex, sizes });
 
     this.#tiles.sync(
       open.map((project) => ({ ...project, focused: project.folder === focused, layout: this.#layout })),
@@ -56,6 +52,7 @@ export class Desk {
       focused,
       projects: this.#projects.all(),
       rects,
+      splitters: gridSplitters({ ...shape, sizes }),
     });
   }
 
@@ -146,6 +143,39 @@ export class Desk {
   setMode(mode) {
     this.#projects.mode = mode;
     this.render();
+  }
+
+  // A gutter dragged. The shell reports the pointer; the geometry is still decided in one place.
+  resizeGrid({ axis, index, position }) {
+    const count = this.#projects.open().length;
+    const [width, height] = this.#window.getContentSize();
+    this.#remember(count, gridResize({
+      width, height, count, sizes: this.#sizes(count), axis, index, position,
+    }));
+    this.render();
+  }
+
+  // Back to equal shares: one axis for a double-click on its gutter, both for the menu item.
+  resetGrid(axis) {
+    const count = this.#projects.open().length;
+    const kept = axis
+      ? Object.fromEntries(Object.entries(this.#sizes(count)).filter(([key]) => key !== axis))
+      : {};
+    this.#remember(count, kept);
+    this.render();
+  }
+
+  #sizes(count) {
+    return this.#projects.sizes[shapeKey(count)] || {};
+  }
+
+  // Against the grid's shape, so closing one of four projects lands back on the proportions the
+  // 2x2 already had. A shape back at equal shares keeps no entry at all.
+  #remember(count, sizes) {
+    const all = { ...this.#projects.sizes };
+    if (Object.keys(sizes).length) all[shapeKey(count)] = sizes;
+    else delete all[shapeKey(count)];
+    this.#projects.sizes = all;
   }
 
   #send(state) {

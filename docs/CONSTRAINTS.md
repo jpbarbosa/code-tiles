@@ -50,6 +50,19 @@ anything that must appear inside a tile is a seam; the shell draws only in the g
 strip; and a drag that starts inside a tile (the badge) is started by the guest and mediated
 by main, never tracked by the shell over the tiles. **[checked]**
 
+**A gutter drag rests on AppKit sending the rest of a drag to the view that took the press.**
+The gutter is 8px of shell page and the tiles either side of it are native views that swallow
+every press inside their own rects, so a hit area wider than the gutter is not available. That is
+survivable only because a drag that STARTS on the page keeps arriving there once the pointer
+crosses a tile - `mouseDragged:` and `mouseUp:` go to the window's mouse-down view, which is the
+same mechanism that lets any Mac splitter be dragged outside its window. If that is ever untrue
+the drag freezes the moment the pointer outruns the gutter, and the fix is for main to read
+`screen.getCursorScreenPoint()` between the press and the release instead of the shell reporting
+it. **[unchecked]** - the machine's display sleeps when nobody is at it, and a sleeping display
+takes no synthetic cursor input, so this could not be driven in the session that wrote it. What
+IS checked is everything either side: the handles land on the gutters and a real press-drag-release
+through the renderer reports the right gutter and the right positions.
+
 **Adding a `WebContentsView` takes the window's focus, and reports it late.** `addChildView`
 moves the native focus to the new view, and the `focus` event on its `webContents` arrives after
 the reconcile that created it, so a run of them leaves the LAST view holding the keyboard whatever

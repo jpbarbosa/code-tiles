@@ -25,6 +25,11 @@ window with it.
   across any empty trailing cells so the grid is always full.
 - **The gutter** is the app's own frame, not the editor's. Whatever inset the editor floats
   its own parts in is neutralised, so a version bump cannot move the tile's edge.
+- **The gutters resize it.** Drag the one between two tiles and those two trade space, the rest
+  of the grid staying exactly where your eye left it; double-click it to even that axis again,
+  or `⌃⌘0` to even both. Sizes are **shares, not pixels**, so a resized window keeps them, and
+  they are remembered against the grid's **shape** rather than the project count - three
+  projects and four are both a 2x2, so closing one and reopening it lands back where you were.
 
 ## Focus
 
@@ -121,6 +126,7 @@ list, and each view offers exactly one gesture to change it:
 | `⌃⌘E` | single view, on the focused project |
 | `⌃⌘O` | open a folder |
 | `⌃⌘W` | close the focused project |
+| `⌃⌘0` | even the tiles out again |
 
 `Ctrl+Cmd` throughout, so nothing shadows the editor's own `⌘1`, `⌘W`, `⌘O` inside a tile.
 `⌘\`` is the deliberate exception: it is macOS's "next window in this app", and a tile is a

@@ -21,6 +21,10 @@ export function installIpc({ desk, usage, popover }) {
     'usage:code': ({ code }) => usage.submit(code),
     'usage:disconnect': () => usage.disconnect(),
     'mode:set': ({ mode }) => desk.setMode(mode),
+    // The gutter drag: where the pointer is, in the window's own coordinates. Main still decides
+    // where every tile goes.
+    'grid:resize': ({ axis, index, position }) => desk.resizeGrid({ axis, index, position }),
+    'grid:reset': ({ axis }) => desk.resetGrid(axis),
     'project:focus': ({ folder }) => desk.focus(folder),
     'project:close': ({ folder }) => desk.close(folder),
     'project:forget': ({ folder }) => { projects.forget(folder); desk.render(); },

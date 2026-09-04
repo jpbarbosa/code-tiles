@@ -280,6 +280,40 @@ html, body {
   box-shadow: 0 0 22px 6px oklch(0.45 0.09 var(--hue) / 0.55);
 }
 
+/* The gutters, as things you can take hold of. 8px is all there is: a view swallows every press
+   inside its own rect, so a hit area wider than the gutter would be a hit area under a tile. */
+#splitters {
+  position: absolute;
+  inset: 0;
+}
+
+.splitter {
+  position: absolute;
+  touch-action: none;
+
+  &[data-axis="cols"] { cursor: col-resize; }
+  &[data-axis="rows"] { cursor: row-resize; }
+
+  /* Inset inside the gutter, so it reads as a hint BETWEEN two tiles rather than as a border on
+     either one. Nothing is drawn until the pointer is on it: the resting window has no seams. */
+  &::after {
+    content: "";
+    position: absolute;
+    background: rgb(255 255 255 / 0);
+    border-radius: 2px;
+    transition: background 0.12s ease;
+  }
+
+  &[data-axis="cols"]::after { inset: 10px 2px; }
+  &[data-axis="rows"]::after { inset: 2px 10px; }
+  &:hover::after,
+  &[data-dragging]::after { background: rgb(255 255 255 / 0.24); }
+}
+
+/* The glow eases to its next rect, which is right when a tile moves on its own and wrong while
+   a gutter is being dragged: there it would trail the hand. */
+body[data-resizing] #glow { transition: none; }
+
 #empty {
   position: absolute;
   inset: 0;

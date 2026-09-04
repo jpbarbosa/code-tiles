@@ -9,6 +9,7 @@ export class Tiles {
   #window;
   #server;
   #views = new Map();
+  #contexts = new Map();
 
   constructor({ window, server }) {
     this.#window = window;
@@ -42,14 +43,21 @@ export class Tiles {
     const view = this.#views.get(folder);
     if (!view) return;
     this.#views.delete(folder);
+    this.#contexts.delete(folder);
     this.#window.contentView.removeChildView(view);
     view.webContents.close();
   }
 
+  // Sent on CHANGE only. A gutter drag re-renders the desk sixty times a second and a window's
+  // context is the same every time; a window told nothing new rebuilds nothing.
   setContext(folder, patch) {
     const view = this.#views.get(folder);
     if (!view || view.webContents.isDestroyed()) return;
-    view.webContents.send('ct:event', { type: 'context', payload: contextOf(patch) });
+    const context = contextOf(patch);
+    const signature = JSON.stringify(context);
+    if (this.#contexts.get(folder) === signature) return;
+    this.#contexts.set(folder, signature);
+    view.webContents.send('ct:event', { type: 'context', payload: context });
   }
 
   #ensure(project) {
@@ -68,6 +76,10 @@ export class Tiles {
         additionalArguments: [`--ct-context=${encodeURIComponent(JSON.stringify(contextOf(project)))}`],
       },
     });
+
+    // A reloaded document is back on the context it was CREATED with, since that one is an
+    // argument rather than a message. Forgetting what was sent makes the next render say it again.
+    view.webContents.on('did-finish-load', () => this.#contexts.delete(project.folder));
 
     // A link out of a project belongs in the browser. Nothing opens a second Electron window.
     view.webContents.setWindowOpenHandler(({ url }) => {

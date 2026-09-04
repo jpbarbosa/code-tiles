@@ -9,6 +9,8 @@ What the tree does today, what comes next, and what to check when the server is 
   start from a pidfile whose command line is checked before anything is signalled.
 - One `WebContentsView` per project on one partition, placed by main from pure geometry.
 - Grid and single view, focus, open, close, project order, all persisted.
+- Gutter resizing: the gutter between two tiles is the handle, a double-click evens its axis and
+  `⌃⌘0` evens both. Shares rather than pixels, kept per grid SHAPE, persisted.
 - The shell: strip, chips, view control, the focused tile's glow, the empty state.
 - The layout control: the editor's own three title bar buttons, in the strip, flipping the side
   bar, the panel or the secondary side bar in every open project at once. A part nobody has

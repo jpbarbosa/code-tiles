@@ -23,6 +23,16 @@ export class Projects {
     this.#store.update({ mode });
   }
 
+  // The one thing about the grid that is a choice rather than a derivation, so the one thing
+  // here that is stored. Keyed by shape; what a key means is the desk's business, not this list's.
+  get sizes() {
+    return this.#store.state.sizes || {};
+  }
+
+  set sizes(sizes) {
+    this.#store.update({ sizes });
+  }
+
   get focused() {
     const open = this.#entries().filter((entry) => entry.open);
     const wanted = this.#store.state.focusedFolder;

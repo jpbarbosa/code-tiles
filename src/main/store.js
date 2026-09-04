@@ -8,6 +8,9 @@ const EMPTY = {
   entries: [],        // [{ folder, open, lastOpened }] - order IS the project order
   focusedFolder: null,
   mode: 'grid',       // 'grid' | 'single'
+  // The grid's proportions, per grid SHAPE: { "2x2": { cols: [...], rows: [...] } }. Shares,
+  // never pixels, so a resized window keeps them.
+  sizes: {},
   serverPort: null,   // reused so the origin, and so the login, is stable
 };
 
