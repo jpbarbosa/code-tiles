@@ -34,7 +34,8 @@ What the tree does today, what comes next, and what to check when the server is 
   `dark` (your desktop's theme, a dark one only as the fallback under it, auto-detect off, and
   the colour scheme of every document the window holds - web's default theme is the light one,
   and a webview that says nothing shows Chromium's white canvas through every pixel its own page
-  leaves uncovered),
+  leaves uncovered; the bundle's own light-first fallback is flipped too, being the first paint on
+  a profile with no theme cached yet),
   `modern` (the editor's rounded design, so a tile's parts are cards on the shell colour),
   `card` (the window clipped to the radius the shell's glow is already struck for, its corners
   left unpainted over a transparent view, so what is in them is the shell's ground and its glow),

@@ -271,6 +271,16 @@ and its load announced it. That canvas is also the whole SURFACE a panel shows, 
 behind one: neither the editor nor the Claude panel's own page paints a background on `body` or
 its root, so a webview has to be given the theme's colour rather than only its scheme. **[checked]**
 
+**The web build's placeholder theme is LIGHT, and only the bundle can change it.** Until a
+profile has a theme in storage the service falls through `fromStorageData` and the workbench's
+`initialColorTheme` option to `getPreferredColorScheme() ?? (isWeb ? 'light' : 'dark')`, so a
+profile's FIRST window wears light while extensions are scanned for the real theme - measured on
+a fresh partition as `vs` at 773 ms and `vs-dark` at 2274 ms, with `color-scheme` already dark and
+the document's own background transparent throughout. No stylesheet can act on it: the
+placeholder's class is plain `vs`, the same one a light theme someone chose would carry. The cache
+is discarded when the theme's name in settings changes, so a theme switch costs the blink once
+more. **[checked]**
+
 **A webview is HOISTED out of the part it belongs to**, so a tab switch neither reloads it nor
 loses its state: the iframe sits in `.webview-overlay-content` two levels under `.monaco-workbench`
 and `closest('.part')` on it is null. What points back is CSS anchor positioning - its holder

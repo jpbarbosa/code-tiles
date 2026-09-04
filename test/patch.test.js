@@ -19,6 +19,14 @@ const SHAPES = {
     + 'this.contentArea=this.createContentArea(e,t),'
     + 'this.partLayout=new PartLayout(this.options,this.contentArea,this.layoutService),'
     + 'this.updateStyles()}}',
+  dark: 'class WorkbenchThemeService{'
+    + 'initialize(){'
+    + 'let theme=ColorThemeData.fromStorageData(this.storageService);'
+    + 'const initial=this.options?.initialColorTheme;'
+    + 'if(!theme&&initial)theme=ColorThemeData.createUnloadedThemeForThemeType(initial.themeType);'
+    + 'if(!theme){const scheme=this.settings.getPreferredColorScheme()??(isWeb?"light":"dark");'
+    + 'theme=ColorThemeData.createUnloadedThemeForThemeType(scheme)}'
+    + 'return this.applyTheme(theme,void 0,!0)}}',
   welcome: 'class GettingStartedPage extends EditorPane{'
     + 'buildGettingStartedWalkthroughsList(){'
     + 'const list=this.gettingStartedList.value=new Index({klass:"getting-started",limit:5});'

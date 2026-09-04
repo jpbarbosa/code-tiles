@@ -19,6 +19,24 @@ module.exports = {
   settings: {
     'window.autoDetectColorScheme': false,
   },
+  // The FIRST paint, before any of the above can be resolved. The theme service takes the theme
+  // cached in profile storage, then the workbench's `initialColorTheme` option, then a base
+  // scheme, and on a profile's first window all three fall through to the last - which is
+  // `isWeb ? light : dark`. So it wears the light theme for the second and a half that scanning
+  // extensions to find the real one costs.
+  //
+  // The bundle is the only way in: the placeholder's DOM class is plain `vs`, the same class a
+  // light theme someone actually chose would carry, so nothing in the document tells the two
+  // apart and no stylesheet can act on it. The option is set where code-server builds the
+  // workbench config rather than here, and the setting above closes the only other branch.
+  //
+  // Unpatched, a profile's first window blinks light. [code-server 4.135.0]
+  patch: {
+    file: 'lib/vscode/out/vs/workbench/workbench.web.main.internal.js',
+    marker: 'ct:dark-first',
+    find: /getPreferredColorScheme\(\)\?\?\([A-Za-z_$][\w$]*\?"light":"dark"\)/,
+    replace: 'getPreferredColorScheme()??("dark"/* ct:dark-first */)',
+  },
   css: () => `
 :root {
   color-scheme: dark;
