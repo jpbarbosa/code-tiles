@@ -28,7 +28,10 @@ export function installMenu(desk) {
         { label: 'Reset Tile Sizes', accelerator: 'Control+Command+0', click: () => desk.resetGrid() },
         { type: 'separator' },
         { label: 'Reload Shell', accelerator: 'Shift+Command+R', click: () => desk.reloadShell() },
-        { role: 'toggleDevTools' },
+        // Not the toggleDevTools role: it opens the SHELL's, docked, which is a pane under the
+        // grid. These open detached, and the first one opens the window you are working in.
+        { label: 'Developer Tools', accelerator: 'Control+Command+I', click: () => desk.inspect('project') },
+        { label: 'Shell Developer Tools', accelerator: 'Shift+Control+Command+I', click: () => desk.inspect('shell') },
       ],
     },
     {

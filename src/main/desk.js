@@ -136,6 +136,19 @@ export class Desk {
     if (focused) this.close(focused);
   }
 
+  // Devtools in a window of their own. Docked, they are part of the PAGE, and every tile is a
+  // native view painted above it - so the pane opens under the grid and there is no size to give
+  // it: main lays the tiles out from the window's content area, which docking does not change.
+  // The focused project's window is the usual target, since that is where a seam runs.
+  inspect(scope) {
+    const contents = scope === 'shell'
+      ? this.#window.webContents
+      // With no project open the shell is the only thing on screen, so it is the honest target.
+      : this.#tiles.contentsFor(this.#projects.focused) || this.#window.webContents;
+    if (contents.isDevToolsOpened()) contents.closeDevTools();
+    else contents.openDevTools({ mode: 'detach' });
+  }
+
   reloadShell() {
     this.#window.webContents.reload();
   }

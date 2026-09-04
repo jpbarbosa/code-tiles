@@ -39,6 +39,13 @@ export class Tiles {
     this.#views.get(folder)?.webContents.focus();
   }
 
+  // The one thing a caller may take out of a view, and only to point devtools at it.
+  contentsFor(folder) {
+    const view = this.#views.get(folder);
+    if (!view || view.webContents.isDestroyed()) return null;
+    return view.webContents;
+  }
+
   destroy(folder) {
     const view = this.#views.get(folder);
     if (!view) return;

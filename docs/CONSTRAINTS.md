@@ -53,8 +53,10 @@ bump is the moment to try deleting.
 **A `WebContentsView` paints above the window's page, always.** There is no z-mixing with
 HTML, and a view swallows every mouse event inside its rect. Consequences, all deliberate:
 anything that must appear inside a tile is a seam; the shell draws only in the gutters and the
-strip; and a drag that starts inside a tile (the badge) is started by the guest and mediated
-by main, never tracked by the shell over the tiles. **[checked]**
+strip; a drag that starts inside a tile (the badge) is started by the guest and mediated
+by main, never tracked by the shell over the tiles; and devtools are opened DETACHED, since a
+docked pane is part of the page and main sizes the tiles from a content area that docking does
+not change. **[checked]**
 
 **A gutter drag rests on AppKit sending the rest of a drag to the view that took the press.**
 The gutter is 8px of shell page and the tiles either side of it are native views that swallow
