@@ -3,6 +3,11 @@ import { Menu, app } from 'electron';
 // Ctrl+Cmd throughout, so nothing here shadows the editor's own Cmd+1, Cmd+W or Cmd+O inside a
 // tile. Cmd+` is the deliberate exception: it is macOS's "next window in this app", and a tile
 // is a window.
+//
+// The editor wins any chord it binds itself, since its dispatcher sees the key before the menu
+// does, and Ctrl+Cmd is not the free family it looks like: Ctrl+Cmd+I is Chat and Ctrl+Cmd+1 and
+// Ctrl+Cmd+9 move an editor between groups. Devtools sits on Alt+Cmd+I for that reason, which is
+// also the chord a browser puts them on. docs/CONSTRAINTS.md says how to check a chord.
 export function installMenu(desk) {
   const projectNumbers = Array.from({ length: 9 }, (_, i) => ({
     label: `Project ${i + 1}`,
@@ -30,7 +35,7 @@ export function installMenu(desk) {
         { label: 'Reload Shell', accelerator: 'Shift+Command+R', click: () => desk.reloadShell() },
         // Not the toggleDevTools role: it opens the SHELL's, docked, which is a pane under the
         // grid. These open detached, and the first one opens the window you are working in.
-        { label: 'Developer Tools', accelerator: 'Control+Command+I', click: () => desk.inspect('project') },
+        { label: 'Developer Tools', accelerator: 'Alt+Command+I', click: () => desk.inspect('project') },
         { label: 'Shell Developer Tools', accelerator: 'Shift+Control+Command+I', click: () => desk.inspect('shell') },
       ],
     },

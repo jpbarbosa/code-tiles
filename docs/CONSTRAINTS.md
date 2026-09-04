@@ -158,8 +158,7 @@ the relayout, and takes the room back when the element goes. **[checked]**
 `.codicon-*` class a seam would think to outrank: the menu button's is
 `content: var(--vscode-icon-menu-content) !important` on `.menubar.compact .toolbar-toggle-more`,
 so a plain `content: ""` loses and the glyph paints on top of whatever the seam drew - a hamburger
-across the badge's favicon. Any seam replacing an icon pays one `!important` for this, and says so.
-**[checked]**
+across the badge's favicon. Any seam replacing an icon pays one `!important` for this, and says so. **[checked]**
 
 **The workbench bundle is cached for a year, under a URL keyed on the server's commit.**
 `Cache-Control: public, max-age=31536000`, no ETag, and the path carries the code-server commit -
@@ -171,6 +170,13 @@ and only that: the login and every window's layout live in the same partition's 
 `noauxiliarybar` are classes on the workbench container, so a seam reads the layout from one
 attribute and observes all three with one `MutationObserver` on `class`. There is nothing to
 measure and no rect to consult. **[checked]**
+
+**A menu accelerator loses to a chord the editor binds.** The workbench's dispatcher sees the
+key first and stops it, so the menu item never fires: Ctrl+Cmd+I opened Chat rather than
+devtools, which is why devtools now sit on Alt+Cmd+I. Ctrl+Cmd is not a free family - the editor
+also holds Ctrl+Cmd+1 and Ctrl+Cmd+9 on macOS. Check a chord in the bundle before taking it: it
+is stored as a sum, `mac:{primary:N}` with CtrlCmd 2048, Shift 1024, Alt 512, WinCtrl 256,
+KeyA 31 (so KeyI 39) and Digit0 21. **[checked]**
 
 **A synthetic `KeyboardEvent` drives the workbench's keybindings, from the preload's isolated
 world.** The editor exposes no page-level way to run a command, so a seam that needs one
