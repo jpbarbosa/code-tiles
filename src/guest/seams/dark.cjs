@@ -17,4 +17,14 @@ module.exports = {
   color-scheme: dark;
 }
 `,
+  // The same half said again INSIDE every webview, which the stylesheet cannot reach: the
+  // editor's own default styles make a webview's body transparent, so a frame with no scheme of
+  // its own paints that white canvas through every pixel the extension's page leaves uncovered.
+  // Only the document inside the frame decides it - docs/CONSTRAINTS.md, code-server 4.135.0.
+  init(api) {
+    api.eachDocument((document) => {
+      const root = document.documentElement;
+      if (root && root.style.colorScheme !== 'dark') root.style.colorScheme = 'dark';
+    });
+  },
 };

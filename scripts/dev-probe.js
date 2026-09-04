@@ -45,12 +45,14 @@ const READ = `(() => {
       panel: !workbench.classList.contains('nopanel'),
       secondarySideBar: !workbench.classList.contains('noauxiliarybar'),
     } : null,
-    // The focus seam's reach: every document a press could land in, walked the way the seam
-    // walks it. A window with a webview open - the Claude panel - has more than one.
-    reachableDocuments: (() => {
-      let count = 0;
+    // What the runtime's sweep reaches, walked the way it walks: every document a press could
+    // land in for the focus seam, and what each one paints its canvas with for the dark seam. A
+    // window with a webview open - the Claude panel - has more than one, and a `normal` in this
+    // list is a white column waiting to show through.
+    documentColorSchemes: (() => {
+      const schemes = [];
       const walk = (doc) => {
-        count += 1;
+        schemes.push(doc.defaultView.getComputedStyle(doc.documentElement).colorScheme);
         let frames;
         try { frames = doc.querySelectorAll('iframe'); } catch { return; }
         for (const frame of frames) {
@@ -58,7 +60,7 @@ const READ = `(() => {
         }
       };
       walk(document);
-      return count;
+      return schemes;
     })(),
     titlebar: box(titlebar),
     statusbar: box(statusbar),

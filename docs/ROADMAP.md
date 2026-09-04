@@ -24,8 +24,9 @@ What the tree does today, what comes next, and what to check when the server is 
   installed from Open VSX into one shared directory, and each tile opened on the profile your
   desktop already associates with that folder.
 - Nine seams, verified in a live window rather than from a screenshot:
-  `dark` (the dark theme, auto-detect off, and the document's own colour scheme - web's default
-  theme is the light one),
+  `dark` (the dark theme, auto-detect off, and the colour scheme of every document the window
+  holds - web's default theme is the light one, and a webview that says nothing shows Chromium's
+  white canvas through every pixel its own page leaves uncovered),
   `modern` (the editor's rounded design, so a tile's parts are cards on the shell colour),
   `chrome` (title bar, status bar and the chat panel gone through the editor's own settings,
   no dead band),
@@ -37,8 +38,8 @@ What the tree does today, what comes next, and what to check when the server is 
   `layout` (the three parts the strip's layout control flips, through the editor's own
   keybindings, acting on a change of instruction rather than on every render),
   `focus` (a press inside a window claims focus for its project, since a view paints above the
-  shell's page and the shell never sees that press - registered on every document in the window,
-  because a press in the Claude panel lands two frames down in a webview).
+  shell's page and the shell never sees that press - registered on every document the runtime's
+  sweep reaches, because a press in the Claude panel lands two frames down in a webview).
 
 ## Next, in order
 

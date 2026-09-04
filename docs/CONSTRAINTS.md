@@ -141,6 +141,15 @@ from the workbench DOM, so a variable rewritten outside is invisible in there tw
 frames are same-origin in code-server, so a seam can reach them, deliberately, by walking the
 frame chain. *[inherited]*
 
+**A webview paints a white canvas through whatever its page leaves uncovered.** The editor's own
+default styles make a webview's `body` transparent, and a frame whose `color-scheme` is `normal`
+paints Chromium's white base behind it. The Claude panel is where that shows: it keeps an empty
+1px flex item at the left of a row body as a test sentinel, so the white reads as a column down
+the panel and as a bright arc where the rounded design clips it. Nothing outside the frame
+decides this - not `color-scheme` on the workbench document, not on the iframe element, not the
+view's `setBackgroundColor`, none of which propagate in - so the `dark` seam walks to each
+document and sets it there. **[checked]**
+
 **The editor's own frame moves between versions.** The inset it floats its parts in was 4px on
 every side in one release and flush left and top with 8px on the right in the next. Nothing
 here may depend on that number: the app's gutter is its own, and the seam that neutralises the
