@@ -35,12 +35,24 @@ export class Desk {
     const focusedIndex = Math.max(0, open.findIndex((project) => project.folder === focused));
     const [width, height] = this.#window.getContentSize();
 
-    const shape = { width, height, count: open.length, mode: this.#projects.mode };
+    const mode = this.#shape(open.length);
+    const shape = { width, height, count: open.length, mode };
     const sizes = this.#sizes(open.length);
     const rects = tileRects({ ...shape, focusedIndex, sizes });
 
+    // What the maximize item in each window draws: it holds the master cell, it does not, or
+    // there is nothing to maximize and the item is not there at all.
+    const maximized = (folder) => (mode === 'single' || open.length < 2
+      ? null
+      : mode === 'master' && folder === focused);
+
     this.#tiles.sync(
-      open.map((project) => ({ ...project, focused: project.folder === focused, layout: this.#layout })),
+      open.map((project) => ({
+        ...project,
+        focused: project.folder === focused,
+        maximized: maximized(project.folder),
+        layout: this.#layout,
+      })),
       rects,
     );
     this.#send({
@@ -158,17 +170,30 @@ export class Desk {
     this.render();
   }
 
+  // The maximize item inside a window: this project takes the master cell, or - on the one that
+  // already holds it - the even grid comes back. The item sends what it will DO rather than what
+  // it is, because the same press claims the focus, and a toggle worked out here would read that
+  // new focus as "already the master" and undo itself.
+  maximize(folder, maximized) {
+    this.#projects.maximized = maximized;
+    // Taking the master is taking the focus: the master is the focused project, so there is
+    // nothing else to move.
+    if (maximized) this.focus(folder);
+    else this.render();
+  }
+
   // A gutter dragged. The shell reports the pointer; the geometry is still decided in one place.
   resizeGrid({ axis, index, position }) {
     const count = this.#projects.open().length;
     const [width, height] = this.#window.getContentSize();
     this.#remember(count, gridResize({
-      width, height, count, sizes: this.#sizes(count), axis, index, position,
+      width, height, count, mode: this.#shape(count), sizes: this.#sizes(count), axis, index, position,
     }));
     this.render();
   }
 
-  // Back to equal shares: one axis for a double-click on its gutter, both for the menu item.
+  // Back to the shape's own split - equal shares, or the master's own: one axis for a
+  // double-click on its gutter, both for the menu item.
   resetGrid(axis) {
     const count = this.#projects.open().length;
     const kept = axis
@@ -178,16 +203,25 @@ export class Desk {
     this.render();
   }
 
+  // Which shape the grid is in. Maximized is the grid wearing another set of tracks rather than
+  // a third view: the strip's control still says grid, and single view keeps the maximized grid
+  // waiting behind it.
+  #shape(count) {
+    const mode = this.#projects.mode;
+    return mode === 'grid' && this.#projects.maximized && count > 1 ? 'master' : mode;
+  }
+
   #sizes(count) {
-    return this.#projects.sizes[shapeKey(count)] || {};
+    return this.#projects.sizes[shapeKey(count, this.#shape(count))] || {};
   }
 
   // Against the grid's shape, so closing one of four projects lands back on the proportions the
   // 2x2 already had. A shape back at equal shares keeps no entry at all.
   #remember(count, sizes) {
+    const key = shapeKey(count, this.#shape(count));
     const all = { ...this.#projects.sizes };
-    if (Object.keys(sizes).length) all[shapeKey(count)] = sizes;
-    else delete all[shapeKey(count)];
+    if (Object.keys(sizes).length) all[key] = sizes;
+    else delete all[key];
     this.#projects.sizes = all;
   }
 

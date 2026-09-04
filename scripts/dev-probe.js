@@ -70,6 +70,22 @@ const READ = `(() => {
       const before = getComputedStyle(el, '::before');
       return { size: [before.width, before.height], image: before.backgroundImage.slice(0, 34) };
     })(),
+    // The maximize seam: the item this app adds to the activity bar's own list. Read the way the
+    // bar reads it - a row in the list, first - plus the glyph the app's state asked for.
+    maximize: (() => {
+      const item = document.querySelector('.part.activitybar .composite-bar .ct-maximize');
+      if (!item) return null;
+      const label = item.querySelector('.action-label');
+      const box = item.getBoundingClientRect();
+      return {
+        first: item.parentElement.firstElementChild === item,
+        glyph: [...label.classList].find((name) => name.startsWith('codicon-')) || null,
+        checked: item.classList.contains('checked'),
+        title: label.title,
+        color: getComputedStyle(label).color,
+        box: [Math.round(box.x), Math.round(box.y), Math.round(box.width), Math.round(box.height)],
+      };
+    })(),
     // The branch seam: what the pills say, and whether the side bar gave them real room - the
     // pane area ending above them is the whole difference between a footer and an overlay.
     branch: (() => {

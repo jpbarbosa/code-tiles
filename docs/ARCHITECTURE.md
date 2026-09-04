@@ -75,7 +75,8 @@ export default {
   badge, forwarding a click. It runs in the preload's isolated world with DOM access, and it
   is handed `api.onContext`, `api.send` and `api.whenReady`.
 
-`ctx` is the project context: `{ folder, name, hue, icon, claudeState, focused, layout }`. It arrives
+`ctx` is the project context: `{ folder, name, hue, icon, claudeState, focused, maximized, layout }`.
+It arrives
 before the first paint (through `additionalArguments`) and is updated by IPC. A seam reads it
 and re-renders; it never asks main for it.
 
@@ -134,8 +135,12 @@ Layout is a pure function, `src/main/layout.js`:
 ```
 tileRects({ width, height, count, mode, focusedIndex, sizes })     -> Rect[]
 gridSplitters({ width, height, count, mode, sizes })               -> Handle[]
-gridResize({ width, height, count, sizes, axis, index, position }) -> sizes
+gridResize({ width, height, count, mode, sizes, axis, index, position }) -> sizes
 ```
+
+`mode` is `grid`, `single` or `master` - the maximized grid, one wide column and a stack. It is
+derived in the desk from the stored view mode and one boolean, never stored as a third mode, and
+which project holds the wide column is the focus rather than a field.
 
 No DOM, no Electron, no measurement of a guest. Main calls it on resize and on any change to
 the project list or view mode, and applies the rects to the views. The shell page is told the

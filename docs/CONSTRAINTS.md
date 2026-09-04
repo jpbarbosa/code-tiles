@@ -161,7 +161,11 @@ so a plain `content: ""` loses and the glyph paints on top of whatever the seam 
 across the badge's favicon. Any seam replacing an icon pays one `!important` for this, and says so.
 The other half of the same fact: a codicon IS its `::before`, so a rule that gives one a
 `content: ""` of its own - a pill behind it, say - blanks the glyph and leaves an empty slot.
-Anything drawn behind a codicon goes on `::after`. **[checked]**
+Anything drawn behind a codicon goes on `::after`. A codicon class the theme has no icon for is
+the same empty slot with nothing to blame: `codicon-panel-restore` resolves
+`--vscode-icon-panel-restore-content` to nothing at all, so the `maximize` seam wears
+`screen-normal` - the same `\eb4d` - for its lit half. Read the variable before taking a name.
+**[checked]**
 
 **The workbench bundle is cached for a year, under a URL keyed on the server's commit.**
 `Cache-Control: public, max-age=31536000`, no ETag, and the path carries the code-server commit -

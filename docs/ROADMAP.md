@@ -11,6 +11,11 @@ What the tree does today, what comes next, and what to check when the server is 
 - Grid and single view, focus, open, close, project order, all persisted.
 - Gutter resizing: the gutter between two tiles is the handle, a double-click evens its axis and
   `⌃⌘0` evens both. Shares rather than pixels, kept per grid SHAPE, persisted.
+- Maximize: one project takes a column of about seven tenths and the rest stack live beside it,
+  from an item at the top of that window's own activity bar. The wide one is the FOCUSED project
+  rather than a second thing to remember, so it follows the focus, and the only thing stored is
+  whether the grid is in that shape. Its column and its stack rows are dragged, evened and
+  remembered like any grid's, under a shape key of their own.
 - The shell: strip, chips, view control, the focused tile's glow, the empty state.
 - The layout control: the editor's own three title bar buttons, in the strip, flipping the side
   bar, the panel or the secondary side bar in every open project at once. A part nobody has
@@ -25,7 +30,7 @@ What the tree does today, what comes next, and what to check when the server is 
 - Your VS Code, mirrored: every desktop profile reproduced on the server, its extensions
   installed from Open VSX into one shared directory, and each tile opened on the profile your
   desktop already associates with that folder.
-- Twelve seams, verified in a live window rather than from a screenshot:
+- Thirteen seams, verified in a live window rather than from a screenshot:
   `dark` (the dark theme, auto-detect off, and the colour scheme of every document the window
   holds - web's default theme is the light one, and a webview that says nothing shows Chromium's
   white canvas through every pixel its own page leaves uncovered),
@@ -42,6 +47,10 @@ What the tree does today, what comes next, and what to check when the server is 
   `identity` (the project's name on the side bar's title row, and its favicon in place of the
   hamburger's glyph at the top of the activity bar - the button underneath is still the editor's,
   so it still opens the menu),
+  `maximize` (the app's one item in the activity bar's own list, first, under the badge - built
+  from the classes the editor builds its items with, so it takes the bar's size, its hover pill
+  and the accent an active view wears, and needs no slot cut for it; the restore half is
+  `screen-normal`, since `panel-restore` has no icon registered in this build and paints nothing),
   `branch` (the branch and its sync as two pills at the bottom of the side bar, mirrored from the
   status bar entries that hiding the bar leaves alive, so a click still checks out or syncs - in
   a footer the side bar is taught to give REAL room to rather than an overlay over the tree),

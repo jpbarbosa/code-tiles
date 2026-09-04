@@ -129,3 +129,72 @@ test('rows are dragged in window coordinates, under the strip', () => {
   assert.equal(rects[0].y + rects[0].height + METRICS.gap / 2, 300);
   assert.equal(rects[0].y, METRICS.strip);
 });
+
+test('maximized: the focused project takes a column of its own and the rest stack beside it', () => {
+  const rects = tileRects({ ...window, count: 4, mode: 'master', focusedIndex: 1 });
+  const [first, master, third, fourth] = rects;
+
+  assert.equal(master.y, METRICS.strip);
+  assert.equal(master.height, window.height - METRICS.strip - METRICS.gap);
+  assert.ok(master.width > window.width * 0.65, `master ${master.width} is about seven tenths`);
+
+  // The stack keeps the project order, in one column, under the same gaps as any grid.
+  for (const tile of [first, third, fourth]) assert.equal(tile.x, master.x + master.width + METRICS.gap);
+  assert.equal(first.y, master.y);
+  assert.equal(third.y - (first.y + first.height), METRICS.gap);
+  assert.equal(fourth.y + fourth.height, window.height - METRICS.gap);
+  assert.equal(first.x + first.width, window.width - METRICS.gap);
+});
+
+test('maximized with two projects is one row beside the master, and with one it is the grid', () => {
+  const pair = tileRects({ ...window, count: 2, mode: 'master', focusedIndex: 0 });
+  assert.equal(pair[1].height, pair[0].height);
+  assert.deepEqual(
+    tileRects({ ...window, count: 1, mode: 'master' }),
+    tileRects({ ...window, count: 1 }),
+  );
+});
+
+test('a maximized shape is remembered apart from the even grid it came from', () => {
+  assert.equal(shapeKey(4, 'master'), 'master3');
+  assert.notEqual(shapeKey(4, 'master'), shapeKey(4));
+  assert.equal(shapeKey(3, 'master'), shapeKey(3, 'master'));
+  assert.notEqual(shapeKey(3, 'master'), shapeKey(4, 'master'));
+  // Nothing to maximize, nothing to name apart.
+  assert.equal(shapeKey(1, 'master'), '1x1');
+  assert.deepEqual(gridShape(4, 'master'), { cols: 2, rows: 3 });
+});
+
+test('the master runs down every row seam, so those handles stop at the stack', () => {
+  const count = 4;
+  const splitters = gridSplitters({ ...window, count, mode: 'master' });
+  assert.deepEqual(splitters.map((s) => `${s.axis}${s.index}`), ['cols1', 'rows1', 'rows2']);
+
+  const rects = tileRects({ ...window, count, mode: 'master', focusedIndex: 0 });
+  const [column, ...rows] = splitters;
+  assert.equal(column.x, rects[0].x + rects[0].width);
+  assert.equal(column.height, rects[0].height, 'the master seam runs the whole height');
+  for (const row of rows) {
+    assert.equal(row.x, rects[1].x);
+    assert.equal(row.width, rects[1].width);
+  }
+
+  // One stacked project has no row to divide.
+  assert.deepEqual(
+    gridSplitters({ ...window, count: 2, mode: 'master' }).map((s) => s.axis),
+    ['cols'],
+  );
+});
+
+test('the master column is dragged from its own default, not from an even one', () => {
+  const count = 3;
+  const shape = { ...window, count, mode: 'master' };
+  const sizes = gridResize({ ...shape, axis: 'cols', index: 1, position: 600 });
+  const rects = tileRects({ ...shape, sizes, focusedIndex: 0 });
+  assert.equal(rects[0].x + rects[0].width + METRICS.gap / 2, 600);
+
+  // Undragged, the split is the master's 2.4 : 1 and not the grid's halves.
+  const [master] = tileRects({ ...shape, focusedIndex: 0 });
+  const even = tileRects({ ...window, count: 4 })[0];
+  assert.ok(master.width > even.width * 1.3, `master ${master.width} against an even ${even.width}`);
+});

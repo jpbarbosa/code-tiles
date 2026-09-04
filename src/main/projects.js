@@ -24,6 +24,16 @@ export class Projects {
     this.#store.update({ mode });
   }
 
+  // Whether the grid gives one project a column of its own. Which project that is stays derived:
+  // it is the focused one, so a project cannot be the master and unfocused at once.
+  get maximized() {
+    return Boolean(this.#store.state.maximized);
+  }
+
+  set maximized(maximized) {
+    this.#store.update({ maximized: Boolean(maximized) });
+  }
+
   // The one thing about the grid that is a choice rather than a derivation, so the one thing
   // here that is stored. Keyed by shape; what a key means is the desk's business, not this list's.
   get sizes() {

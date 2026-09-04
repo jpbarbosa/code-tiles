@@ -117,6 +117,9 @@ function contextOf(project) {
     // window is, said in the one place inside it that a glance lands on.
     icon: project.icon || null,
     focused: Boolean(project.focused),
+    // Whether this window holds the master cell, or null where there is nothing to maximize -
+    // single view, or one project - and the maximize item is not drawn at all.
+    maximized: project.maximized ?? null,
     claudeState: project.claudeState || 'idle',
     // Which parts the app wants every window showing. A part nobody has chosen for is null, and
     // the window is left with whatever layout it remembers.

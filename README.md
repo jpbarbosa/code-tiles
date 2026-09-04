@@ -30,6 +30,14 @@ window with it.
   or `⌃⌘0` to even both. Sizes are **shares, not pixels**, so a resized window keeps them, and
   they are remembered against the grid's **shape** rather than the project count - three
   projects and four are both a 2x2, so closing one and reopening it lands back where you were.
+- **Maximize** gives one project a column of about seven tenths of the width and stacks the
+  others live beside it, so you can work in one while still watching the rest. The switch is an
+  item at the top of that window's own activity bar, under the badge: on a stacked project it
+  offers the column, and on the project that already holds it the same item is lit and hands the
+  even grid back. The wide one is always the **focused** project, so it follows `⌘\`` and a click
+  into a tile rather than being a second thing to keep track of. The gutters resize the master's
+  column and the stack's rows the way they resize any grid, and those proportions are remembered
+  against the maximized shape rather than the even one it came from.
 
 ## Focus
 

@@ -21,6 +21,9 @@ export function installIpc({ desk, usage, popover }) {
     'usage:code': ({ code }) => usage.submit(code),
     'usage:disconnect': () => usage.disconnect(),
     'mode:set': ({ mode }) => desk.setMode(mode),
+    // A window's maximize item, saying what it will do rather than what it is: the same press
+    // claims the focus, and the master IS the focused project.
+    'project:maximize': ({ maximized }, folder) => desk.maximize(folder, Boolean(maximized)),
     // The gutter drag: where the pointer is, in the window's own coordinates. Main still decides
     // where every tile goes.
     'grid:resize': ({ axis, index, position }) => desk.resizeGrid({ axis, index, position }),
