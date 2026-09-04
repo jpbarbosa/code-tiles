@@ -12,9 +12,10 @@ What the tree does today, what comes next, and what to check when the server is 
 - Gutter resizing: the gutter between two tiles is the handle, a double-click evens its axis and
   `⌃⌘0` evens both. Shares rather than pixels, kept per grid SHAPE, persisted.
 - Maximize: one project takes a column of about seven tenths and the rest stack live beside it,
-  from an item at the top of that window's own activity bar. The wide one is the FOCUSED project
-  rather than a second thing to remember, so it follows the focus, and the only thing stored is
-  whether the grid is in that shape. Its column and its stack rows are dragged, evened and
+  from an item at the top of that window's own activity bar. The wide one is CHOSEN and stays
+  chosen: clicking into a stacked tile moves the focus ring and leaves the column where it was, so
+  the two questions - where you are, what is wide - are answered separately and the item is the
+  only thing that answers the second. Its column and its stack rows are dragged, evened and
   remembered like any grid's, under a shape key of their own.
 - The shell: strip, chips, view control, the focused tile's glow, the empty state.
 - The layout control: the editor's own three title bar buttons, in the strip, flipping the side

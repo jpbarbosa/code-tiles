@@ -12,10 +12,10 @@
 // its children, so a window short enough to run out of room has one item's worth less than the
 // editor believes. [code-server 4.135.0]
 //
-// The press sends what it will DO rather than a toggle for main to work out: the same press
-// claims the focus, and the master IS the focused project, so a toggle would read that new focus
-// as "already maximized" and undo itself in the same frame. `context.maximized` is null where
-// there is nothing to maximize - single view, or one project - which is the state with no item.
+// The press sends what it will DO rather than a toggle for main to work out, so this window's own
+// state is the only copy of it. Clicking into a window claims the FOCUS and nothing else: the
+// column moves from here and from nowhere else. `context.maximized` is null where there is nothing
+// to maximize - single view, or one project - which is the state with no item.
 //
 // The lit half is `screen-normal`, not the `panel-restore` its name suggests: that class has no
 // icon registered in this build, so its content variable resolves to nothing and the item would

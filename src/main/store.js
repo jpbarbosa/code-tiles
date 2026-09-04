@@ -8,9 +8,9 @@ const EMPTY = {
   entries: [],        // [{ folder, open, lastOpened }] - order IS the project order
   focusedFolder: null,
   mode: 'grid',       // 'grid' | 'single'
-  // Whether the grid is in its maximized shape. Not WHICH project is maximized: that is the
-  // focused one, and the focus is already stored.
-  maximized: false,
+  // Which project holds the master column, by folder, or null for the even grid. Not the focus:
+  // clicking into a stacked tile moves that and leaves this alone.
+  maximized: null,
   // The grid's proportions, per grid SHAPE: { "2x2": { cols: [...], rows: [...] } }. Shares,
   // never pixels, so a resized window keeps them.
   sizes: {},

@@ -24,18 +24,22 @@ export class Projects {
     this.#store.update({ mode });
   }
 
-  // Whether the grid gives one project a column of its own. Which project that is stays derived:
-  // it is the focused one, so a project cannot be the master and unfocused at once.
+  // Which project holds the column of its own, or null for the even grid. A choice rather than a
+  // derivation, like the sizes below and for the same reason: the focus moves on its own, and a
+  // master that followed it would make every click into a promotion. A folder that is not open
+  // is no master, so closing the wide one evens the grid rather than leaving a cell nobody holds.
   get maximized() {
-    return Boolean(this.#store.state.maximized);
+    const folder = this.#store.state.maximized;
+    if (typeof folder !== 'string') return null;
+    return this.#entries().some((entry) => entry.open && entry.folder === folder) ? folder : null;
   }
 
-  set maximized(maximized) {
-    this.#store.update({ maximized: Boolean(maximized) });
+  set maximized(folder) {
+    this.#store.update({ maximized: typeof folder === 'string' ? folder : null });
   }
 
-  // The one thing about the grid that is a choice rather than a derivation, so the one thing
-  // here that is stored. Keyed by shape; what a key means is the desk's business, not this list's.
+  // The grid's proportions, the other choice. Keyed by shape; what a key means is the desk's
+  // business, not this list's.
   get sizes() {
     return this.#store.state.sizes || {};
   }

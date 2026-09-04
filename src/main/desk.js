@@ -38,13 +38,15 @@ export class Desk {
     const mode = this.#shape(open.length);
     const shape = { width, height, count: open.length, mode };
     const sizes = this.#sizes(open.length);
-    const rects = tileRects({ ...shape, focusedIndex, sizes });
+    const master = this.#projects.maximized;
+    const masterIndex = Math.max(0, open.findIndex((project) => project.folder === master));
+    const rects = tileRects({ ...shape, focusedIndex, masterIndex, sizes });
 
     // What the maximize item in each window draws: it holds the master cell, it does not, or
     // there is nothing to maximize and the item is not there at all.
     const maximized = (folder) => (mode === 'single' || open.length < 2
       ? null
-      : mode === 'master' && folder === focused);
+      : mode === 'master' && folder === master);
 
     this.#tiles.sync(
       open.map((project) => ({
@@ -172,14 +174,14 @@ export class Desk {
 
   // The maximize item inside a window: this project takes the master cell, or - on the one that
   // already holds it - the even grid comes back. The item sends what it will DO rather than what
-  // it is, because the same press claims the focus, and a toggle worked out here would read that
-  // new focus as "already the master" and undo itself.
+  // it is, so the window's own state is the only copy of it.
+  //
+  // The focus is not touched. The press that reached the item already claimed it through the
+  // `focus` seam, and a click anywhere else in a stacked window claims it too WITHOUT moving the
+  // column - which is the difference between saying where you are and saying what is wide.
   maximize(folder, maximized) {
-    this.#projects.maximized = maximized;
-    // Taking the master is taking the focus: the master is the focused project, so there is
-    // nothing else to move.
-    if (maximized) this.focus(folder);
-    else this.render();
+    this.#projects.maximized = maximized ? folder : null;
+    this.render();
   }
 
   // A gutter dragged. The shell reports the pointer; the geometry is still decided in one place.

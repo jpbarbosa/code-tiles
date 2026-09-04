@@ -130,8 +130,8 @@ test('rows are dragged in window coordinates, under the strip', () => {
   assert.equal(rects[0].y, METRICS.strip);
 });
 
-test('maximized: the focused project takes a column of its own and the rest stack beside it', () => {
-  const rects = tileRects({ ...window, count: 4, mode: 'master', focusedIndex: 1 });
+test('maximized: the master takes a column of its own and the rest stack beside it', () => {
+  const rects = tileRects({ ...window, count: 4, mode: 'master', masterIndex: 1 });
   const [first, master, third, fourth] = rects;
 
   assert.equal(master.y, METRICS.strip);
@@ -147,12 +147,22 @@ test('maximized: the focused project takes a column of its own and the rest stac
 });
 
 test('maximized with two projects is one row beside the master, and with one it is the grid', () => {
-  const pair = tileRects({ ...window, count: 2, mode: 'master', focusedIndex: 0 });
+  const pair = tileRects({ ...window, count: 2, mode: 'master', masterIndex: 0 });
   assert.equal(pair[1].height, pair[0].height);
   assert.deepEqual(
     tileRects({ ...window, count: 1, mode: 'master' }),
     tileRects({ ...window, count: 1 }),
   );
+});
+
+test('the focus does not move the master column: only the master index places it', () => {
+  const shape = { ...window, count: 3, mode: 'master', masterIndex: 2 };
+  const wide = (rects) => rects.findIndex((rect) => rect.height === rects[2].height
+    && rect.width === Math.max(...rects.map((other) => other.width)));
+  // The same master, whichever tile the focus is on.
+  for (const focusedIndex of [0, 1, 2]) {
+    assert.equal(wide(tileRects({ ...shape, focusedIndex })), 2, `focus on ${focusedIndex}`);
+  }
 });
 
 test('a maximized shape is remembered apart from the even grid it came from', () => {
@@ -170,7 +180,7 @@ test('the master runs down every row seam, so those handles stop at the stack', 
   const splitters = gridSplitters({ ...window, count, mode: 'master' });
   assert.deepEqual(splitters.map((s) => `${s.axis}${s.index}`), ['cols1', 'rows1', 'rows2']);
 
-  const rects = tileRects({ ...window, count, mode: 'master', focusedIndex: 0 });
+  const rects = tileRects({ ...window, count, mode: 'master', masterIndex: 0 });
   const [column, ...rows] = splitters;
   assert.equal(column.x, rects[0].x + rects[0].width);
   assert.equal(column.height, rects[0].height, 'the master seam runs the whole height');
@@ -190,11 +200,11 @@ test('the master column is dragged from its own default, not from an even one', 
   const count = 3;
   const shape = { ...window, count, mode: 'master' };
   const sizes = gridResize({ ...shape, axis: 'cols', index: 1, position: 600 });
-  const rects = tileRects({ ...shape, sizes, focusedIndex: 0 });
+  const rects = tileRects({ ...shape, sizes, masterIndex: 0 });
   assert.equal(rects[0].x + rects[0].width + METRICS.gap / 2, 600);
 
   // Undragged, the split is the master's 2.4 : 1 and not the grid's halves.
-  const [master] = tileRects({ ...shape, focusedIndex: 0 });
+  const [master] = tileRects({ ...shape, masterIndex: 0 });
   const even = tileRects({ ...window, count: 4 })[0];
   assert.ok(master.width > even.width * 1.3, `master ${master.width} against an even ${even.width}`);
 });

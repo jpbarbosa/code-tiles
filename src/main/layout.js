@@ -83,7 +83,7 @@ function geometry({ width, height, count, mode = 'grid', sizes = {}, strip, gap 
 }
 
 export function tileRects({
-  width, height, count, mode = 'grid', focusedIndex = 0, sizes,
+  width, height, count, mode = 'grid', focusedIndex = 0, masterIndex = 0, sizes,
   strip = METRICS.strip, gap = METRICS.gap,
 }) {
   if (count <= 0) return [];
@@ -96,13 +96,13 @@ export function tileRects({
     ));
   }
 
-  // Maximized: the focused project takes the left column whole, and the rest keep their order
-  // down the right one. Which project is the master is the focus, so nothing here decides it -
-  // and a stacked window is a live tile, not a thumbnail.
+  // Maximized: the master takes the left column whole, and the rest keep their order down the
+  // right one. The master is told, like the focus, and it is not the same project: a click moves
+  // the focus and leaves the column where it was. A stacked window is a live tile, not a thumbnail.
   if (maximized(count, mode)) {
     let row = 0;
     return Array.from({ length: count }, (_, i) => {
-      if (i === focusedIndex) {
+      if (i === masterIndex) {
         return { visible: true, x: xs[0], y: area.y, width: xs[1] - xs[0] - gap, height: area.height };
       }
       const slot = row;
