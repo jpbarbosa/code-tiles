@@ -49,8 +49,8 @@ What the tree does today, what comes next, and what to check when the server is 
   `ground` (the theme's shell colour reported back so the app's ground matches it),
   `tint` (the project's hue mixed into the parts' own surfaces and their chrome, into every
   active tab, and into the focused window's ground - which the activity bar wears too, being
-  shell rather than a part; the terminal is excepted, its canvas taking its colours at
-  construction and letting no stylesheet in),
+  shell rather than a part; the terminal takes the same colour from a `lighten` overlay, its
+  canvas having taken its own at construction and letting no stylesheet in),
   `identity` (the project's name on the side bar's title row, and its favicon in place of the
   hamburger's glyph at the top of the activity bar - the button underneath is still the editor's,
   so it still opens the menu),

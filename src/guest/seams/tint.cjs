@@ -45,6 +45,26 @@ module.exports = {
     background-color: var(--vscode-editor-background) !important;
   }
 
+  /* The terminal takes no variable at all: xterm resolves its colours in JS at construction and
+     paints them into an opaque canvas, so the tint goes ON TOP of that canvas as the colour the
+     panel already wears. Lighten blending is a per-channel max, so every pixel brighter than a
+     7% hue over a near-black comes through byte-identical - which is every glyph a theme puts
+     there - and over chrome already tinted the same colour it is the identity. The overlay clears
+     .xterm-screen's z-index 31, and positions against the pane body rather than its own box: the
+     body is the terminal's whole area and is already relative, so nothing here re-bases the
+     absolutely positioned .xterm inside it. */
+  & .part.panel .terminal-outer-container::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    pointer-events: none;
+    /* The backdrop in the order the editor resolves it, so the mix starts where xterm started. */
+    background: color-mix(in oklab,
+      var(--vscode-terminal-background, var(--ct-source-panel)) var(--ct-veil), var(--ct-brand));
+    mix-blend-mode: lighten;
+  }
+
   /* The activity bar is SHELL, not a card: it wears the ground the parts float on, which is what
      it showed before a theme with an activityBar.background of its own made it opaque and
      dropped it out. Neither veil nor plate is the colour - the ground is, and it is the ground

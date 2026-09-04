@@ -197,11 +197,12 @@ that only `!important` outranks. The activity bar, which is SHELL rather than a 
 `--modern-ui-shell-background`, and a theme with an `activityBar.background` of its own makes it
 opaque and drops it out of that ground, leaving a black column beside tinted parts - restore it by
 painting the ground, never by tinting the part, because the veil is 7% of a hue and invisible over
-the near-blacks a theme puts there. And the terminal, which no CSS reaches - xterm paints an opaque
-canvas from colours it took at construction, so a tinted panel surrounds a terminal that stays the
-theme's own. Rewriting one of those variables also has to CAPTURE it on an ancestor first: a custom
-property cannot reference itself on one element, that is a cycle, and it computes to nothing.
-**[checked]**
+the near-blacks a theme puts there. And the terminal, where no variable arrives at all - xterm
+resolves its colours in JS at construction and paints them into an opaque canvas - so the tint goes
+on top of that canvas as an overlay blended with `lighten`, a per-channel max that leaves every
+pixel brighter than a 7% hue over a near-black byte-identical. Rewriting one of those variables also
+has to CAPTURE it on an ancestor first: a custom property cannot reference itself on one element,
+that is a cycle, and it computes to nothing. **[checked]**
 
 **The workbench says which parts it is showing, on itself.** `nosidebar`, `nopanel` and
 `noauxiliarybar` are classes on the workbench container, so a seam reads the layout from one

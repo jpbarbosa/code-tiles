@@ -143,10 +143,17 @@ const READ = `(() => {
       return fill ? getComputedStyle(fill).backgroundColor : null;
     })(),
     shellGround: workbench ? getComputedStyle(workbench).getPropertyValue('--modern-ui-shell-background').trim() : null,
-    // Which theme actually landed, now that the dark seam only DEFAULTS one. The terminal is
-    // read as a variable rather than off xterm, which paints from JS: the variable is the half a
-    // seam can answer for, and a theme-scoped colorCustomizations block shows up in it.
+    // Which theme actually landed, now that the dark seam only DEFAULTS one: a theme-scoped
+    // colorCustomizations block shows up in this one.
     terminalBackground: workbench ? getComputedStyle(workbench).getPropertyValue('--vscode-terminal-background').trim() : null,
+    // The tint over the terminal, which is an overlay because xterm paints from JS. Its colour
+    // has to match the panel's tinted background above; null is a window with no terminal open.
+    terminalOverlay: (() => {
+      const outer = document.querySelector('.part.panel .terminal-outer-container');
+      if (!outer) return null;
+      const after = getComputedStyle(outer, '::after');
+      return [after.backgroundColor, after.mixBlendMode, after.zIndex];
+    })(),
     // The tint, read where it is SPENT: the workbench holds the theme's own values and the
     // rewrite lands one level down, so a pair here equal to editorBackground above is a tint
     // that stopped reaching whatever theme is now in front of it.
