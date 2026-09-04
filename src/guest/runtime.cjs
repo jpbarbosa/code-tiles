@@ -17,6 +17,8 @@ const SWEEP_MS = 1000;
 let context = readContext();
 const contextListeners = new Set();
 const documentListeners = new Set();
+const watchedDocuments = new WeakSet();
+const wiredFrames = new WeakSet();
 
 function readContext() {
   const prefix = '--ct-context=';
@@ -51,19 +53,49 @@ function render() {
 // event crosses that boundary. The sandbox carries allow-same-origin, which is how the editor's
 // own wrapper reaches in, so the chain can be walked.
 //
-// It repeats on a timer because those frames are built and rebuilt as panels open: a seam has to
-// be there already, so a document that appears between two sweeps is caught by the next one
-// rather than by anything it announces. Making a repeat cheap is the seam's own business.
+// A document is reached the moment it exists rather than at the next tick, because until a seam
+// has been inside it the frame paints Chromium's white canvas: a panel opened between two ticks
+// blinks white for as long as the wait. The timer below stays as the backstop, so making a
+// repeat cheap is still the seam's own business.
 function sweep(document) {
   if (!document) return;
+  watch(document);
   for (const listener of documentListeners) {
     try { listener(document); } catch (error) { console.error('[code-tiles] document listener:', error); }
   }
   let frames;
   try { frames = document.querySelectorAll('iframe'); } catch { return; }
   for (const frame of frames) {
+    wire(frame);
     try { sweep(frame.contentDocument); } catch { /* genuinely cross-origin */ }
   }
+}
+
+// The two halves of "the moment it exists": a frame is announced by the document that appends
+// it, and the document it will actually hold is announced by the frame. Only an iframe is worth
+// a sweep, and no seam appends one, so the observer cannot answer its own writes.
+function watch(document) {
+  if (watchedDocuments.has(document) || !document.documentElement) return;
+  watchedDocuments.add(document);
+  const observer = new MutationObserver((records) => {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+        if (node.tagName === 'IFRAME' || node.getElementsByTagName('iframe').length) return void sweep(document);
+      }
+    }
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+}
+
+// Navigating replaces a frame's document, and with it everything a seam wrote into the one
+// before: the frame is swept again on every load rather than once when it was found.
+function wire(frame) {
+  if (wiredFrames.has(frame)) return;
+  wiredFrames.add(frame);
+  frame.addEventListener('load', () => {
+    try { sweep(frame.contentDocument); } catch { /* genuinely cross-origin */ }
+  });
 }
 
 function whenWorkbench(callback) {

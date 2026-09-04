@@ -98,8 +98,9 @@ reaches the workbench's document as no press, no focus and no blur - measured by
 click over the panel and counting what the `focus` seam sent: one message for a press on the
 workbench, none for a press in the panel. The sandbox carries `allow-same-origin`, which is how
 the editor's own wrapper reaches in, so the seam walks `contentDocument` and registers on every
-document it can reach. The walk repeats on a timer because those frames are built and rebuilt as
-panels open, and the press has to find the listener already there. **[checked]**
+document it can reach. Those frames are built and rebuilt as panels open, so a frame is taken as
+it appears - its parent announces the append, the frame announces its own navigation - with a
+timer left only as the backstop. **[checked]**
 
 **code-server keeps the GitHub session browser-side**, in IndexedDB keyed by origin, inside
 the view's session partition, not in the server's user data directory. One shared login
@@ -264,7 +265,9 @@ paints Chromium's white base behind it. The Claude panel is where that shows: it
 the panel and as a bright arc where the rounded design clips it. Nothing outside the frame
 decides this - not `color-scheme` on the workbench document, not on the iframe element, not the
 view's `setBackgroundColor`, none of which propagate in - so the `dark` seam walks to each
-document and sets it there. **[checked]**
+document and sets it there. Reaching a frame a tick late is a visible blink rather than a late
+correction: a new one measured 997 ms of white waiting for a 1 s sweep, and 6 ms once its append
+and its load announced it. **[checked]**
 
 **The editor's own frame moves between versions.** The inset it floats its parts in was 4px on
 every side in one release and flush left and top with 8px on the right in the next. Nothing
