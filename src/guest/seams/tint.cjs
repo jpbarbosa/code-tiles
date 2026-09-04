@@ -11,7 +11,22 @@ module.exports = {
   css: (context) => `
 .monaco-workbench {
   --ct-brand: oklch(0.62 0.15 ${context.hue});
-  --ct-plate: color-mix(in oklab, var(--vscode-sideBar-background) 74%, var(--ct-brand));
+  /* How much of the theme's own colour survives the hue, wherever the hue lands on a surface. */
+  --ct-wash: 74%;
+  --ct-plate: color-mix(in oklab, var(--vscode-sideBar-background) var(--ct-wash), var(--ct-brand));
+
+  /* The active tab wears the hue too, wherever there is one: a file, a Claude session, the view
+     switcher's own active item, and the terminal tabs the terminals seam mirrors. All of them
+     read these two variables and nothing else, so this is the one place it is said - and the
+     unfocused-group variants derive from the first, so they follow with nothing added here.
+     The hover washes are left alone: they are the theme's translucent white over whatever is
+     under them, which is now a tinted tab. */
+  &.modern-ui-tabs {
+    --modern-ui-editor-tab-active-background:
+      color-mix(in oklab, var(--vscode-modernEditorTab-activeBackground) var(--ct-wash), var(--ct-brand));
+    --modern-ui-tab-active-background:
+      color-mix(in oklab, var(--vscode-modernTab-activeBackground) var(--ct-wash), var(--ct-brand));
+  }
 
   & .part.sidebar .composite.title {
     background-color: var(--ct-plate);

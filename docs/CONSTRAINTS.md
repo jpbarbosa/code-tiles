@@ -158,7 +158,10 @@ the relayout, and takes the room back when the element goes. **[checked]**
 `.codicon-*` class a seam would think to outrank: the menu button's is
 `content: var(--vscode-icon-menu-content) !important` on `.menubar.compact .toolbar-toggle-more`,
 so a plain `content: ""` loses and the glyph paints on top of whatever the seam drew - a hamburger
-across the badge's favicon. Any seam replacing an icon pays one `!important` for this, and says so. **[checked]**
+across the badge's favicon. Any seam replacing an icon pays one `!important` for this, and says so.
+The other half of the same fact: a codicon IS its `::before`, so a rule that gives one a
+`content: ""` of its own - a pill behind it, say - blanks the glyph and leaves an empty slot.
+Anything drawn behind a codicon goes on `::after`. **[checked]**
 
 **The workbench bundle is cached for a year, under a URL keyed on the server's commit.**
 `Cache-Control: public, max-age=31536000`, no ETag, and the path carries the code-server commit -
@@ -177,6 +180,12 @@ devtools, which is why devtools now sit on Alt+Cmd+I. Ctrl+Cmd is not a free fam
 also holds Ctrl+Cmd+1 and Ctrl+Cmd+9 on macOS. Check a chord in the bundle before taking it: it
 is stored as a sum, `mac:{primary:N}` with CtrlCmd 2048, Shift 1024, Alt 512, WinCtrl 256,
 KeyA 31 (so KeyI 39) and Digit0 21. **[checked]**
+
+**The terminal `<select>` is rebuilt on every change, including which terminal is ACTIVE.** Which
+one is active is a `selectedIndex` write that mutates nothing, but the editor re-renders the
+options around it, so a `childList` observer over the panel's title sees the switch and the
+`terminals` seam needs no poll. Measured against 4.135: 22 mutations on one switch, `class` on
+the terminal wrappers and a `childList` on the select. **[checked]**
 
 **A synthetic `KeyboardEvent` drives the workbench's keybindings, from the preload's isolated
 world.** The editor exposes no page-level way to run a command, so a seam that needs one

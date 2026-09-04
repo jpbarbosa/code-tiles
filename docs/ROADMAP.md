@@ -25,7 +25,7 @@ What the tree does today, what comes next, and what to check when the server is 
 - Your VS Code, mirrored: every desktop profile reproduced on the server, its extensions
   installed from Open VSX into one shared directory, and each tile opened on the profile your
   desktop already associates with that folder.
-- Eleven seams, verified in a live window rather than from a screenshot:
+- Twelve seams, verified in a live window rather than from a screenshot:
   `dark` (the dark theme, auto-detect off, and the colour scheme of every document the window
   holds - web's default theme is the light one, and a webview that says nothing shows Chromium's
   white canvas through every pixel its own page leaves uncovered),
@@ -37,13 +37,17 @@ What the tree does today, what comes next, and what to check when the server is 
   `trust` (restricted mode off, without which an extension that refuses untrusted workspaces -
   Claude Code - is simply absent),
   `ground` (the theme's shell colour reported back so the app's ground matches it),
-  `tint` (the project's hue mixed into the parts, and into the focused window's ground),
+  `tint` (the project's hue mixed into the parts, into every active tab, and into the focused
+  window's ground),
   `identity` (the project's name on the side bar's title row, and its favicon in place of the
   hamburger's glyph at the top of the activity bar - the button underneath is still the editor's,
   so it still opens the menu),
   `branch` (the branch and its sync as two pills at the bottom of the side bar, mirrored from the
   status bar entries that hiding the bar leaves alive, so a click still checks out or syncs - in
   a footer the side bar is taught to give REAL room to rather than an overlay over the tree),
+  `terminals` (the terminals as tabs across the panel's header, mirrored from the <select> the
+  editor puts there once its own tab list is off - which is the setting that also gives the
+  panel's width back; a right-click on the header still opens the editor's own view menu),
   `layout` (the three parts the strip's layout control flips, through the editor's own
   keybindings, acting on a change of instruction rather than on every render),
   `focus` (a press inside a window claims focus for its project, since a view paints above the
@@ -68,7 +72,7 @@ What the tree does today, what comes next, and what to check when the server is 
    an extension whose desktop version moves on.
 5. **Chat titles.** The active chat's name per project, read by a seam from the editor tab it
    already lives on, reported like the ground.
-6. **The rest of the window**: terminals along the panel header, the trimmed Welcome page.
+6. **The rest of the window**: the trimmed Welcome page.
 7. **Packaging**: a signed `.app`, and a fetch of the pinned server into `vendor/`.
 
 ## Not doing

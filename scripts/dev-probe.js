@@ -101,6 +101,30 @@ const READ = `(() => {
       const el = document.querySelector('.part.sidebar .composite.title');
       return el ? getComputedStyle(el).backgroundColor : null;
     })(),
+    // The card seam: the window's own corner. What shows in the corner it stops painting is the
+    // shell's, and no page can see that, so the radius is the half a window can answer for.
+    cardRadius: workbench ? getComputedStyle(workbench).borderRadius : null,
+    // The terminals seam: the panel's header taken over, and what the strip says. Armed only
+    // where the editor's own <select> is, so a false here and a setting that never landed read
+    // the same - which is the point.
+    terminals: (() => {
+      const title = document.querySelector('.part.panel > .composite.title');
+      if (!title) return null;
+      const strip = title.querySelector(':scope > .ct-terminals');
+      const names = title.querySelector('.composite-bar .action-item:not(.icon)');
+      return {
+        armed: title.classList.contains('ct-terminals-on'),
+        tabs: [...(strip ? strip.querySelectorAll('.ct-terminals-name') : [])].map((el) => el.textContent),
+        viewNames: names ? getComputedStyle(names).display : null,
+      };
+    })(),
+    // The tint on the active tab, read off a painted tab rather than off the variable behind it:
+    // an editor tab and the terminal strip's own are the same colour by construction, and this
+    // says whether that colour is the theme's or the project's.
+    activeTabBg: (() => {
+      const fill = document.querySelector('.part.editor .tabs-container > .tab.active > .tab-fill');
+      return fill ? getComputedStyle(fill).backgroundColor : null;
+    })(),
     shellGround: workbench ? getComputedStyle(workbench).getPropertyValue('--modern-ui-shell-background').trim() : null,
   };
 })()`;
