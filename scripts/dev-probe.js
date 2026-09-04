@@ -38,6 +38,13 @@ const READ = `(() => {
       const el = document.querySelector('.part.sidebar');
       return el ? getComputedStyle(el).borderRadius : null;
     })(),
+    // The layout seam's effect, read the way the seam itself reads it: the workbench's own
+    // classes, never a rect.
+    parts: workbench ? {
+      sideBar: !workbench.classList.contains('nosidebar'),
+      panel: !workbench.classList.contains('nopanel'),
+      secondarySideBar: !workbench.classList.contains('noauxiliarybar'),
+    } : null,
     titlebar: box(titlebar),
     statusbar: box(statusbar),
     auxiliarybar: box(document.querySelector('.part.auxiliarybar')),

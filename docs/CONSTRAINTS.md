@@ -96,6 +96,20 @@ title bar to raise it from. The `trust` seam is why every tile has its extension
 is opened before the real one exists - so an unsubscribed app ends during its own startup, with
 no error anywhere. **[checked]**
 
+**The workbench says which parts it is showing, on itself.** `nosidebar`, `nopanel` and
+`noauxiliarybar` are classes on the workbench container, so a seam reads the layout from one
+attribute and observes all three with one `MutationObserver` on `class`. There is nothing to
+measure and no rect to consult. **[checked]**
+
+**A synthetic `KeyboardEvent` drives the workbench's keybindings, from the preload's isolated
+world.** The editor exposes no page-level way to run a command, so a seam that needs one
+dispatches the command's own keybinding, and the event reaches the workbench's dispatcher
+through the shared DOM with no `executeJavaScript` anywhere. What makes it match is the LEGACY
+`keyCode`, which the workbench reads and which belongs in the CONSTRUCTOR's init member: an
+expando defined on the event afterwards lands on the isolated world's own wrapper, not on the
+one the page sees. Cmd+B, Cmd+J and Alt+Cmd+B were driven this way against code-server 4.135.0,
+each flipping its part. **[checked]**
+
 **Injected CSS lands before the workbench's own styles.** `webContents.insertCSS` cannot be
 made to land after them, which is what forced `!important` on every rule in the previous
 tree. A `<style>` element the runtime appends to `<head>` and keeps last does not have that

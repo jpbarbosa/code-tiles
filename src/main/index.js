@@ -8,6 +8,8 @@ import { ProfileMirror } from './profiles.js';
 import { Projects } from './projects.js';
 import { Store } from './store.js';
 import { Tiles } from './tiles.js';
+import { Usage } from './usage.js';
+import { UsagePopover } from './popover.js';
 import { createWindow } from './window.js';
 import { installIpc } from './ipc.js';
 import { installMenu } from './menu.js';
@@ -20,6 +22,7 @@ if (!app.requestSingleInstanceLock()) app.quit();
 
 let server = null;
 let mirror = null;
+let usage = null;
 
 app.whenReady().then(async () => {
   // The app's half of dark: the traffic lights, the file dialog and every guest's
@@ -79,7 +82,18 @@ app.whenReady().then(async () => {
   const tiles = new Tiles({ window, server });
   const desk = new Desk({ window, projects, tiles });
 
-  installIpc({ desk });
+  // Account-global, so it is the app's poll rather than one per tile, and it publishes on its
+  // own channel: a reading every five minutes must not re-place the views.
+  usage = new Usage({
+    file: paths.usageToken,
+    send: (state) => {
+      if (window.isDestroyed()) return;
+      window.webContents.send('ct:event', { type: 'usage', payload: state });
+    },
+  });
+  usage.start();
+
+  installIpc({ desk, usage, popover: new UsagePopover({ parent: window }) });
   installMenu(desk);
 
   window.webContents.on('did-finish-load', () => desk.render());
@@ -99,5 +113,5 @@ app.whenReady().then(async () => {
 // window that matters quits on its own `closed`.
 app.on('window-all-closed', () => {});
 
-app.on('before-quit', () => { mirror?.stop(); server?.stop(); });
+app.on('before-quit', () => { usage?.stop(); mirror?.stop(); server?.stop(); });
 process.on('exit', () => server?.stop());

@@ -10,10 +10,20 @@ What the tree does today, what comes next, and what to check when the server is 
 - One `WebContentsView` per project on one partition, placed by main from pure geometry.
 - Grid and single view, focus, open, close, project order, all persisted.
 - The shell: strip, chips, view control, the focused tile's glow, the empty state.
+- The layout control: the editor's own three title bar buttons, in the strip, flipping the side
+  bar, the panel or the secondary side bar in every open project at once. A part nobody has
+  chosen for is left alone, and the buttons show the focused window's own answer, so a Cmd+B
+  inside a tile moves them.
+- The usage meter: a 5-hour and a 7-day bar, live from `/api/oauth/usage` behind the app's own
+  PKCE login, one poll for the account with a five minute floor and a back-off on 429. The grant
+  is encrypted with `safeStorage`. Clicking opens the panel - exact numbers, reset times,
+  per-model buckets, and the sign-in itself - which is a WINDOW of its own, because a panel drawn
+  in the shell page would sit behind the tiles. It sizes itself to what it drew and dismisses on
+  blur, except while a sign-in is in flight, since that blur is you fetching the code.
 - Your VS Code, mirrored: every desktop profile reproduced on the server, its extensions
   installed from Open VSX into one shared directory, and each tile opened on the profile your
   desktop already associates with that folder.
-- Seven seams, verified in a live window rather than from a screenshot:
+- Eight seams, verified in a live window rather than from a screenshot:
   `dark` (the dark theme, auto-detect off, and the document's own colour scheme - web's default
   theme is the light one),
   `modern` (the editor's rounded design, so a tile's parts are cards on the shell colour),
@@ -23,7 +33,9 @@ What the tree does today, what comes next, and what to check when the server is 
   Claude Code - is simply absent),
   `ground` (the theme's shell colour reported back so the app's ground matches it),
   `tint` (the project's hue mixed into the parts, and into the focused window's ground),
-  `identity` (the project's name on the side bar's title row).
+  `identity` (the project's name on the side bar's title row),
+  `layout` (the three parts the strip's layout control flips, through the editor's own
+  keybindings, acting on a change of instruction rather than on every render).
 
 ## Next, in order
 
@@ -37,16 +49,14 @@ What the tree does today, what comes next, and what to check when the server is 
 3. **Drag to reorder.** Chip drag in the strip (insert) is host-only. Badge drag in the grid
    (swap) starts in the guest, so the seam reports pointer positions to main, main hit-tests
    against the rects it already owns, and the shell draws nothing over a tile.
-4. **Usage bars.** OAuth PKCE in main, token in `safeStorage`, one poll for the app rather than
-   one per tile, a five minute floor and a back-off on 429.
-5. **Profile upkeep.** The mirror is rewritten at start and restored by a watcher if the
+4. **Profile upkeep.** The mirror is rewritten at start and restored by a watcher if the
    workbench deletes it. Not yet handled: a desktop profile added while the app is running, and
    an extension whose desktop version moves on.
-6. **Chat titles.** The active chat's name per project, read by a seam from the editor tab it
+5. **Chat titles.** The active chat's name per project, read by a seam from the editor tab it
    already lives on, reported like the ground.
-7. **The rest of the window**: terminals along the panel header, the branch under the file tree,
+6. **The rest of the window**: terminals along the panel header, the branch under the file tree,
    the trimmed Welcome page.
-8. **Packaging**: a signed `.app`, and a fetch of the pinned server into `vendor/`.
+7. **Packaging**: a signed `.app`, and a fetch of the pinned server into `vendor/`.
 
 ## Not doing
 

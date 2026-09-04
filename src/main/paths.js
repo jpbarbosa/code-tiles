@@ -8,6 +8,7 @@ export const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
 export const files = {
   shellPage: path.join(ROOT, 'src/shell/index.html'),
+  usagePage: path.join(ROOT, 'src/shell/usage.html'),
   shellPreload: path.join(ROOT, 'src/shell/preload.cjs'),
   guestRuntime: path.join(ROOT, 'src/guest/runtime.cjs'),
 };
@@ -34,6 +35,8 @@ export function userPaths() {
     settings: path.join(base, 'server', 'User', 'settings.json'),
     profiles: path.join(base, 'server', 'User', 'profiles'),
     extensions: path.join(base, 'extensions'),
+    // Our own OAuth grant for the usage meter, encrypted. Never the CLI's keychain item.
+    usageToken: path.join(base, 'usage-token.enc'),
     // Ids Open VSX did not have. Cached because it will not have grown them since, and asking
     // again is a 404 per extension on every start. Delete it to make the app retry.
     missCache: path.join(base, 'unavailable-extensions.json'),

@@ -2,6 +2,11 @@ import { dialog } from 'electron';
 
 import { METRICS, tileRects } from './layout.js';
 
+// The parts the strip's layout control flips, and what a window shows before anyone has chosen:
+// the editor's own defaults, once the chrome seam has had its say on the secondary side bar.
+const LAYOUT_PARTS = ['sideBar', 'panel', 'secondarySideBar'];
+const LAYOUT_DEFAULTS = { sideBar: true, panel: false, secondarySideBar: false };
+
 // The one place that turns "what is open, in what order, focused where" into views on screen and
 // a picture for the shell. Everything else asks it to render; nothing else places a view.
 export class Desk {
@@ -9,6 +14,10 @@ export class Desk {
   #projects;
   #tiles;
   #ground = null;
+  // null is "nobody has chosen for this part yet", which leaves every window the layout it
+  // remembers. Not persisted: a fresh launch follows the windows rather than the last session.
+  #layout = { sideBar: null, panel: null, secondarySideBar: null };
+  #parts = new Map();
 
   constructor({ window, projects, tiles }) {
     this.#window = window;
@@ -34,9 +43,13 @@ export class Desk {
       focusedIndex,
     });
 
-    this.#tiles.sync(open.map((project) => ({ ...project, focused: project.folder === focused })), rects);
+    this.#tiles.sync(
+      open.map((project) => ({ ...project, focused: project.folder === focused, layout: this.#layout })),
+      rects,
+    );
     this.#send({
       ground: this.#ground,
+      parts: this.#shownParts(focused),
       mode: this.#projects.mode,
       strip: METRICS.strip,
       gap: METRICS.gap,
@@ -52,6 +65,26 @@ export class Desk {
     if (ground === this.#ground) return;
     this.#ground = ground;
     this.render();
+  }
+
+  // The layout control: one part, every window, whether it is on screen or not.
+  setLayout(part, visible) {
+    if (!LAYOUT_PARTS.includes(part)) return;
+    this.#layout = { ...this.#layout, [part]: Boolean(visible) };
+    this.render();
+  }
+
+  // A window saying what its own parts are doing, on change only. It is what the buttons show, so
+  // a Cmd+B pressed inside a tile moves them rather than leaving them stale.
+  reportParts(folder, parts) {
+    this.#parts.set(folder, parts);
+    if (folder === this.#projects.focused) this.render();
+  }
+
+  #shownParts(focused) {
+    const reported = this.#parts.get(focused);
+    return Object.fromEntries(LAYOUT_PARTS.map((part) =>
+      [part, reported?.[part] ?? this.#layout[part] ?? LAYOUT_DEFAULTS[part]]));
   }
 
   focus(folder) {
@@ -89,6 +122,7 @@ export class Desk {
 
   close(folder) {
     this.#projects.close(folder);
+    this.#parts.delete(folder);
     this.render();
   }
 

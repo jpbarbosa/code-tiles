@@ -84,5 +84,8 @@ function contextOf(project) {
     hue: project.hue,
     focused: Boolean(project.focused),
     claudeState: project.claudeState || 'idle',
+    // Which parts the app wants every window showing. A part nobody has chosen for is null, and
+    // the window is left with whatever layout it remembers.
+    layout: project.layout || {},
   };
 }

@@ -2,12 +2,22 @@ import { ipcMain } from 'electron';
 
 // The whole surface between the app's three layers: one channel, one table. A new feature adds
 // a row here, never a channel, and the shell never talks to a guest directly.
-export function installIpc({ desk }) {
+export function installIpc({ desk, usage, popover }) {
   const projects = desk.projects;
 
   const commands = {
-    'state': () => desk.render(),
+    'state': () => { desk.render(); usage.publish(); },
     'ground': ({ ground }) => desk.setGround(ground),
+    // A window saying what its own parts are doing; the strip choosing for every window at once.
+    'layout': ({ parts }, folder) => desk.reportParts(folder, parts),
+    'layout:set': ({ part, visible }) => desk.setLayout(part, visible),
+    // The panel is a window of its own, so it asks for what it draws and says how tall it got.
+    'usage:popover': ({ anchor }) => popover.toggle(anchor),
+    'usage:state': () => usage.state,
+    'usage:height': ({ height }) => popover.fit(height),
+    'usage:connect': () => { popover.pin(); return usage.connect(); },
+    'usage:code': ({ code }) => usage.submit(code),
+    'usage:disconnect': () => usage.disconnect(),
     'mode:set': ({ mode }) => desk.setMode(mode),
     'project:focus': ({ folder }) => desk.focus(folder),
     'project:close': ({ folder }) => desk.close(folder),
@@ -21,7 +31,8 @@ export function installIpc({ desk }) {
   const dispatch = async (message) => {
     const command = commands[message?.type];
     if (!command) throw new Error(`unknown command: ${message?.type}`);
-    return command(message.payload || {});
+    // The sender's folder, for the commands that are a window talking about itself.
+    return command(message.payload || {}, message.folder);
   };
 
   ipcMain.handle('ct:call', (_event, message) => dispatch(message));

@@ -70,7 +70,7 @@ export default {
   badge, forwarding a click. It runs in the preload's isolated world with DOM access, and it
   is handed `api.onContext`, `api.send` and `api.whenReady`.
 
-`ctx` is the project context: `{ id, name, folder, hue, claudeState, focused }`. It arrives
+`ctx` is the project context: `{ folder, name, hue, claudeState, focused, layout }`. It arrives
 before the first paint (through `additionalArguments`) and is updated by IPC. A seam reads it
 and re-renders; it never asks main for it.
 
@@ -159,7 +159,10 @@ Two channels, not twenty.
 
 - `ct:call` - renderer or guest to main, request and response, with a command name and a
   payload. The command table is in `src/main/ipc.js` and it is the whole surface.
-- `ct:event` - main to renderer or guest, broadcast. One shape: `{ type, payload }`.
+- `ct:event` - main to renderer or guest, broadcast. One shape: `{ type, payload }`. `state` is
+  the desk's picture, `context` is what a window is told about itself, and `usage` is the
+  account's meter, which is on its own type because a reading every five minutes must not
+  re-place the views.
 
 A new feature adds a command to the table or a type to the event union. It does not add a
 channel, and the shell never talks to a guest directly.
@@ -178,12 +181,17 @@ src/main/extensions.js the one shared extensions directory: install, prune
 src/main/profiles.js   the profile mirror on the server's disk, and keeping it alive
 src/main/registry.js   seeding the profile registry into the tiles' partition
 src/main/store.js      persistence
+src/main/oauth.js      the usage wire: PKCE, the token endpoint, /api/oauth/usage. No Electron.
+src/main/usage.js      the account's one poll: the grant, the five minute floor, the back-off
+src/main/popover.js    the usage panel's window: anchored under the widget, sized by its page
 src/main/ipc.js        the command table
 src/main/menu.js       the menu and every accelerator
 
 src/shell/index.html   strip, gutters, glow, picker
 src/shell/shell.js     one module, talks to main through window.ct
 src/shell/shell.css
+src/shell/usage.html   the usage panel: its own page in its own window, on the same preload
+src/shell/format.js    what both pages agree on: the colour ramp and a reset time
 src/shell/preload.cjs  contextBridge: window.ct
 
 src/guest/manifest.js  the seam list. Adding a seam means adding a line here.

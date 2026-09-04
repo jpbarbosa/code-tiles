@@ -20,7 +20,7 @@ the editor is running, so a tile edge never shows a step and a theme change carr
 window with it.
 
 - **The strip** (36px) holds, on one line: the traffic lights, the view control, the project
-  chips, the **+**, and the usage meter.
+  chips, the **+**, the layout control and the usage meter.
 - **The grid** fills the rest. `cols = ceil(sqrt(n))`, near square; the last tile stretches
   across any empty trailing cells so the grid is always full.
 - **The gutter** is the app's own frame, not the editor's. Whatever inset the editor floats
@@ -70,14 +70,25 @@ alike, and it is the same ring on the chip in single view.
 
 ## Usage
 
-A 5-hour and a 7-day bar sit at the right of the strip, account-global rather than per
-project, ramping green to amber to orange to red as a window fills. Click for exact
-percentages, reset times and per-model buckets.
+A 5-hour and a 7-day bar sit at the right of the strip, left of the layout control,
+account-global rather than per project, ramping green to amber to orange to red as a window
+fills. Click for a panel with exact percentages, reset times and per-model buckets.
 
 Numbers are live or absent. Without a connected account the widget is a single **Connect**
-button; there is deliberately no estimate from local transcripts, because an estimate can
-only calibrate against your own biggest window ever run and reads 100% every time you set a
-new peak.
+button, and the panel it opens is where you sign in: it sends you to the browser you are already
+signed into and takes the code back. There is deliberately no estimate from local transcripts,
+because an estimate can only calibrate against your own biggest window ever run and reads 100%
+every time you set a new peak.
+
+## The layout control
+
+The three buttons VS Code puts at the right of its own title bar - side bar, panel, secondary
+side bar - sit at the right of the strip instead, and here each one drives **every open project
+at once**, so one click retiles the whole grid the same way. A project opened afterwards comes
+up in the state you chose.
+
+Until you press one, nothing is imposed: every window keeps the layout it remembers. The buttons
+show the focused project's own answer, so a ⌘B pressed inside a tile moves them.
 
 ## Opening, closing, reordering
 

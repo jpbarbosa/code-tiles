@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Claude usage</title>
+  <!-- One small window, so it carries its own style rather than pulling the strip's in. It is
+       drawn by the OS, above the tiles, which is the whole reason it is a window at all. -->
+  <style>
+    :root { color-scheme: dark; }
+
+    body {
+      margin: 0;
+      padding: 12px 14px;
+      background: #232325;
+      color: #d6d6d8;
+      font: 12px/1.3 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      user-select: none;
+      cursor: default;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: #8b8b90;
+    }
+
+    #rows { display: flex; flex-direction: column; gap: 9px; }
+
+    .row { display: flex; flex-direction: column; gap: 4px; }
+    .row .head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .row .reset { color: #8b8b90; font-size: 10.5px; }
+    .row .track { height: 5px; border-radius: 3px; background: rgb(255 255 255 / 0.12); overflow: hidden; }
+    .row .fill { height: 100%; border-radius: 3px; }
+
+    form { display: flex; flex-direction: column; gap: 8px; }
+    form .line { display: flex; align-items: center; gap: 7px; }
+
+    input {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 24px;
+      padding: 0 8px;
+      border: 1px solid rgb(255 255 255 / 0.18);
+      border-radius: 6px;
+      background: rgb(255 255 255 / 0.06);
+      color: inherit;
+      font: inherit;
+      outline: none;
+    }
+
+    input:focus { border-color: #4a8cff; }
+
+    button {
+      flex: 0 0 auto;
+      height: 24px;
+      padding: 0 11px;
+      border: 0;
+      border-radius: 6px;
+      background: rgb(255 255 255 / 0.1);
+      color: inherit;
+      font: inherit;
+      cursor: default;
+    }
+
+    button:hover { background: rgb(255 255 255 / 0.16); }
+    .primary { background: #d97757; color: #fff; font-weight: 600; }
+    .primary:hover { background: #c76a4c; }
+    .error { color: #f0883e; }
+    [hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Claude usage</h1>
+  <div id="rows"></div>
+
+  <button id="connect" class="primary" hidden>Connect account</button>
+
+  <form id="paste" hidden>
+    <div class="line">
+      <input id="code" type="text" spellcheck="false" autocomplete="off"
+             placeholder="Paste the code" aria-label="Claude sign-in code" />
+      <button class="primary" type="submit">OK</button>
+    </div>
+    <span class="error" role="alert"></span>
+  </form>
+
+  <button id="disconnect" hidden>Disconnect account</button>
+
+  <script type="module">
+    import { rampFor, resetLabel } from './format.js';
+
+    const rows = document.getElementById('rows');
+    const paste = document.getElementById('paste');
+    const connect = document.getElementById('connect');
+    const disconnect = document.getElementById('disconnect');
+    const code = document.getElementById('code');
+    const error = paste.querySelector('.error');
+
+    const LABELS = {
+      fiveHour: '5-hour', sevenDay: '7-day',
+      sevenDayOpus: '7-day Opus', sevenDaySonnet: '7-day Sonnet',
+    };
+
+    // The window is sized by what it drew, so a state with two rows is not a panel with four.
+    const fit = () => window.ct.call('usage:height', { height: document.documentElement.scrollHeight });
+
+    function render(account) {
+      const connected = Boolean(account.connected) && !account.needsReauth;
+      const readings = Object.entries(LABELS)
+        .map(([key, label]) => [label, account[key]])
+        .filter(([, reading]) => reading);
+
+      rows.replaceChildren(...readings.map(([label, reading]) => row(label, reading)));
+      if (connected && !readings.length) rows.append(quiet('No reading yet.'));
+      if (!connected) rows.append(quiet(account.needsReauth ? 'That grant expired.' : 'Not connected.'));
+
+      connect.hidden = connected;
+      connect.textContent = account.needsReauth ? 'Connect again' : 'Connect account';
+      disconnect.hidden = !connected;
+      fit();
+    }
+
+    function row(label, reading) {
+      const node = document.createElement('div');
+      node.className = 'row';
+      node.innerHTML = '<div class="head"><span></span><span class="reset"></span></div>'
+        + '<div class="track"><div class="fill"></div></div>';
+      node.querySelector('.head span').textContent = `${label}  ${Math.round(reading.utilization)}%`;
+      node.querySelector('.reset').textContent = resetLabel(reading.resetsAt);
+      const fill = node.querySelector('.fill');
+      fill.style.width = `${reading.utilization}%`;
+      fill.style.background = rampFor(reading.utilization);
+      return node;
+    }
+
+    function quiet(text) {
+      const node = document.createElement('div');
+      node.className = 'reset';
+      node.textContent = text;
+      return node;
+    }
+
+    // The consent page opens in the browser you are already signed into, and prints a code.
+    connect.addEventListener('click', async () => {
+      connect.hidden = true;
+      paste.hidden = false;
+      code.focus();
+      fit();
+      await window.ct.call('usage:connect');
+    });
+
+    paste.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      error.textContent = '';
+      const result = await window.ct.call('usage:code', { code: code.value });
+      if (result?.ok) return void window.close();
+      error.textContent = result?.error || 'Sign-in failed.';
+      fit();
+    });
+
+    disconnect.addEventListener('click', async () => {
+      await window.ct.call('usage:disconnect');
+      window.close();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') window.close();
+    });
+
+    render(await window.ct.call('usage:state'));
+  </script>
+</body>
+</html>

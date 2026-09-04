@@ -6,8 +6,15 @@
   --ink: #d6d6d8;
   --ink-quiet: #8b8b90;
   --strip: 36px;
+  /* One height for every control in the strip, so the row's edges line up rather than only its
+     centres. Where each one sits vertically is the strip's `align-items: center` and nothing else. */
+  --control: 24px;
   --chip-radius: 7px;
   --accent: #4a8cff;
+  --claude: #d97757;
+  /* The usage ramp, green while there is room and red at the cap. */
+  --ok: #3fb950;
+  --warn: #f0883e;
 }
 
 * { box-sizing: border-box; }
@@ -38,9 +45,10 @@ html, body {
 
 #strip button,
 #strip nav,
-#strip #view-control,
-#strip #usage { -webkit-app-region: no-drag; }
+#strip #view-control { -webkit-app-region: no-drag; }
 
+/* The space the OS draws its traffic lights over. Their own inset is set from the strip's height
+   in src/main/window.js, which is the only place macOS lets that be said. */
 #lights { width: 72px; flex: 0 0 auto; }
 
 #view-control {
@@ -51,7 +59,7 @@ html, body {
 
 .segment {
   width: 26px;
-  height: 22px;
+  height: var(--control);
   display: grid;
   place-items: center;
   border: 0;
@@ -67,11 +75,14 @@ html, body {
 
 #chips[hidden] { display: none; }
 
+/* Wide enough for its chips and no wider, so the + stays against the last one. What holds the
+   right cluster out at the edge is its own auto margin, not this row stretching. Shrinking is
+   still allowed: past that the chips ellipsize rather than pushing anything off. */
 #chips {
   display: flex;
   align-items: center;
   gap: 4px;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
 }
@@ -89,6 +100,9 @@ html, body {
   background: color-mix(in oklab, var(--bg) 88%, oklch(0.6 0.14 var(--hue)) 12%);
   color: var(--ink-quiet);
   max-width: 210px;
+  /* A flex item will not shrink past its own text unless it is told it may. Without this the row
+     runs under the + instead of the names ellipsizing. */
+  min-width: 0;
   cursor: default;
 }
 
@@ -132,8 +146,8 @@ html, body {
 /* The one filled control in the row, because it is the action you take when the row is empty. */
 #add {
   flex: 0 0 auto;
-  width: 24px;
-  height: 24px;
+  width: var(--control);
+  height: var(--control);
   border: 0;
   border-radius: 6px;
   background: var(--accent);
@@ -143,19 +157,110 @@ html, body {
   cursor: default;
 }
 
+/* The right cluster. The chips flex only in single view, so this auto margin is what holds the
+   layout control and the meter against the window's edge in the grid too. */
+#right {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The editor's own three controls, in the app's strip because here they drive every window at
+   once. The gap is the one its title bar toolbar sets between them. */
+#layout-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.part {
+  width: var(--control);
+  height: var(--control);
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink-quiet);
+  cursor: default;
+
+  & svg { width: 16px; height: 16px; fill: currentColor; }
+  &:hover { background: rgb(255 255 255 / 0.08); color: var(--ink); }
+
+  /* Each part ships as a codicon PAIR whose filled half is the state, and the editor lights no
+     plate behind them: showing is the solid glyph, hidden is the outline. */
+  & .on { display: none; }
+  &[aria-pressed="true"] .off { display: none; }
+  &[aria-pressed="true"] .on { display: inline; }
+  &[aria-pressed="true"] { color: var(--ink); }
+}
+
 #usage {
   flex: 0 0 auto;
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  width: 46px;
-  opacity: 0.5;
-}
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-quiet);
+  cursor: default;
 
-#usage .bar {
-  height: 4px;
-  border-radius: 2px;
-  background: rgb(255 255 255 / 0.14);
+  /* One grid, so the two bars start at the same x whatever the tags say, and the tags set the
+     widget's height rather than the 4px bars. Nothing here is positioned by hand. */
+  & .bars {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    gap: 3px 5px;
+  }
+
+  & .tag {
+    justify-self: end;
+    font-size: 8.5px;
+    line-height: 1;
+    letter-spacing: 0.3px;
+  }
+
+  & .bar {
+    position: relative;
+    width: 46px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgb(255 255 255 / 0.14);
+    overflow: hidden;
+  }
+
+  & .fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    border-radius: 2px;
+    background: var(--ok);
+    transition: width 0.5s ease, background 0.4s ease;
+  }
+
+  &:hover .bar { background: rgb(255 255 255 / 0.2); }
+
+  /* No account, no numbers: the widget becomes the connect affordance rather than two bars it
+     cannot fill. There is deliberately no estimate to fall back on. */
+  & .offer {
+    display: none;
+    height: var(--control);
+    align-items: center;
+    padding: 0 9px;
+    border-radius: 6px;
+    background: var(--claude);
+    color: #fff;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  &[data-connected="false"] .bars { display: none; }
+  &[data-connected="false"] .offer { display: inline-flex; }
+  &[data-connected="false"]:hover .offer { filter: brightness(0.92); }
 }
 
 #stage {
