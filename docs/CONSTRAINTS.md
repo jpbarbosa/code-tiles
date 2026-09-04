@@ -58,6 +58,12 @@ by main, never tracked by the shell over the tiles; and devtools are opened DETA
 docked pane is part of the page and main sizes the tiles from a content area that docking does
 not change. **[checked]**
 
+**A `WebContentsView` composites transparently over the window's page.** Give it a zero-alpha
+`setBackgroundColor` and every pixel its page leaves unpainted is the shell's. That is what
+rounds a tile: the guest clips the workbench to a radius, and the corners it stops painting are
+the shell's ground, or its glow when the tile is focused. A view that paints its own corner is a
+square of opacity over that glow, and pinches the halo off at all four. **[checked]**
+
 **A gutter drag rests on AppKit sending the rest of a drag to the view that took the press.**
 The gutter is 8px of shell page and the tiles either side of it are native views that swallow
 every press inside their own rects, so a hit area wider than the gutter is not available. That is
@@ -189,6 +195,10 @@ preview), and the iframe builds its own `--vscode-*` block from the theme servic
 from the workbench DOM, so a variable rewritten outside is invisible in there twice over. The
 frames are same-origin in code-server, so a seam can reach them, deliberately, by walking the
 frame chain. *[inherited]*
+
+**The theme's `--vscode-*` variables are scoped to the workbench element.** They are written
+into a rule on `.monaco-workbench`, so `:root` and `body` read none of them: a rule on the
+document that wants a theme colour gets nothing, silently. **[checked]**
 
 **A webview paints a white canvas through whatever its page leaves uncovered.** The editor's own
 default styles make a webview's `body` transparent, and a frame whose `color-scheme` is `normal`

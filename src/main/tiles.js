@@ -84,6 +84,12 @@ export class Tiles {
       },
     });
 
+    // The corners the card seam rounds off are left unpainted by the window, so the view has to
+    // let them through: an opaque view is a square of colour over the glow the shell draws under
+    // it. What shows there is the shell's own ground, which is the colour a tile would have
+    // painted anyway - and the glow when the tile is focused.
+    view.setBackgroundColor('#00000000');
+
     // A reloaded document is back on the context it was CREATED with, since that one is an
     // argument rather than a message. Forgetting what was sent makes the next render say it again.
     view.webContents.on('did-finish-load', () => this.#contexts.delete(project.folder));

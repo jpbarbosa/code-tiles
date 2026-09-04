@@ -25,11 +25,13 @@ What the tree does today, what comes next, and what to check when the server is 
 - Your VS Code, mirrored: every desktop profile reproduced on the server, its extensions
   installed from Open VSX into one shared directory, and each tile opened on the profile your
   desktop already associates with that folder.
-- Ten seams, verified in a live window rather than from a screenshot:
+- Eleven seams, verified in a live window rather than from a screenshot:
   `dark` (the dark theme, auto-detect off, and the colour scheme of every document the window
   holds - web's default theme is the light one, and a webview that says nothing shows Chromium's
   white canvas through every pixel its own page leaves uncovered),
   `modern` (the editor's rounded design, so a tile's parts are cards on the shell colour),
+  `card` (the window clipped to the radius the shell's glow is already struck for, its corners
+  left unpainted over a transparent view, so what is in them is the shell's ground and its glow),
   `chrome` (title bar, status bar and the chat panel gone through the editor's own settings,
   no dead band),
   `trust` (restricted mode off, without which an extension that refuses untrusted workspaces -

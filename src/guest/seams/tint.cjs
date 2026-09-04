@@ -11,11 +11,19 @@ module.exports = {
   css: (context) => `
 .monaco-workbench {
   --ct-brand: oklch(0.62 0.15 ${context.hue});
-}
+  --ct-plate: color-mix(in oklab, var(--vscode-sideBar-background) 74%, var(--ct-brand));
 
-.monaco-workbench .part.sidebar .composite.title,
-.monaco-workbench .part.activitybar .menubar {
-  background-color: color-mix(in oklab, var(--vscode-sideBar-background) 74%, var(--ct-brand));
+  & .part.sidebar .composite.title {
+    background-color: var(--ct-plate);
+  }
+
+  /* The activity bar rounds its own right corners and clips to them, so a square plate reaching
+     that far loses a chamfer - and a plate is what this tint makes of the menubar, which nothing
+     paints in a stock window. One step in from the part's own radius clears the arc. */
+  & .part.activitybar .menubar {
+    background-color: var(--ct-plate);
+    border-radius: var(--vscode-cornerRadius-small, 4px);
+  }
 }
 ${context.focused ? `
 /* Focus is the ground: the gaps between this window's own parts take the hue while every part
