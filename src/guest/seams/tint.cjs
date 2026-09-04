@@ -1,5 +1,106 @@
 'use strict';
 
+const STYLE_ID = 'code-tiles-tint';
+
+// The tokens, said once and spent in two sheets: a frame shares no cascade with the document
+// holding it, so the workbench's block and a webview's own each have to declare them.
+const tokens = (hue) => `  --ct-brand: oklch(0.62 0.15 ${hue});
+  /* How much of the theme's own colour survives the hue, wherever the hue lands on a surface. */
+  --ct-wash: 74%;
+  /* The same hue over the whole of a part rather than over its chrome, at a quarter of the
+     strength: enough that a side bar reads as this project's, little enough that the plate
+     below still reads as a plate on top of it. */
+  --ct-veil: 93%;`;
+
+const veiled = (source) => `color-mix(in oklab, var(${source}) var(--ct-veil), var(--ct-brand))`;
+
+// Which of the theme's surfaces a webview is drawn over, named by the part it covers.
+const SURFACES = {
+  auxiliarybar: '--vscode-sideBar-background',
+  sidebar: '--vscode-sideBar-background',
+  panel: '--vscode-panel-background',
+  editor: '--vscode-editor-background',
+};
+
+// The ground stays exactly as the theme shipped it: the app paints its own strip and gutters that
+// colour, so a hue on it is a step at every tile edge - the focused window's ground is derived
+// from it in the block below instead.
+const GROUND = '--vscode-titleBar-activeBackground';
+
+// A webview is HOISTED out of the part it belongs to, so a tab switch neither reloads it nor
+// loses its state: the iframe sits in `.webview-overlay-content` under the workbench and
+// `closest('.part')` on it is null. What points back is anchor positioning - the holder names an
+// anchor and the part declares that name - so that is what is followed when `closest` finds none.
+function anchoredPart(frame) {
+  for (let node = frame; node; node = node.parentElement) {
+    const anchor = node.style && node.style.positionAnchor;
+    if (!anchor) continue;
+    const target = node.ownerDocument.querySelector(`[style*="anchor-name: ${anchor}"]`);
+    return (target && target.closest('.part')) || null;
+  }
+  return null;
+}
+
+// Up through frames because a webview's own document is two down, and the top document has no
+// frame at all, which is how it excludes itself.
+function surfaceFor(document) {
+  let frame = document.defaultView && document.defaultView.frameElement;
+  while (frame) {
+    const part = (frame.closest && frame.closest('.part')) || anchoredPart(frame);
+    if (part) {
+      const name = Object.keys(SURFACES).find((key) => part.classList.contains(key));
+      return name ? SURFACES[name] : null;
+    }
+    const view = frame.ownerDocument && frame.ownerDocument.defaultView;
+    frame = view && view.frameElement;
+  }
+  return null;
+}
+
+// The theme's own values, taken from the INLINE properties the editor writes on a webview's root
+// and never from the computed ones, which are this seam's own answer by the second sweep. A
+// document holding none of them is not a themed webview at all - the extension host's frame, the
+// wrapper around the content - and is left alone.
+//
+// EVERY background, not the three the workbench rewrites: out here a part's own panes read those
+// three and follow, but a webview's page resolves its names from the theme one by one - the chat
+// input is `--app-input-background: var(--vscode-input-background)` - so anything left out stays
+// the colour it was. Foregrounds and syntax tokens are not backgrounds and so are untouched, and
+// a semantic colour survives a 7% veil as itself.
+function rawsFrom(root) {
+  const raws = {};
+  for (let i = 0; i < root.style.length; i += 1) {
+    const name = root.style[i];
+    if (!name.startsWith('--vscode-') || !/background/i.test(name) || name === GROUND) continue;
+    const value = root.style.getPropertyValue(name).trim();
+    if (value) raws[name] = value;
+  }
+  return raws;
+}
+
+// The mix said against a literal rather than a variable, which is what lets it land on :root: a
+// custom property cannot reference itself on one element, and :root is where the editor writes
+// the theme and where an extension resolves its own names from it - the Claude panel reads the
+// page it paints as `--app-primary-background: var(--vscode-sideBar-background)` there, so a
+// rewrite one element down is inherited by nothing it uses.
+// !important because those properties are written INLINE, which no stylesheet outranks otherwise.
+function frameCss(hue, surface, raws) {
+  const mixed = (value) => `color-mix(in oklab, ${value} var(--ct-veil), var(--ct-brand))`;
+  const lines = Object.keys(raws).map((name) => `  ${name}: ${mixed(raws[name])} !important;`);
+  const canvas = raws[surface]
+    ? `\n  /* The frame's own canvas, which is the surface a webview showing nothing of its own
+     paints: the editor makes its body transparent. */
+  background-color: ${mixed(raws[surface])};`
+    : '';
+  return `
+:root {
+${tokens(hue)}
+${lines.join('\n')}
+${canvas}
+}
+`;
+}
+
 // The project's colour, worn by the parts and - when this window is the focused one - by the
 // ground its parts float on.
 //
@@ -10,13 +111,7 @@ module.exports = {
   name: 'tint',
   css: (context) => `
 .monaco-workbench {
-  --ct-brand: oklch(0.62 0.15 ${context.hue});
-  /* How much of the theme's own colour survives the hue, wherever the hue lands on a surface. */
-  --ct-wash: 74%;
-  /* The same hue over the whole of a part rather than over its chrome, at a quarter of the
-     strength: enough that a side bar reads as this project's, little enough that the plate
-     below still reads as a plate on top of it. */
-  --ct-veil: 93%;
+${tokens(context.hue)}
   --ct-plate: color-mix(in oklab, var(--vscode-sideBar-background) var(--ct-wash), var(--ct-brand));
 
   /* The surfaces, which the modern UI paints from the theme's own variables and with an
@@ -32,9 +127,9 @@ module.exports = {
   --ct-source-icon: var(--vscode-activityBar-foreground, var(--vscode-foreground));
 
   & > * {
-    --vscode-sideBar-background: color-mix(in oklab, var(--ct-source-sidebar) var(--ct-veil), var(--ct-brand));
-    --vscode-editor-background: color-mix(in oklab, var(--ct-source-editor) var(--ct-veil), var(--ct-brand));
-    --vscode-panel-background: color-mix(in oklab, var(--ct-source-panel) var(--ct-veil), var(--ct-brand));
+    --vscode-sideBar-background: ${veiled('--ct-source-sidebar')};
+    --vscode-editor-background: ${veiled('--ct-source-editor')};
+    --vscode-panel-background: ${veiled('--ct-source-panel')};
   }
 
   /* Every part writes its background INLINE, as a literal, from JS. The modern UI's own
@@ -133,4 +228,24 @@ ${context.focused ? `
   }
 }` : ''}
 `,
+  // The stylesheet stops at a frame, so the same tint is said again inside every webview. The
+  // element goes on documentElement rather than head: the editor's own applyStyles runs before a
+  // content document has a head, and it clears the INLINE properties there and nothing else.
+  init(api) {
+    api.eachDocument((document) => {
+      const root = document.documentElement;
+      if (!root) return;
+      const surface = surfaceFor(document);
+      const raws = rawsFrom(root);
+      if (!surface || !Object.keys(raws).length) return;
+      let element = document.getElementById(STYLE_ID);
+      if (!element) {
+        element = document.createElement('style');
+        element.id = STYLE_ID;
+      }
+      const css = frameCss(api.context.hue, surface, raws);
+      if (element.textContent !== css) element.textContent = css;
+      if (element.parentElement !== root) root.appendChild(element);
+    });
+  },
 };

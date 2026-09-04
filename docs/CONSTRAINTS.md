@@ -267,7 +267,33 @@ decides this - not `color-scheme` on the workbench document, not on the iframe e
 view's `setBackgroundColor`, none of which propagate in - so the `dark` seam walks to each
 document and sets it there. Reaching a frame a tick late is a visible blink rather than a late
 correction: a new one measured 997 ms of white waiting for a 1 s sweep, and 6 ms once its append
-and its load announced it. **[checked]**
+and its load announced it. That canvas is also the whole SURFACE a panel shows, not a fallback
+behind one: neither the editor nor the Claude panel's own page paints a background on `body` or
+its root, so a webview has to be given the theme's colour rather than only its scheme. **[checked]**
+
+**A webview is HOISTED out of the part it belongs to**, so a tab switch neither reloads it nor
+loses its state: the iframe sits in `.webview-overlay-content` two levels under `.monaco-workbench`
+and `closest('.part')` on it is null. What points back is CSS anchor positioning - its holder
+carries `position-anchor: --overlay-anchor-<uuid>` and the part declares that name in an inline
+`anchor-name` - which is how the `tint` seam knows which surface a frame is drawn over. **[checked]**
+
+**A webview's `--vscode-*` are written INLINE on its `documentElement`**, cleared and rewritten
+there on every theme change, and an extension resolves its own names from them at `:root` - the
+Claude panel's page is `--app-primary-background: var(--vscode-sideBar-background)`, declared on
+`html`. So a rewrite one element down is inherited by nothing that matters, and the tint has to
+land on `:root` itself with `!important`. A property cannot reference itself on one element, so
+the mix is said against the inline value read back off the root, never against `var()` of the
+name being rewritten - which is also what stops the second sweep tinting its own answer.
+**[checked]**
+
+**A webview's page resolves the theme one name at a time**, so the three backgrounds the
+workbench rewrites are not enough in there: a part's panes read those three and follow, while the
+chat input is `--app-input-background: var(--vscode-input-background)` and stays put. Every inline
+`--vscode-*background*` is tinted instead, 277 of them in Dark 2026, minus the ground. What that
+still cannot do is SEPARATE two surfaces a theme shipped equal - `input.background` and
+`sideBar.background` are both `#191a1b` here, and `#222222` in Monokai Pro - because one veil over
+both keeps them equal. A surface that has to read as lifted has to be painted, not tinted.
+**[checked]**
 
 **The editor's own frame moves between versions.** The inset it floats its parts in was 4px on
 every side in one release and flush left and top with 8px on the right in the next. Nothing
