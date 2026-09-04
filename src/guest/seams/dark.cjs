@@ -4,12 +4,19 @@
 // the LIGHT one - the default is picked by isWeb, not by the OS - so a window told nothing at
 // all comes up white. Auto-detect goes off with it, or the browser's colour scheme wins it back.
 //
+// The theme is a DEFAULT and the auto-detect a setting, which is the difference between the two
+// halves: only the second is a web-only default being repaired. A desktop that names a theme
+// keeps it, and every theme-scoped `workbench.colorCustomizations` block keeps it too - those
+// apply under their own theme and under no other, so pinning one here silently emptied them.
+//
 // `color-scheme` is the document's own half, and nothing in the workbench sets it: without it
 // the page a tile shows before the theme has painted is Chromium's white canvas.
 module.exports = {
   name: 'dark',
-  settings: {
+  defaults: {
     'workbench.colorTheme': 'Dark 2026',
+  },
+  settings: {
     'window.autoDetectColorScheme': false,
   },
   css: () => `

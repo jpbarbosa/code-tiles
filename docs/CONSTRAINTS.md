@@ -43,8 +43,14 @@ says what.
 it cares about (`MutationObserver`, a workbench event) and reacts once. A loop with a pass
 count is a design that could not say what it was waiting for.
 
-**Derive rather than store.** Name from the folder, hue from the path, order from one list.
-Anything stored twice will disagree, and every stored field is a migration you owe yourself.
+**A seam proposes a preference, it does not take one.** A setting the app's shape depends on is
+`settings`; a setting that only repairs a web-only default is `defaults`, which loses to your own
+file. Pinning `workbench.colorTheme` cost more than the theme: a theme-scoped
+`workbench.colorCustomizations` block applies under its own theme and under no other, so every
+colour tuned for the theme you actually use went silently dead with it.
+
+**Derive rather than store.** Name from the folder, hue from the folder's favicon, order from one
+list. Anything stored twice will disagree, and every stored field is a migration you owe yourself.
 
 **A workaround dies with its cause.** Every seam that exists because of a code-server bug
 names the version it was written against. `docs/ROADMAP.md` carries the bump checklist; a
@@ -180,6 +186,22 @@ the title bar and the login page. **[checked]**
 so patching that file changes nothing for a window whose partition already fetched it, and the
 patch would look like it had failed. The start that applies one clears the partition's HTTP cache,
 and only that: the login and every window's layout live in the same partition's storage. **[checked]**
+
+**The modern UI paints a part from the theme's own variable, with an `!important` of its own.**
+`.monaco-workbench.floating-panels .part.sidebar` - and the same for the secondary side bar and
+the panel - is painted `var(--vscode-sideBar-background) !important` by the editor's own sheet, so
+tinting a part is that variable rewritten and no selector at all, and every pane header, section
+header and list row inside follows because they read the same names. Three things are outside it.
+The editor part, whose `.content` and `.editor-container` carry an inline literal written from JS
+that only `!important` outranks. The activity bar, which is SHELL rather than a card: it wears
+`--modern-ui-shell-background`, and a theme with an `activityBar.background` of its own makes it
+opaque and drops it out of that ground, leaving a black column beside tinted parts - restore it by
+painting the ground, never by tinting the part, because the veil is 7% of a hue and invisible over
+the near-blacks a theme puts there. And the terminal, which no CSS reaches - xterm paints an opaque
+canvas from colours it took at construction, so a tinted panel surrounds a terminal that stays the
+theme's own. Rewriting one of those variables also has to CAPTURE it on an ancestor first: a custom
+property cannot reference itself on one element, that is a cycle, and it computes to nothing.
+**[checked]**
 
 **The workbench says which parts it is showing, on itself.** `nosidebar`, `nopanel` and
 `noauxiliarybar` are classes on the workbench container, so a seam reads the layout from one

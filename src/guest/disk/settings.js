@@ -9,15 +9,24 @@ import seams from '../manifest-settings.js';
 //
 // A profile does not inherit the default profile's settings - it reads its own file or gets an
 // empty model - so every profile the app mirrors is merged separately, over whichever desktop
-// file that profile reads. The seams win the merge in all of them.
+// file that profile reads. A seam's `settings` win that merge in all of them; its `defaults`
+// lose to the file.
 export function seamSettings() {
   return Object.assign({}, ...seams.map((seam) => seam.settings || {}));
 }
 
-// The text a settings file should hold: the source file's own settings with the seams' on top.
+// A seam's `defaults` are what it wants the editor to do when you have said nothing, and they
+// lose to your own file rather than winning over it. The distinction is the whole difference
+// between a seam that repairs a web-only default and one that takes a preference off you.
+export function seamDefaults() {
+  return Object.assign({}, ...seams.map((seam) => seam.defaults || {}));
+}
+
+// The text a settings file should hold: your own settings between the two seam layers.
 // Returns text rather than writing, so a caller can skip a write that changes nothing.
 export function settingsFrom(source) {
-  return `${JSON.stringify({ ...read(source), ...seamSettings() }, null, 2)}\n`;
+  const merged = { ...seamDefaults(), ...read(source), ...seamSettings() };
+  return `${JSON.stringify(merged, null, 2)}\n`;
 }
 
 export function writeSettings(file, source = file) {

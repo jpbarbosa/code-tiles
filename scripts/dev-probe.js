@@ -143,6 +143,25 @@ const READ = `(() => {
       return fill ? getComputedStyle(fill).backgroundColor : null;
     })(),
     shellGround: workbench ? getComputedStyle(workbench).getPropertyValue('--modern-ui-shell-background').trim() : null,
+    // Which theme actually landed, now that the dark seam only DEFAULTS one. The terminal is
+    // read as a variable rather than off xterm, which paints from JS: the variable is the half a
+    // seam can answer for, and a theme-scoped colorCustomizations block shows up in it.
+    terminalBackground: workbench ? getComputedStyle(workbench).getPropertyValue('--vscode-terminal-background').trim() : null,
+    // The tint, read where it is SPENT: the workbench holds the theme's own values and the
+    // rewrite lands one level down, so a pair here equal to editorBackground above is a tint
+    // that stopped reaching whatever theme is now in front of it.
+    tintedBackgrounds: workbench?.firstElementChild ? (() => {
+      const style = getComputedStyle(workbench.firstElementChild);
+      return ['--vscode-editor-background', '--vscode-panel-background', '--vscode-sideBar-background']
+        .map((name) => style.getPropertyValue(name).trim());
+    })() : null,
+    // What each part actually PAINTS against the literal the workbench wrote inline on it. Equal
+    // is a part the tint never reached, and the activity bar is the one that reads as an untinted
+    // column beside a tinted side bar in a theme that colours the two differently.
+    partBackgrounds: Object.fromEntries([...document.querySelectorAll('.part')].map((part) => {
+      const name = [...part.classList].filter((className) => className !== 'part').join('.') || 'part';
+      return [name, [getComputedStyle(part).backgroundColor, part.style.backgroundColor || null]];
+    })),
     // The welcome seam: the page's own two columns, Start and Recent, with no walkthrough list
     // under one and no ad above the other. Null in a window whose welcome tab is closed.
     welcome: (() => {

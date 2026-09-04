@@ -31,9 +31,10 @@ What the tree does today, what comes next, and what to check when the server is 
   installed from Open VSX into one shared directory, and each tile opened on the profile your
   desktop already associates with that folder.
 - Fourteen seams, verified in a live window rather than from a screenshot:
-  `dark` (the dark theme, auto-detect off, and the colour scheme of every document the window
-  holds - web's default theme is the light one, and a webview that says nothing shows Chromium's
-  white canvas through every pixel its own page leaves uncovered),
+  `dark` (your desktop's theme, a dark one only as the fallback under it, auto-detect off, and
+  the colour scheme of every document the window holds - web's default theme is the light one,
+  and a webview that says nothing shows Chromium's white canvas through every pixel its own page
+  leaves uncovered),
   `modern` (the editor's rounded design, so a tile's parts are cards on the shell colour),
   `card` (the window clipped to the radius the shell's glow is already struck for, its corners
   left unpainted over a transparent view, so what is in them is the shell's ground and its glow),
@@ -46,8 +47,10 @@ What the tree does today, what comes next, and what to check when the server is 
   `trust` (restricted mode off, without which an extension that refuses untrusted workspaces -
   Claude Code - is simply absent),
   `ground` (the theme's shell colour reported back so the app's ground matches it),
-  `tint` (the project's hue mixed into the parts, into every active tab, and into the focused
-  window's ground),
+  `tint` (the project's hue mixed into the parts' own surfaces and their chrome, into every
+  active tab, and into the focused window's ground - which the activity bar wears too, being
+  shell rather than a part; the terminal is excepted, its canvas taking its colours at
+  construction and letting no stylesheet in),
   `identity` (the project's name on the side bar's title row, and its favicon in place of the
   hamburger's glyph at the top of the activity bar - the button underneath is still the editor's,
   so it still opens the menu),

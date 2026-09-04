@@ -52,6 +52,7 @@ optional, and most seams have one.
 ```js
 export default {
   name: 'identity',
+  defaults: { 'workbench.colorTheme': 'Dark 2026' },    // proposed to the editor; your file wins
   settings: { 'workbench.statusBar.visible': false },   // written to disk before the server starts
   patch: { file, marker, find, replace },               // the server's own bundle, same moment
   css: (ctx) => `...`,                                  // one stylesheet, appended last
@@ -63,6 +64,9 @@ export default {
   you want, take the switch: it reflows the layout properly and it survives version bumps.
   Seams collect their settings in the manifest and `src/guest/disk/settings.js` merges them
   into the server's `settings.json` once, before it starts.
+- **`defaults`** is the same list on the other side of your own file: `defaults`, then your
+  settings, then `settings`. A seam repairing a web-only default says it here, and your desktop
+  keeps the preference. Anything the app's own shape depends on stays in `settings`.
 - **`patch`** is the last door, and there are two. What a seam needs the server's own BUNDLE to
   do, for the case where the editor has the thing and offers no way in: it is matched by shape,
   applied by `src/guest/disk/patch.js` before the server starts, and refused rather than
@@ -112,8 +116,9 @@ The ordering is the whole thing, and each step is load-bearing:
 
 1. **Install and prune before the server is spawned.** It scans the extensions directory as it
    boots and will not notice an arrival until a window reloads.
-2. **Write the mirror**, merging the seams' settings over each profile's own. A profile inherits
-   nothing from the default one, so this is the only copy of them a tile will read.
+2. **Write the mirror**, layering each profile's own settings between the seams' `defaults` and
+   their `settings`. A profile inherits nothing from the default one, so this is the only copy
+   of them a tile will read.
 3. **Start the server**, then **seed the registry** on its origin - before the first tile, because
    a tile that names an unregistered profile renders blank. If the seed throws, every tile falls
    back to the default profile rather than to a broken one.
@@ -121,7 +126,7 @@ The ordering is the whole thing, and each step is load-bearing:
 A tile then names its profile in the URL (`?folder=…&payload=[["profile","Laravel"]]`), so the
 app says which profile a window is on every load rather than depending on an association having
 survived somewhere. Which profile a folder gets is derived from your desktop's own association,
-the same way a project's name and hue are derived from its path.
+the same way a project's name is derived from its path and its hue from its favicon.
 
 Two deliberate one-way streets. Files are **copied**, never linked back: a window may save
 whatever it likes into a mirrored profile and the worst outcome is that the next start
@@ -166,8 +171,9 @@ One store, `src/main/store.js`, one file, atomic writes, a `version` field:
 ```
 
 What is derivable is not stored. A project's **name** is its folder's basename and its **hue**
-is a hash of its path, so neither can drift out of step with the folder, and neither needs a
-migration when the rule changes.
+is the average of the colourful pixels in its favicon - a hash of its path when there is no
+favicon, none Electron can decode (a true ICO, an SVG), or no colour in it. So neither can drift
+out of step with the folder, and neither needs a migration when the rule changes.
 
 ## IPC
 

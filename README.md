@@ -54,10 +54,12 @@ chip and the keyboard, and focus is shown by **colour on the ground, never by a 
 
 ## Identity
 
-Every project carries its own hue, derived from its path, so it is stable across restarts and
-never stored. The hue appears in six places and nowhere else: the chip, the focused tile's
-ground and glow, the sidebar title row inside the window, the branch pills under its file tree,
-the ring around the identity badge, and the ACTIVE tab wherever there is one - a file, a Claude
+Every project carries its own hue, sampled from the colours its own favicon is mostly made of
+and hashed from its path when there is no favicon to take one from - derived either way, so it
+is stable across restarts and never stored. The hue appears in six places and nowhere else: the
+chip, the focused tile's ground and glow, the sidebar title row inside the window, the branch
+pills under its file tree, the ring around the identity badge, and the ACTIVE tab wherever
+there is one - a file, a Claude
 session, a terminal, the side bar's own view switcher. An inactive tab keeps the theme's colour,
 so in every row the hue marks the one thing you are working in.
 
