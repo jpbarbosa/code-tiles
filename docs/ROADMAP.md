@@ -75,7 +75,7 @@ What the tree does today, what comes next, and what to check when the server is 
   open project that holds it. Focusing a project clears a finished turn; a question is only
   cleared by answering it. Drawn twice: the ring on each window's own badge, and the dot on the
   chip in the strip, which is where you see a project you are not looking at.
-- Nineteen seams, verified in a live window rather than from a screenshot:
+- Twenty seams, verified in a live window rather than from a screenshot:
   `dark` (your desktop's theme, a dark one only as the fallback under it, auto-detect off, and
   the colour scheme of every document the window holds - web's default theme is the light one,
   and a webview that says nothing shows Chromium's white canvas through every pixel its own page
@@ -92,6 +92,10 @@ What the tree does today, what comes next, and what to check when the server is 
   their hosted product and without the walkthrough list - the first two are the server's own
   switches, taken at the spawn, and the third is a patch that hands the page no walkthroughs so
   the editor's own empty state moves Recent into the column they had),
+  `secrets` (an extension's secret surviving another tile writing one of its own - the server
+  keeps every one of them in a single localStorage blob, read at load and rewritten whole, so on
+  one origin with several windows the last writer wins with a stale snapshot; the write is taught
+  to re-read inside a per-window queue, and a storage listener keeps the read fresh with it),
   `trust` (restricted mode off, without which an extension that refuses untrusted workspaces -
   Claude Code - is simply absent),
   `ground` (the theme's shell colour reported back so the app's ground matches it),

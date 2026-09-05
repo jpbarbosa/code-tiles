@@ -10,6 +10,7 @@ module.exports = [
   require('./seams/frame.cjs'),
   require('./seams/chrome.cjs'),
   require('./seams/welcome.cjs'),
+  require('./seams/secrets.cjs'),
   require('./seams/trust.cjs'),
   require('./seams/ground.cjs'),
   require('./seams/tint.cjs'),

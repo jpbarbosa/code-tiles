@@ -31,6 +31,15 @@ const SHAPES = {
   'ct:webview-dark': '<html lang="en" style="width: 100%; height: 100%;">',
   'ct:frame-share': 'var FLOATING_MARGIN=4,NO_MARGIN=0;'
     + 'function isHorizontal(position){return position===2||position===3}',
+  'ct:secret-merge': 'class LocalStorageSecretStorageProvider{'
+    + 'async get(key){return(await this.secretsPromise)[key]}'
+    + 'async set(key,value){let all=await this.secretsPromise;'
+    + 'all[key]=value,this.secretsPromise=Promise.resolve(all),this.save()}'
+    + 'async delete(key){let all=await this.secretsPromise;'
+    + 'delete all[key],this.secretsPromise=Promise.resolve(all),this.save()}}',
+  'ct:secret-fresh': 'class LocalStorageSecretStorageProvider{'
+    + 'constructor(crypto){this.crypto=crypto;this.storageKey="secrets.provider";'
+    + 'this.type="persisted";this.secretsPromise=this.load()}}',
   'ct:no-walkthroughs': 'class GettingStartedPage extends EditorPane{'
     + 'buildGettingStartedWalkthroughsList(){'
     + 'const list=this.gettingStartedList.value=new Index({klass:"getting-started",limit:5});'
