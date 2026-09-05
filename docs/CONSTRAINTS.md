@@ -420,3 +420,14 @@ sentence and exactly one is the record**, the rest being a conversation about th
 Anything that resumes the session writes a newer marker, so reading it un-latches on its own. The
 other half of the same file: a hook's stdout is fed BACK to Claude on some events, so a hook that
 prints anything is a hook that talks. **[checked]**
+
+**A page paints itself dark; `color-scheme` is what tells Chromium so.** The shell's ground is
+hand-painted `--bg`, and that says nothing to the browser: without `color-scheme: dark` the
+document is a LIGHT one, and `-webkit-focus-ring-color` resolves to `rgb(229, 151, 0)` rather
+than `rgb(153, 200, 255)`. So the first keyboard focus in the strip put a white-and-orange ring
+round a segment - the UA's own two-tone ring, in a colour nothing in the tree owns. `:focus-visible`
+is why it looks intermittent: a click focuses a button without the ring, and the ring arrives on
+the next key pressed while that button still holds focus. The declaration and a mark of the app's
+own are both in `shell.css`; `picker.html` and `usage.html` always had the declaration. **[checked]**
+- measured by reading the colour out of a light and a dark document, and by forcing the pseudo-class
+over CDP and dumping the pixels: `#e5972d` + `#ffffff` before, neither after.

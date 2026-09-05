@@ -2,6 +2,10 @@
    tile's edge never shows a step. --bg is the dark theme's own ground, held until a seam
    reports the running theme's back and main hands it over. */
 :root {
+  /* The page is dark by hand, and Chromium reads its ring and native control colours from this
+     rather than from what we paint: a light document rings a focused button in ORANGE. */
+  color-scheme: dark;
+
   --bg: #191a1b;
   --ink: #d6d6d8;
   --ink-quiet: #8b8b90;
@@ -41,6 +45,13 @@ html, body {
   gap: 8px;
   padding-right: 10px;
   -webkit-app-region: drag;
+
+  /* Every control here is a bare button, so keyboard focus is the browser's ring or nothing. The
+     mark is inset because #chips clips: an outward ring vanishes at the row's edge. */
+  & button:focus-visible {
+    outline: 1px solid rgb(255 255 255 / 0.28);
+    outline-offset: -1px;
+  }
 }
 
 #strip button,
@@ -450,4 +461,9 @@ body[data-resizing] #glow { transition: none; }
   color: #fff;
   font-size: 12px;
   cursor: default;
+
+  &:focus-visible {
+    outline: 1px solid rgb(255 255 255 / 0.28);
+    outline-offset: -1px;
+  }
 }
