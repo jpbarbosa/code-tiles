@@ -19,6 +19,7 @@ import { seedProfileRegistry } from './registry.js';
 import { PARTITION, claudePaths, desktopPaths, resolveCodeServer, userPaths } from './paths.js';
 import { patchExtensions } from '../guest/disk/extension.js';
 import { patchServer } from '../guest/disk/patch.js';
+import { writeKeybindings } from '../guest/disk/keybindings.js';
 import { writeSettings } from '../guest/disk/settings.js';
 
 if (!app.requestSingleInstanceLock()) app.quit();
@@ -56,6 +57,8 @@ app.whenReady().then(async () => {
   // already the shape the product wants. Written every start: the manifest is the source. The
   // mirror writes the same seams into each profile, which does not inherit this file.
   writeSettings(paths.settings);
+  // The same idea for the chords the app needs back: a tile on no mirrored profile reads this one.
+  writeKeybindings(paths.keybindings);
   // The rarer half of the same idea: what a seam needs the server's own bundle to do. Before the
   // spawn, so no window ever loads the unpatched one.
   const patched = patchServer(bin);

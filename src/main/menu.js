@@ -32,6 +32,17 @@ export function installMenu(desk) {
         { label: 'Single Project', accelerator: 'Control+Command+E', click: () => desk.setMode('single') },
         { label: 'Reset Tile Sizes', accelerator: 'Control+Command+0', click: () => desk.resetGrid() },
         { type: 'separator' },
+        // Not the zoomIn/zoomOut/resetZoom roles: a role zooms whichever webContents holds the
+        // keyboard, which is the SHELL whenever a gutter or the strip does, and a zoomed shell
+        // draws its gutters in CSS pixels that main's rects no longer agree with. Zoom In twice
+        // because `Plus` is the shifted key and the unshifted press is the one people make.
+        { label: 'Zoom In', accelerator: 'CommandOrControl+Plus', click: () => desk.zoom(1) },
+        { label: 'Zoom In', accelerator: 'CommandOrControl+=', visible: false, click: () => desk.zoom(1) },
+        { label: 'Zoom Out', accelerator: 'CommandOrControl+-', click: () => desk.zoom(-1) },
+        // Cmd+0 only because the `zoom` seam takes it back off the editor, which binds it to
+        // Focus into Primary Side Bar and would swallow the key before the menu ever saw it.
+        { label: 'Actual Size', accelerator: 'CommandOrControl+0', click: () => desk.zoom(0) },
+        { type: 'separator' },
         { label: 'Reload Shell', accelerator: 'Shift+Command+R', click: () => desk.reloadShell() },
         // Not the toggleDevTools role: it opens the SHELL's, docked, which is a pane under the
         // grid. These open detached, and the first one opens the window you are working in.

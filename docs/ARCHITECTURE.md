@@ -46,7 +46,7 @@ own agent session.
 
 ## The seam contract
 
-A seam is one file in `src/guest/seams/` with a name and up to three parts. All three are
+A seam is one file in `src/guest/seams/` with a name and up to a handful of parts. All are
 optional, and most seams have one.
 
 ```js
@@ -54,6 +54,7 @@ export default {
   name: 'identity',
   defaults: { 'workbench.colorTheme': 'Dark 2026' },    // proposed to the editor; your file wins
   settings: { 'workbench.statusBar.visible': false },   // written to disk before the server starts
+  keybindings: [{ key, command: '-some.command' }],     // a chord given back, same moment
   patch: { file, marker, find, replace },               // the server's own bundle, same moment
   extension: { id, file, marker, apply },               // an extension's bundle, same moment
   css: (ctx) => `...`,                                  // one stylesheet, appended last
@@ -68,6 +69,10 @@ export default {
 - **`defaults`** is the same list on the other side of your own file: `defaults`, then your
   settings, then `settings`. A seam repairing a web-only default says it here, and your desktop
   keeps the preference. Anything the app's own shape depends on stays in `settings`.
+- **`keybindings`** is for a chord the app's own menu needs and the editor holds. A menu
+  accelerator loses to a chord the workbench binds, so the way to take one is to give it back:
+  the entries land after your own in every profile's `keybindings.json`, and VS Code resolves the
+  last matching rule. Removals (`-command`) reach default bindings only, which is what these are.
 - **`patch`** is the last door, and there are two. What a seam needs the server's own BUNDLE to
   do, for the case where the editor has the thing and offers no way in: it is matched by shape,
   applied by `src/guest/disk/patch.js` before the server starts, and refused rather than
@@ -225,7 +230,7 @@ src/shell/preload.cjs  contextBridge: window.ct
 src/guest/manifest.js  the seam list. Adding a seam means adding a line here.
 src/guest/runtime.cjs  the preload: loads seams, owns the style element, owns the context
 src/guest/seams/*.js   one seam per file
-src/guest/disk/        the seams' parts that land before the server starts: their settings, merged
-                       into its file and every profile's, and the patches to the server's own
-                       bundle and to an extension's
+src/guest/disk/        the seams' parts that land before the server starts: their settings and
+                       keybindings, merged into its files and every profile's, and the patches to
+                       the server's own bundle and to an extension's
 ```

@@ -33,6 +33,7 @@ export function userPaths() {
     state: path.join(base, 'state.json'),
     serverData: path.join(base, 'server'),
     settings: path.join(base, 'server', 'User', 'settings.json'),
+    keybindings: path.join(base, 'server', 'User', 'keybindings.json'),
     profiles: path.join(base, 'server', 'User', 'profiles'),
     extensions: path.join(base, 'extensions'),
     // One marker per live Claude session, written by the hook script beside it. Both are the

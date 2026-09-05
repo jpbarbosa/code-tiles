@@ -20,4 +20,5 @@ module.exports = [
   require('./seams/terminals.cjs'),
   require('./seams/layout.cjs'),
   require('./seams/focus.cjs'),
+  require('./seams/zoom.cjs'),
 ];

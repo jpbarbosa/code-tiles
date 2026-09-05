@@ -38,7 +38,9 @@ test('every seam renders its CSS for a focused and an unfocused window', () => {
 });
 
 test('a seam declares only the parts a seam has', () => {
-  const allowed = new Set(['name', 'defaults', 'settings', 'patch', 'extension', 'css', 'init']);
+  const allowed = new Set([
+    'name', 'defaults', 'settings', 'keybindings', 'patch', 'extension', 'css', 'init',
+  ]);
   for (const seam of seams) {
     const extra = Object.keys(seam).filter((key) => !allowed.has(key));
     assert.deepEqual(extra, [], `${seam.name} declares ${extra.join(', ')}`);

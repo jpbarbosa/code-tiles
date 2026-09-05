@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { keybindingsFrom } from '../guest/disk/keybindings.js';
 import { settingsFrom } from '../guest/disk/settings.js';
 
 // The desktop's profiles, reproduced on the server's filesystem. code-server is a Code-OSS
@@ -33,9 +34,10 @@ export class ProfileMirror {
       // default profile's settings, so this is the only copy of the seams the window will see.
       writeIfChanged(path.join(dir, 'settings.json'), settingsFrom(profile.sources.settings));
 
-      if (profile.sources.keybindings) {
-        writeIfChanged(path.join(dir, 'keybindings.json'), read(profile.sources.keybindings));
-      }
+      // Also always: the seams' chords have to be in every profile, and a profile with no
+      // desktop file behind it still needs the one the app's own menu is waiting on.
+      writeIfChanged(path.join(dir, 'keybindings.json'), keybindingsFrom(profile.sources.keybindings));
+
       if (profile.sources.snippets) copyDir(profile.sources.snippets, path.join(dir, 'snippets'));
 
       writeIfChanged(path.join(dir, 'extensions.json'), manifestFor(profile, entries));
@@ -110,8 +112,4 @@ function writeIfChanged(file, content) {
 
 function copyDir(from, to) {
   try { fs.cpSync(from, to, { recursive: true, force: true }); } catch { /* nothing to copy */ }
-}
-
-function read(file) {
-  try { return fs.readFileSync(file, 'utf8'); } catch { return null; }
 }

@@ -2,6 +2,11 @@ import { WebContentsView, shell } from 'electron';
 
 import { PARTITION, files } from './paths.js';
 
+// Half a level per press, as every browser's zoom steps, and a ceiling either side of actual
+// size: Chromium clamps neither end, so a held key reaches 3834%.
+const ZOOM_STEP = 0.5;
+const ZOOM_LIMIT = 8;
+
 // The views, and the only place that creates, moves or destroys one. Callers hand it the whole
 // desired state and it reconciles; there is no create-then-place-then-focus sequence to get
 // wrong in three different callers.
@@ -37,6 +42,20 @@ export class Tiles {
 
   focus(folder) {
     this.#views.get(folder)?.webContents.focus();
+  }
+
+  // Every tile at once, and a step of 0 is back to actual size. Chromium keeps zoom per HOST and
+  // every tile is a window of the one server, so a project opened later comes up already at it
+  // and the partition remembers it across launches - there is no level to store here. The shell
+  // is a file:// page and stays put, which is what keeps its gutters over main's rects.
+  zoom(step) {
+    const contents = [...this.#views.values()]
+      .map((view) => view.webContents)
+      .filter((webContents) => !webContents.isDestroyed());
+    if (!contents.length) return;
+    const stepped = contents[0].getZoomLevel() + step * ZOOM_STEP;
+    const level = step === 0 ? 0 : Math.max(-ZOOM_LIMIT, Math.min(ZOOM_LIMIT, stepped));
+    for (const webContents of contents) webContents.setZoomLevel(level);
   }
 
   // The one thing a caller may take out of a view, and only to point devtools at it.

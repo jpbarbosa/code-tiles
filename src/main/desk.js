@@ -173,6 +173,12 @@ export class Desk {
     this.#window.webContents.reload();
   }
 
+  // Every window at once rather than the one you are in: the tiles are the app's text, and one
+  // tile larger than the rest is a thing nobody asked for.
+  zoom(step) {
+    this.#tiles.zoom(step);
+  }
+
   setMode(mode) {
     this.#projects.mode = mode;
     this.render();

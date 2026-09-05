@@ -224,7 +224,19 @@ key first and stops it, so the menu item never fires: Ctrl+Cmd+I opened Chat rat
 devtools, which is why devtools now sit on Alt+Cmd+I. Ctrl+Cmd is not a free family - the editor
 also holds Ctrl+Cmd+1 and Ctrl+Cmd+9 on macOS. Check a chord in the bundle before taking it: it
 is stored as a sum, `mac:{primary:N}` with CtrlCmd 2048, Shift 1024, Alt 512, WinCtrl 256,
-KeyA 31 (so KeyI 39) and Digit0 21. **[checked]**
+KeyA 31 (so KeyI 39) and Digit0 21. A chord worth more than the workaround is taken back rather
+than worked around: a seam's `keybindings` write `-command` into every profile's file, which the
+web build honours for DEFAULT bindings, and the menu then sees the key. That is how Actual Size
+holds Cmd+0, which the editor binds to Focus into Primary Side Bar. **[checked]**
+
+**Chromium keeps a zoom level per HOST, and every tile is one host.** Setting it on any tile
+sets it on every other, and a project opened later comes up already at it, so the app zooms as one
+thing and holds no level of its own - `webContents.getZoomLevel()` on any view is the answer. A
+`persist:` partition writes it to `per_host_zoom_levels` in its `Preferences`, keyed by HOST with
+no port, so it also survives a restart and a server that came up on another port.
+Two things follow: the shell is a `file://` origin and does not move, which is what keeps its
+gutters and glow over the rects main placed the tiles from; and nothing clamps either end, so a
+`Tiles.zoom` without a ceiling reaches 3834% on a held key. **[checked]**
 
 **The terminal `<select>` is rebuilt on every change, including which terminal is ACTIVE.** Which
 one is active is a `selectedIndex` write that mutates nothing, but the editor re-renders the
