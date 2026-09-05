@@ -35,11 +35,20 @@ export function installIpc({ desk, usage, popover, picker }) {
     'grid:resize': ({ axis, index, position }) => desk.resizeGrid({ axis, index, position }),
     'grid:reset': ({ axis }) => desk.resetGrid(axis),
     'project:focus': ({ folder }) => desk.focus(folder),
-    'project:close': ({ folder }) => desk.close(folder),
+    // The strip names a project; a window closing itself is the sender and says nothing.
+    'project:close': ({ folder }, sender) => desk.close(folder || sender),
+    // The grid's gesture, which starts on a window's own grip: the seam reports the press and the
+    // release, and main follows the cursor in between. Esc in that window abandons it.
+    'project:drag': (_payload, folder) => desk.startDrag(folder),
+    'project:drop': ({ cancel }) => desk.endDrag(Boolean(cancel)),
     'project:forget': ({ folder }) => { projects.forget(folder); desk.render(); },
     'project:open': ({ folder }) => desk.open(folder),
+    // The strip's chip drag, one insertion per chip it passes. The grid's swap has no row here:
+    // that gesture is held by main from the press to the release, so it moves the projects itself.
     'project:move': ({ folder, index }) => { projects.move(folder, index); desk.render(); },
-    'project:swap': ({ a, b }) => { projects.swap(a, b); desk.render(); },
+    // That gesture abandoned: the open order as it was when the press began, which the strip keeps
+    // because the strip is what reordered.
+    'project:restore': ({ folders }) => { projects.restore(folders); desk.render(); },
     // The picker, which is a window of its own for the reason the usage panel is. Nothing to
     // pick from is not a screen worth showing, so an empty list goes straight to the dialog.
     'project:pick': () => (rows().length ? picker.toggle() : browse()),

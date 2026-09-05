@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { hueFor } from './hue.js';
 import { iconFor } from './icon.js';
+import { arranged, inserted, swapped } from './order.js';
 
 // A project IS its folder. No generated id, no stored name, no stored colour: everything a
 // project has is either the path or derived from it, so nothing can fall out of step with the
@@ -120,24 +121,28 @@ export class Projects {
     this.#write(this.#entries().filter((entry) => entry.folder !== folder));
   }
 
-  // Single view's gesture: the dragged project lands at an index and the rest shift along.
+  // The strip's gesture, the grid's, and either of them abandoned. What each one means is in
+  // src/main/order.js, with nothing around it; what this list adds is that an order is written
+  // once and only ever for the open slots.
   move(folder, index) {
-    const entries = this.#entries();
-    const from = entries.findIndex((entry) => entry.folder === folder);
-    if (from < 0) return;
-    const [entry] = entries.splice(from, 1);
-    entries.splice(Math.max(0, Math.min(entries.length, index)), 0, entry);
-    this.#write(entries);
+    this.#arrange(inserted(this.#openFolders(), folder, index));
   }
 
-  // The grid's gesture: two tiles trade slots and nothing else moves.
   swap(a, b) {
-    const entries = this.#entries();
-    const i = entries.findIndex((entry) => entry.folder === a);
-    const j = entries.findIndex((entry) => entry.folder === b);
-    if (i < 0 || j < 0) return;
-    [entries[i], entries[j]] = [entries[j], entries[i]];
-    this.#write(entries);
+    this.#arrange(swapped(this.#openFolders(), a, b));
+  }
+
+  // A gesture abandoned: the open order as it was when it started.
+  restore(folders) {
+    this.#arrange(folders);
+  }
+
+  #openFolders() {
+    return this.#entries().filter((entry) => entry.open).map((entry) => entry.folder);
+  }
+
+  #arrange(folders) {
+    this.#write(arranged(this.#entries(), folders));
   }
 
   #entries() {

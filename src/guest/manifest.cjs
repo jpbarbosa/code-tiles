@@ -17,6 +17,7 @@ module.exports = [
   require('./seams/chat-icon.cjs'),
   require('./seams/branch.cjs'),
   require('./seams/maximize.cjs'),
+  require('./seams/close.cjs'),
   require('./seams/terminals.cjs'),
   require('./seams/layout.cjs'),
   require('./seams/focus.cjs'),

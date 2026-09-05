@@ -10,8 +10,9 @@ says it against the thing it is replacing, which is the only place some of these
 written down.
 
 **Where it stands: the product is there, the last mile is not.** Every mechanism the old app
-proved is rebuilt and several are better founded. What is missing is concentrated in two places:
-the two drag gestures, and four patches of someone else's bundle.
+proved is rebuilt and several are better founded. What is missing is no longer a gesture: it is
+four patches of someone else's bundle, and the app's own edges - popups, the dock badge, a
+signed `.app`.
 
 Legend: **yes** the same feature, however differently built. **partial** the feature exists
 with something named missing from it. **no** not in this tree. **by design** deliberately not
@@ -30,7 +31,7 @@ rebuilt, with the reason in the last section.
 | Gutter drag to resize, double-click to even, `⌃⌘0` | no | yes | shares per grid shape, persisted |
 | Zoom every tile together, `⌘+` / `⌘-` / `⌘0` | no | yes | |
 | Focus glow in the gutter, tinted ground inside the tile | yes | yes | |
-| A close affordance on a tile in the grid | yes | **no** | the chip's `×` is single view only, so grid closes only on `⌃⌘W` |
+| A close affordance on a tile in the grid | yes | yes | the app's own `×` in the window's top right corner, on a plate of the project's hue, drawn by a seam and given room by the editor's title row - the old one was a host button floated over a slot the guest cut for it, sized from a height measured in the window |
 | Empty state | yes | yes | |
 
 ## Projects: opening, closing, ordering
@@ -44,9 +45,10 @@ rebuilt, with the reason in the last section.
 | `×` on a row to forget a folder | yes | yes | shown on hover and on keyboard focus, which the old one was not |
 | Closing keeps the entry so reopening is a click | yes | yes | the entry outlives the tile in both |
 | One project order behind strip, grid, numbers and storage | yes | yes | |
-| Chip drag along the strip, inserting | yes | **no** | `project:move` exists in the command table; the gesture does not |
-| Badge drag onto another tile, swapping | yes | **no** | `project:swap` likewise. Roadmap items 1 and 2 |
-| `Esc` abandons a drag | yes | no | with the drags |
+| Chip drag along the strip, inserting | yes | yes | same shape: a clone under the hand and the hole it left as the placeholder. The clone rides IN the strip rather than hanging below it, because below the strip is the stage and every pixel of that is a view painted above this page |
+| Badge drag onto another tile, swapping | yes | yes | the badge stays a pseudo-element: the listener is on the menu button it is drawn on, delegated off the workbench. The gesture is reported; the CURSOR is followed by main, off the OS, so no position crosses the boundary and the guests are never muted to let a press through |
+| A click on the badge still opens the menu | replayed by the host with `sendInputEvent` | yes | replayed inside the document instead: `preventDefault` on the pointerdown suppresses the mousedown the menubar opens on, and a release that never moved dispatches that pair back |
+| `Esc` abandons a drag | yes | yes | the open order the press began with, put back - in either view |
 | A project's window boots lazily | yes | **no** | a view is created for every open project at startup, visible or not, and all at once rather than staggered |
 
 ## Focus and identity
@@ -54,8 +56,9 @@ rebuilt, with the reason in the last section.
 | | old | new | |
 |---|---|---|---|
 | A hue per project, sampled from its favicon, hashed from the path otherwise | yes | yes | derived and never stored in both |
-| Favicon on the chip | yes | **no** | the chip is a Claude ring plus the name |
+| Favicon on the chip | yes | yes | the same mark the badge wears inside the window, drawn from one function both the strip and the picker call, with the Claude ring around it - and the project's initial on its own hue where there is no favicon, or where the one there is turns out not to decode |
 | A monogram where a project has no favicon | yes | **partial** | the picker draws one; the badge inside the window still keeps the editor's hamburger, which is roadmap item 1 |
+| Dragging the badge rearranges the grid | yes | yes | and in single view the press belongs to the menu underneath, as it did there |
 | Identity badge at the top of the activity bar | yes | yes | drawn by the guest as a pseudo-element, so nothing is overlaid and nothing is measured |
 | Project name on the side bar's title row | yes | yes | |
 | Narrow side bar holds its title actions back until hover | yes | **no** | in a tile's Search view the name can still be ellipsised |
@@ -174,18 +177,18 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 
 ## What is missing, in the order it will be missed
 
-1. **The two drag gestures.** Reordering is unreachable, in both views. The commands exist.
-2. **A close affordance in the grid**, and the badge's own monogram.
-3. **Claude opening in a locked split column.** One extension patch, and the most visible
+1. **The badge's monogram.** A project with no favicon keeps the editor's hamburger inside its
+   window; the picker already draws that project's initial.
+2. **Claude opening in a locked split column.** One extension patch, and the most visible
    thing about working in a tile that the old tree fixed.
-4. **The extension secret merge.** Silent, intermittent, and it looks like an extension bug:
+3. **The extension secret merge.** Silent, intermittent, and it looks like an extension bug:
    a secret written in one tile disappears when another writes any secret of its own.
-5. **Popups and navigation.** An auth flow started inside a tile cannot complete, and a
+4. **Popups and navigation.** An auth flow started inside a tile cannot complete, and a
    `target=_self` link is a tile with no way back.
-6. **The dock badge**, which is the only part of the Claude signal that reaches you with the
+5. **The dock badge**, which is the only part of the Claude signal that reaches you with the
    app in the background.
-7. **The chat title**, which is the one thing the old chips carried that no tile does.
-8. **Packaging.** Until then this runs from source, which also means it holds no TCC grants.
+6. **The chat title**, which is the one thing the old chips carried that no tile does.
+7. **Packaging.** Until then this runs from source, which also means it holds no TCC grants.
 
 ## What this tree has that the old one never did
 
@@ -200,6 +203,12 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
   `dom-ready` or keyed for removal.
 - **No measurement across the boundary.** Main hands a window meaning and never asks it for a
   number, which deletes the whole dpr-scaling class of bug the old tree lived with.
+- **A drag over the tiles that mutes nothing.** The old badge drag had to put every webview on
+  `pointer-events: none` for as long as the badge was held, since a webview eats every mouse event
+  that lands on it, and the click that was not a drag had to be replayed into the guest from the
+  host. Here the guest reports the press and the release and main follows the CURSOR off the OS,
+  so the tiles stay live under the hand, the drop is hit-tested against the rects the views were
+  placed from, and the menu's press is given back inside the document that swallowed it.
 - **Geometry as a pure function**, with tests, rather than CSS grid plus `holdGuests`.
 - **Patches matched by shape and required to hit exactly once**, refused rather than
   half-applied, each naming what it degrades to.

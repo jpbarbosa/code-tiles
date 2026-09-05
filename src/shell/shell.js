@@ -1,7 +1,7 @@
 // The shell draws around the tiles: the strip, the empty state, and the focused tile's glow in
 // the gutter. It never draws over a tile, because a WebContentsView paints above this page by
 // construction - anything that has to appear inside a window is a seam, not an overlay.
-import { rampFor } from './format.js';
+import { projectMark, rampFor } from './format.js';
 
 const chips = document.getElementById('chips');
 const glow = document.getElementById('glow');
@@ -13,6 +13,7 @@ const stripScrim = document.getElementById('strip-scrim');
 
 let state = { projects: [], rects: [], splitters: [], mode: 'grid', focused: null, strip: 36, parts: {} };
 let drag = null;
+let sorting = null;
 
 const call = (type, payload) => window.ct.call(type, payload).catch((error) => console.error(error));
 
@@ -60,11 +61,16 @@ function renderChips(open) {
     chip.title = project.folder;
     chip.setAttribute('aria-current', String(project.folder === state.focused));
 
-    const ring = document.createElement('span');
-    ring.className = 'ring';
-    // What Claude is doing there, on the mark that is already the project's. In single view the
-    // tile that needs you is usually the one you cannot see.
-    ring.dataset.claude = project.claudeState;
+    // The same mark the window wears inside itself: the project's favicon, or its initial on its
+    // own hue where there is no favicon to take one from. One glance then matches a chip to a
+    // tile, which is the whole job of this row in single view - where the tile it names is the one
+    // you cannot see.
+    const mark = document.createElement('span');
+    mark.className = 'mark';
+    // And what Claude is doing there, as a ring around that mark - the badge's own arrangement,
+    // one size down.
+    mark.dataset.claude = project.claudeState;
+    mark.append(projectMark(project));
 
     const name = document.createElement('span');
     name.className = 'name';
@@ -75,7 +81,11 @@ function renderChips(open) {
     close.textContent = '×';
     close.title = 'Close project';
 
-    chip.append(ring, name, close);
+    // The chip being dragged is not in the row any more - a clone is following the hand - so what
+    // is left here is the placeholder it will drop into.
+    chip.toggleAttribute('data-dragging', project.folder === sorting?.folder);
+
+    chip.append(mark, name, close);
     return chip;
   }));
 }
@@ -171,6 +181,113 @@ chips.addEventListener('click', (event) => {
   if (event.target.classList.contains('close')) call('project:close', { folder: chip.dataset.folder });
   else call('project:focus', { folder: chip.dataset.folder });
 });
+
+// The strip's own gesture: a chip dragged along the row INSERTS, the chips it passes shifting
+// along, the way a row of tabs behaves everywhere else. The grid's is the other one, and it starts
+// inside a window - the two never contend, because the row is only shown in single view.
+//
+// The pointer is captured by the ROW rather than by the chip, and only once the drag has actually
+// begun. By the row, because every render replaces the chips and a captured node that is replaced
+// drops the drag - on the first reorder, which is the reorder the gesture exists to make. Only
+// then, because a capture retargets the click that ends the press to the capturing element: taken
+// on the press, it leaves every chip in the strip unclickable.
+const SORT_THRESHOLD = 4;
+
+chips.addEventListener('pointerdown', (event) => {
+  const chip = event.target.closest('.chip');
+  if (!chip || event.button !== 0 || event.target.classList.contains('close')) return;
+  sorting = { folder: chip.dataset.folder, from: event.clientX, order: openFolders(), moved: false };
+});
+
+chips.addEventListener('pointermove', (event) => {
+  if (!sorting) return;
+  // Horizontal intent only, and only past a few pixels: the row runs one way, and the wobble on
+  // the way to a click must not lift a chip out of it.
+  if (!sorting.moved && Math.abs(event.clientX - sorting.from) < SORT_THRESHOLD) return;
+  if (!sorting.moved) {
+    sorting.moved = true;
+    chips.setPointerCapture(event.pointerId);
+    lift(event);
+    document.body.dataset.sorting = '';
+    render();
+  }
+  carry(event);
+  const index = slotAt(event.clientX, sorting.folder);
+  const current = [...chips.children].findIndex((chip) => chip.dataset.folder === sorting.folder);
+  if (index !== current) call('project:move', { folder: sorting.folder, index });
+});
+
+// The chip leaves the row: a clone follows the hand, and what stays behind - emptied out, still
+// holding its width - is the PLACEHOLDER it will drop into, which reflows through the row as the
+// others shift around it. The clone is what carries the lift, because #chips is a scroll
+// container and clips anything a chip paints outside its own box.
+//
+// It is cloned before the render that empties the original, or the clone is a hole too. And it
+// rides IN the strip rather than hanging below it the way the old app's did: below the strip is
+// the stage, and every pixel of that is a native view painted above this page.
+function lift(event) {
+  const chip = [...chips.children].find((child) => child.dataset.folder === sorting.folder);
+  if (!chip) return;
+  const box = chip.getBoundingClientRect();
+  const ghost = chip.cloneNode(true);
+  ghost.id = 'chip-ghost';
+  ghost.removeAttribute('data-folder');
+  ghost.style.width = `${box.width}px`;
+  ghost.style.height = `${box.height}px`;
+  ghost.style.top = `${box.top}px`;
+  document.body.append(ghost);
+  // Held where you took hold of it, so the clone does not jump under the hand at the first move.
+  sorting.ghost = ghost;
+  sorting.grab = event.clientX - box.left;
+}
+
+function carry(event) {
+  if (!sorting.ghost) return;
+  // Clamped to the row, so a hand that runs off the end leaves the clone at the end rather than
+  // over the traffic lights. Only x decides where it lands; there is nowhere for a y to go.
+  const row = chips.getBoundingClientRect();
+  const width = sorting.ghost.offsetWidth;
+  const left = Math.min(Math.max(event.clientX - sorting.grab, row.left), row.right - width);
+  sorting.ghost.style.left = `${left}px`;
+}
+
+for (const kind of ['pointerup', 'pointercancel']) {
+  chips.addEventListener(kind, () => endSort(false));
+}
+
+// Abandoning a gesture is the same everywhere: the order the press began with, put back.
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') endSort(true);
+});
+
+function endSort(cancel) {
+  if (!sorting) return;
+  const { moved, order, ghost } = sorting;
+  sorting = null;
+  ghost?.remove();
+  // A press that never became a drag is a click, and a render here would REPLACE the chip
+  // between its press and its release - which is a click that never fires and a project that
+  // never gets focused.
+  if (!moved) return;
+  delete document.body.dataset.sorting;
+  if (cancel) call('project:restore', { folders: order });
+  render();
+}
+
+// Where the hand says the chip goes: how many of the OTHERS it has passed the middle of. Leaving
+// the dragged chip out of that count is what makes a chip change places when the pointer passes
+// its neighbour's centre rather than when it passes its own.
+function slotAt(x, folder) {
+  return [...chips.children].filter((chip) => {
+    if (chip.dataset.folder === folder) return false;
+    const box = chip.getBoundingClientRect();
+    return box.left + box.width / 2 < x;
+  }).length;
+}
+
+function openFolders() {
+  return state.projects.filter((project) => project.open).map((project) => project.folder);
+}
 
 for (const segment of document.querySelectorAll('.segment')) {
   segment.addEventListener('click', () => call('mode:set', { mode: segment.dataset.mode }));

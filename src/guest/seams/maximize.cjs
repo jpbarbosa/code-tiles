@@ -14,8 +14,9 @@
 //
 // The press sends what it will DO rather than a toggle for main to work out, so this window's own
 // state is the only copy of it. Clicking into a window claims the FOCUS and nothing else: the
-// column moves from here and from nowhere else. `context.maximized` is null where there is nothing
-// to maximize - single view, or one project - which is the state with no item.
+// column moves from here and from nowhere else. The item is there only while the window is one of
+// several tiles - `context.tiled` - since single view and a lone project have nothing to widen it
+// against; the grip in `controls` hangs on the same fact for the same reason.
 //
 // The lit half is `screen-normal`, not the `panel-restore` its name suggests: that class has no
 // icon registered in this build, so its content variable resolves to nothing and the item would
@@ -43,12 +44,12 @@ module.exports = {
         let item = null;
 
         const render = () => {
-          const state = api.context.maximized;
-          if (state !== true && state !== false) {
+          if (!api.context.tiled) {
             item?.remove();
             item = null;
             return;
           }
+          const state = api.context.maximized;
 
           if (!item) {
             item = build(list.ownerDocument, () => api.send('project:maximize', {

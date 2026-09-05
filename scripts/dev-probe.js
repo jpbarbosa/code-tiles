@@ -102,6 +102,29 @@ const READ = `(() => {
         box: [Math.round(box.x), Math.round(box.y), Math.round(box.width), Math.round(box.height)],
       };
     })(),
+    // The close seam: the app's × in the window's corner, and whether the editor's title row
+    // actually gave up the room for it. Actions still reaching past the button's left edge is a
+    // close laid OVER the editor's own "..." rather than beside it.
+    close: (() => {
+      const button = document.querySelector('.monaco-workbench > .ct-close');
+      if (!button) return null;
+      const actions = document.querySelector('.part.editor .title .editor-actions');
+      const box = button.getBoundingClientRect();
+      const style = getComputedStyle(button);
+      return {
+        title: button.title,
+        box: [Math.round(box.x), Math.round(box.y), Math.round(box.width), Math.round(box.height)],
+        clear: actions ? Math.round(actions.getBoundingClientRect().right) <= Math.round(box.left) : null,
+        plate: style.backgroundColor,
+        ink: style.color,
+      };
+    })(),
+    // The identity seam's other half: the badge is the tile's own drag handle while there are
+    // other tiles to move it among, and the cursor is the whole of what says so.
+    badgeHandle: (() => {
+      const button = document.querySelector('.part.activitybar .menubar .menubar-menu-button');
+      return button ? getComputedStyle(button).cursor : null;
+    })(),
     // The branch seam: what the pills say, and whether the side bar gave them real room - the
     // pane area ending above them is the whole difference between a footer and an overlay.
     branch: (() => {
@@ -243,7 +266,12 @@ export async function run({ window }) {
   // SAME preload, partition and context: the same document, in a thing that can be photographed.
   const first = guests[0];
   if (first) {
-    const context = { folder: 'probe', name: 'probe', hue: 276, focused: true, claudeState: 'idle' };
+    // Tiled and not the master, which is the shape that draws every control a window can have:
+    // the maximize item offering the column, and the grip beside the close in the corner.
+    const context = {
+      folder: 'probe', name: 'probe', hue: 276, focused: true, claudeState: 'idle',
+      tiled: true, maximized: false,
+    };
     const shot = new BrowserWindow({
       width: 1200, height: 820, show: false,
       webPreferences: {

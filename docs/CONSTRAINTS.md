@@ -63,8 +63,8 @@ bump is the moment to try deleting.
 **A `WebContentsView` paints above the window's page, always.** There is no z-mixing with
 HTML, and a view swallows every mouse event inside its rect. Consequences, all deliberate:
 anything that must appear inside a tile is a seam; the shell draws only in the gutters and the
-strip; a drag that starts inside a tile (the badge) is started by the guest and mediated
-by main, never tracked by the shell over the tiles; and devtools are opened DETACHED, since a
+strip; a drag that starts inside a tile (the badge) is reported by the guest and followed by main,
+never tracked by the shell over the tiles; and devtools are opened DETACHED, since a
 docked pane is part of the page and main sizes the tiles from a content area that docking does
 not change. **[checked]**
 
@@ -86,6 +86,29 @@ it. **[unchecked]** - the machine's display sleeps when nobody is at it, and a s
 takes no synthetic cursor input, so this could not be driven in the session that wrote it. What
 IS checked is everything either side: the handles land on the gutters and a real press-drag-release
 through the renderer reports the right gutter and the right positions.
+The grid's TILE drag takes the cursor route from the start, for a reason of its own: that press
+lands inside a view, so any position it reported would be a guest's own pixels - a number across
+the boundary, and a zoom factor to undo - where the cursor read off the OS is neither.
+
+**`preventDefault` on a `pointerdown` suppresses the compatibility mouse events, and the menubar
+opens on those.** So a seam can HOLD a press on the editor's menu button - which is where the
+identity badge is drawn, and therefore where the tile's drag has to start - without the menu
+opening under the hand: cancelling the pointerdown stops the `mousedown` and `mouseup` that would
+have opened it. Two halves of the same fact make it usable. The `click` still fires, so nothing
+can be hung on that; and the menu is given the press back by dispatching `mousedown` + `mouseup`
+on the button, which a synthetic `click` alone does not do. Measured against 4.135.0 by driving
+real input at the button: stock press opens it, held press does not, and the dispatched pair opens
+it again. **[checked]**
+
+**A pointer capture retargets the click that ends the press, and a render between the two cancels
+it.** Both bite the same thing: a row that reorders live under the hand, which is what the strip's
+chips are. Capture taken on `pointerdown` - the obvious place, since every render replaces the
+chips and a captured chip is gone by the first reorder - sends the CLICK to the capturing row
+instead of to the chip, so every chip in the strip silently stops focusing its project. And a
+render on `pointerup` replaces the chip between its own press and its release, which is a click
+that is never dispatched at all. So the capture is taken on the first `pointermove` past the
+threshold, and a press that never became a drag leaves the row alone. **[checked]** - driven as a
+real press-move-release with `sendInputEvent` against the shell page, counting what it called.
 
 **Adding a `WebContentsView` takes the window's focus, and reports it late.** `addChildView`
 moves the native focus to the new view, and the `focus` event on its `webContents` arrives after

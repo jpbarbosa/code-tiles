@@ -11,8 +11,24 @@
 // A third thing rides on the badge, for the same reason it is where a glance lands: what Claude
 // is doing here, as a ring around it. The badge is the ::before of that one element and the ring
 // is its ::after, so the two cannot fall out of step with each other.
+//
+// A fourth: the badge is what you take hold of to move this tile among the others. The card the
+// project's mark sits on is the honest handle for the project itself, and it costs the badge
+// nothing - a pseudo-element cannot carry a listener, but the button it is drawn on can, and the
+// gesture is delegated off the workbench anyway, since the menubar is rebuilt whenever the menu
+// changes. What it costs is the PRESS: the menubar opens on `mousedown`, and the only way to know
+// whether a press is a drag is to hold it until the hand moves. `preventDefault` on `pointerdown`
+// suppresses the compatibility mousedown the menu would have opened on, and a release that never
+// became a drag gives the press back by dispatching the pair the menubar listens for - a
+// synthetic `click` alone does not open it. [code-server 4.135.0]
 const HUE = '#d97757';
 const CLEAR = 'rgba(217, 119, 87, 0)';
+
+// The badge, and the button it is drawn on: the editor's menu button at the top of the activity
+// bar, which the compact menu bar setting puts there and the tint paints as a card.
+const HANDLE = '.part.activitybar .menubar .menubar-menu-button';
+// Far enough that a hand on its way to the menu does not take the tile with it.
+const SLOP = 4;
 
 // The state is the MOTION, never the colour: turning while Claude works, pulsing while it waits
 // on you, breathing once a turn has ended that you have not seen. One hue, so there is nothing to
@@ -96,6 +112,13 @@ ${RINGS[context.claudeState] ? `
 @keyframes ct-ring-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes ct-ring-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.34; } }` : ''}
 
+${context.tiled ? `
+/* While there are other tiles to move this one among, the badge is a handle and says so. The
+   cursor is the whole affordance: the card is already drawn, and a second mark on it would be
+   the app talking about itself inside a window that has a project in it. */
+.monaco-workbench ${HANDLE} { cursor: grab; }
+.monaco-workbench ${HANDLE}[data-ct-holding] { cursor: grabbing; }
+` : ''}
 /* The row wears the ink the activity bar's icons wear - a colour derived from the ground rather
    than mixed into the theme's own foreground, which on a light theme washes the hue out.
    !important because the composite writes the theme's title foreground INLINE on this node from
@@ -109,4 +132,65 @@ ${RINGS[context.claudeState] ? `
   }
 }
 `,
+
+  init(api) {
+    api.whenWorkbench((workbench) => {
+      // Delegated off the workbench rather than bound to the button: the menubar is rebuilt
+      // whenever the menu changes, and a listener on the button would go with it.
+      let press = null;
+
+      const finish = (cancel) => {
+        if (!press) return;
+        const { button, dragging } = press;
+        press = null;
+        button.removeAttribute('data-ct-holding');
+        if (dragging) return void api.send('project:drop', { cancel });
+        // Never a drag, so the menu gets the press it was denied. Not on Esc: abandoning a
+        // gesture is not a way to open a menu.
+        if (!cancel) openMenu(button);
+      };
+
+      workbench.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0 || !api.context.tiled) return;
+        const button = event.target.closest(HANDLE);
+        if (!button) return;
+        // Held, not taken: this suppresses the mousedown the menubar opens on, which is the only
+        // way to tell a drag from a click before the hand has said which it is.
+        event.preventDefault();
+        button.setPointerCapture(event.pointerId);
+        button.setAttribute('data-ct-holding', '');
+        press = { button, x: event.clientX, y: event.clientY, dragging: false };
+      }, true);
+
+      workbench.addEventListener('pointermove', (event) => {
+        if (!press || press.dragging) return;
+        if (Math.hypot(event.clientX - press.x, event.clientY - press.y) < SLOP) return;
+        press.dragging = true;
+        // Only now does main hear about it: a press that stays still is a menu, and a drag
+        // session it would have to end for itself.
+        api.send('project:drag');
+      }, true);
+
+      workbench.addEventListener('pointerup', () => finish(false), true);
+      workbench.addEventListener('pointercancel', () => finish(true), true);
+      workbench.ownerDocument.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') finish(true);
+      }, true);
+    });
+  },
 };
+
+// The press the menu never got. The menubar listens for the pair; a synthetic click does not
+// reach it. [code-server 4.135.0]
+function openMenu(button) {
+  const box = button.getBoundingClientRect();
+  const at = {
+    bubbles: true,
+    cancelable: true,
+    button: 0,
+    view: button.ownerDocument.defaultView,
+    clientX: box.x + box.width / 2,
+    clientY: box.y + box.height / 2,
+  };
+  for (const type of ['mousedown', 'mouseup']) button.dispatchEvent(new MouseEvent(type, at));
+}

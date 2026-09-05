@@ -99,7 +99,7 @@ html, body {
   border-radius: var(--chip-radius);
   background: color-mix(in oklab, var(--bg) 88%, oklch(0.6 0.14 var(--hue)) 12%);
   color: var(--ink-quiet);
-  max-width: 210px;
+  max-width: 190px;
   /* A flex item will not shrink past its own text unless it is told it may. Without this the row
      runs under the + instead of the names ellipsizing. */
   min-width: 0;
@@ -112,35 +112,60 @@ html, body {
   white-space: nowrap;
 }
 
-.chip .ring {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  flex: 0 0 auto;
-  background: oklch(0.68 0.15 var(--hue));
+/* The mark: the same favicon the window wears on its badge inside, or the project's initial on
+   its own hue where there is no favicon to take one from - the hue being sampled from that
+   favicon, the two can never disagree about a colour. One box either way, so a project with an
+   icon and one without line up down the row. */
+.chip .mark {
   position: relative;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
 
-  /* The ring the badge inside the window wears, around the dot out here: the state is the motion
-     and the hue only ever says Claude, so the dot underneath keeps saying which project it is.
-     Round here and a rounded rectangle in there, each concentric with the mark it stands off -
-     a favicon card in the window, a dot in the strip. A circle can just turn, so this one does. */
+  & img,
+  & .monogram {
+    display: block;
+    width: 15px;
+    height: 15px;
+    border-radius: 3.5px;
+  }
+
+  & .monogram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  /* What Claude is doing there, as the ring the badge wears one size up: a rounded rectangle
+     standing 3.5px off a 15px mark, so 22px at a radius of 7, and the 2px the stroke eats inward
+     leaves 1.5px of air on the flats and round the corners. box-sizing is said out loud because
+     the padding IS the stroke. */
   &:is([data-claude="working"], [data-claude="attention"], [data-claude="finished"])::after {
     content: "";
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 15px;
-    height: 15px;
-    margin: -7.5px 0 0 -7.5px;
-    border-radius: 50%;
-    mask: radial-gradient(farthest-side, #0000 calc(100% - 2px), #000 calc(100% - 2px));
+    box-sizing: border-box;
+    width: 22px;
+    height: 22px;
+    margin: -11px 0 0 -11px;
+    border-radius: 7px;
+    padding: 2px;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
     background: var(--claude);
   }
 
-  /* Stepped, like the badge's: what a ring costs is per-frame compositing, so the frame count is
-     the only lever on it. */
+  /* A mask turns with the element it masks, so a rounded ring cannot be spun by a transform - the
+     corners would wobble round. The comet turns by an ANGLE inside its own gradient instead, the
+     way the badge's does, and stepped for the same reason: an angle cannot be composited, so
+     every step is a repaint and the frame count is the only lever on what it costs. */
   &[data-claude="working"]::after {
-    background: conic-gradient(from 0deg, rgba(217, 119, 87, 0) 0deg, rgba(217, 119, 87, 0) 35deg, var(--claude) 330deg, rgba(217, 119, 87, 0) 360deg);
+    background: conic-gradient(from var(--ct-ring-angle), rgba(217, 119, 87, 0) 0deg, rgba(217, 119, 87, 0) 35deg, var(--claude) 330deg, rgba(217, 119, 87, 0) 360deg);
     animation: ct-ring-turn 1.8s steps(36) infinite;
   }
 
@@ -153,7 +178,9 @@ html, body {
   }
 }
 
-@keyframes ct-ring-turn { to { transform: rotate(360deg); } }
+/* Registered, or it is a string the gradient cannot read and the comet never moves. */
+@property --ct-ring-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes ct-ring-turn { to { --ct-ring-angle: 360deg; } }
 @keyframes ct-ring-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes ct-ring-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.34; } }
 
@@ -163,6 +190,30 @@ html, body {
   background: oklch(0.42 0.09 var(--hue));
   color: #fff;
 }
+
+/* The chip being dragged is not in the row any more - a clone is following the hand - so what is
+   left here is the PLACEHOLDER it will drop into: the strip showing through a hole rather than a
+   second copy of the chip. Its children keep their boxes and lose their ink, which is what holds
+   the width: the width IS the gap. */
+.chip[data-dragging] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+}
+
+.chip[data-dragging] > * { visibility: hidden; }
+
+/* The lifted chip, in <body> so nothing clips its shadow: #chips scrolls, and a shadow on a chip
+   inside it is painted outside the chip's own box and lost. */
+#chip-ghost {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  transform: scale(1.04);
+  filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.55)) drop-shadow(0 2px 4px rgb(0 0 0 / 0.4));
+}
+
+body[data-sorting] .chip,
+body[data-sorting] .chip .close { cursor: grabbing; }
 
 .chip .close {
   opacity: 0;

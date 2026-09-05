@@ -176,6 +176,15 @@ export function gridSplitters({
   return out;
 }
 
+// Which tile a point in the window lands in, or -1. A drag over the tiles is hit-tested here,
+// against the rects main already owns, because a view swallows every press inside its own rect
+// and nothing in a window may be measured from outside it.
+export function rectAt(rects, x, y) {
+  return rects.findIndex((rect) => rect.visible
+    && x >= rect.x && x < rect.x + rect.width
+    && y >= rect.y && y < rect.y + rect.height);
+}
+
 // A gutter dragged to `position`: the pointer's own x or y, in the window's coordinates, which
 // is the space the rects are already in. Only the two shares either side of the gutter change,
 // so the rest of the grid stays exactly where the eye left it.

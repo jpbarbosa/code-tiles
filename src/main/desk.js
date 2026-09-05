@@ -1,11 +1,15 @@
-import { dialog } from 'electron';
+import { dialog, screen } from 'electron';
 
-import { METRICS, gridResize, gridSplitters, shapeKey, tileRects } from './layout.js';
+import { METRICS, gridResize, gridSplitters, rectAt, shapeKey, tileRects } from './layout.js';
 
 // The parts the strip's layout control flips, and what a window shows before anyone has chosen:
 // the editor's own defaults, once the chrome seam has had its say on the secondary side bar.
 const LAYOUT_PARTS = ['sideBar', 'panel', 'secondarySideBar'];
 const LAYOUT_DEFAULTS = { sideBar: true, panel: false, secondarySideBar: false };
+
+// How often the cursor is read while a tile is being dragged. A gesture bounded by a press being
+// held is a hand followed at 33Hz, not a loop waiting for the workbench to agree with itself.
+const DRAG_MS = 30;
 
 // The one place that turns "what is open, in what order, focused where" into views on screen and
 // a picture for the shell. Everything else asks it to render; nothing else places a view.
@@ -19,6 +23,9 @@ export class Desk {
   // remembers. Not persisted: a fresh launch follows the windows rather than the last session.
   #layout = { sideBar: null, panel: null, secondarySideBar: null };
   #parts = new Map();
+  // A rearrangement in progress: which window's grip is held, and the order to put back if the
+  // gesture is abandoned. Nothing about it is persisted - it lives and dies with the press.
+  #drag = null;
 
   constructor({ window, projects, tiles, activity = null }) {
     this.#window = window;
@@ -32,29 +39,19 @@ export class Desk {
   }
 
   render() {
-    const open = this.#projects.open();
-    const focused = this.#projects.focused;
-    const focusedIndex = Math.max(0, open.findIndex((project) => project.folder === focused));
-    const [width, height] = this.#window.getContentSize();
+    const { open, focused, mode, master, shape, sizes, rects } = this.#placement();
 
-    const mode = this.#shape(open.length);
-    const shape = { width, height, count: open.length, mode };
-    const sizes = this.#sizes(open.length);
-    const master = this.#projects.maximized;
-    const masterIndex = Math.max(0, open.findIndex((project) => project.folder === master));
-    const rects = tileRects({ ...shape, focusedIndex, masterIndex, sizes });
-
-    // What the maximize item in each window draws: it holds the master cell, it does not, or
-    // there is nothing to maximize and the item is not there at all.
-    const maximized = (folder) => (mode === 'single' || open.length < 2
-      ? null
-      : mode === 'master' && folder === master);
+    // Whether a window is one of SEVERAL tiles, which is what both of the app's own controls
+    // inside it hang on: the item that widens this one, and the grip that moves it among the
+    // rest. Single view, or a lone project, has neither to offer.
+    const tiled = mode !== 'single' && open.length > 1;
 
     this.#tiles.sync(
       open.map((project) => ({
         ...project,
         focused: project.folder === focused,
-        maximized: maximized(project.folder),
+        tiled,
+        maximized: mode === 'master' && project.folder === master,
         layout: this.#layout,
       })),
       rects,
@@ -70,6 +67,33 @@ export class Desk {
       rects,
       splitters: gridSplitters({ ...shape, sizes }),
     });
+  }
+
+  // Where every tile is, and the few facts the answer is made of. One place, because the drag
+  // below hit-tests against the same rects the views were placed from - a second copy of this
+  // arithmetic is a drop that lands somewhere the eye never saw.
+  #placement() {
+    const open = this.#projects.open();
+    const focused = this.#projects.focused;
+    const master = this.#projects.maximized;
+    const [width, height] = this.#window.getContentSize();
+    const mode = this.#shape(open.length);
+    const shape = { width, height, count: open.length, mode };
+    const sizes = this.#sizes(open.length);
+    return {
+      open,
+      focused,
+      mode,
+      master,
+      shape,
+      sizes,
+      rects: tileRects({
+        ...shape,
+        sizes,
+        focusedIndex: Math.max(0, open.findIndex((project) => project.folder === focused)),
+        masterIndex: Math.max(0, open.findIndex((project) => project.folder === master)),
+      }),
+    };
   }
 
   // Reported by the ground seam, from whichever window last read its theme. One server means one
@@ -112,6 +136,9 @@ export class Desk {
   // A click inside a window. The native focus is already there, so only the app's own idea of it
   // has to catch up - focusing the view back would be a loop.
   adoptFocus(folder) {
+    // A press in another window could not have happened while a grip was still held in this one,
+    // so it is also the answer to a drag whose release was never reported.
+    this.endDrag(false);
     if (folder === this.#projects.focused) return;
     this.#projects.focused = folder;
     this.#activity?.seen(folder);
@@ -195,6 +222,59 @@ export class Desk {
   // column - which is the difference between saying where you are and saying what is wide.
   maximize(folder, maximized) {
     this.#projects.maximized = maximized ? folder : null;
+    this.render();
+  }
+
+  // A tile picked up by its grip. The press can only have happened INSIDE a window - a view
+  // swallows every event in its own rect and the shell's page never sees one - so the seam says
+  // that the gesture began and nothing more. The pointer is followed here, read off the OS rather
+  // than reported by a window: every number then stays in the space the rects are already in, and
+  // a zoomed tile has nothing to scale.
+  startDrag(folder) {
+    this.endDrag(false);
+    if (!this.#projects.open().some((project) => project.folder === folder)) return;
+    this.#drag = {
+      folder,
+      order: this.#projects.open().map((project) => project.folder),
+      master: this.#projects.maximized,
+      timer: setInterval(() => this.#dragTick(), DRAG_MS),
+    };
+  }
+
+  // Released, or abandoned with Esc. A release applies nothing: the grid has been rearranging
+  // under the hand the whole way, which is the only drop feedback a tree that may not draw over a
+  // tile can give. Abandoning is the one that has work to do.
+  endDrag(cancel) {
+    if (!this.#drag) return;
+    const { order, master } = this.#drag;
+    clearInterval(this.#drag.timer);
+    this.#drag = null;
+    if (!cancel) return;
+    this.#projects.maximized = master;
+    this.#projects.restore(order);
+    this.render();
+  }
+
+  #dragTick() {
+    const held = this.#drag.folder;
+    const { open, master, rects } = this.#placement();
+    // The two ways a gesture ends with nobody left to report the release: the project closing
+    // under it, and the window that took the press no longer being the app's.
+    if (!this.#window.isFocused() || !open.some((project) => project.folder === held)) {
+      return void this.endDrag(false);
+    }
+
+    const cursor = screen.getCursorScreenPoint();
+    const bounds = this.#window.getContentBounds();
+    const over = open[rectAt(rects, cursor.x - bounds.x, cursor.y - bounds.y)]?.folder;
+    if (!over || over === held) return;
+
+    // The wide column is a slot like any other: the two trade slots, and whichever of them lands
+    // in the master's holds it - so a tile dropped on the master promotes itself and demotes the
+    // one that was there into the row it came from.
+    if (master === over) this.#projects.maximized = held;
+    else if (master === held) this.#projects.maximized = over;
+    this.#projects.swap(held, over);
     this.render();
   }
 

@@ -34,10 +34,15 @@ window with it.
   others live beside it, so you can work in one while still watching the rest. The switch is an
   item at the top of that window's own activity bar, under the badge: on a stacked project it
   offers the column, and on the project that already holds it the same item is lit and hands the
-  even grid back. The wide one is always the **focused** project, so it follows `⌘\`` and a click
-  into a tile rather than being a second thing to keep track of. The gutters resize the master's
-  column and the stack's rows the way they resize any grid, and those proportions are remembered
-  against the maximized shape rather than the even one it came from.
+  even grid back. The wide one is **chosen and stays chosen** - clicking into a stacked tile
+  moves the focus and leaves the column where it is, so where you are and what is wide are two
+  answers rather than one. Dragging a tile onto the column is the other way to hand it over. The
+  gutters resize the master's column and the stack's rows the way they resize any grid, and those
+  proportions are remembered against the maximized shape rather than the even one it came from.
+- **Each tile closes from its own top right corner**: an **×** on a small plate in the project's
+  colour, the same plate the branch pills wear at the other corner. It is drawn inside the window,
+  because nothing outside a tile can paint on one, and the editor's own title row gives up the
+  room for it rather than being covered by it.
 
 ## Focus
 
@@ -63,10 +68,17 @@ there is one - a file, a Claude
 session, a terminal, the side bar's own view switcher. An inactive tab keeps the theme's colour,
 so in every row the hue marks the one thing you are working in.
 
+The **chip in the strip wears that same mark**: the project's favicon, or its initial on its own
+hue where there is no favicon to take one from - and the hue is sampled from the favicon, so the
+two can never disagree about a colour. One glance matches a chip to a tile, which is the whole job
+of that row in single view, where the tile it names is the one you cannot see.
+
 The **identity badge** sits at the top of the activity bar, inside the window, where the
-editor's own title bar used to be. It is the project's favicon, or a monogram, and it is what
-you drag to rearrange the grid. It is drawn **by the guest**, not overlaid by the app: it
-belongs to the window it names, moves with it, and needs nothing from the host to stay put.
+editor's own title bar used to be. It is the project's favicon, or a monogram, and it is what you
+take hold of to move the tile among the others. It is drawn **by the guest**, not overlaid by the
+app: it belongs to the window it names, moves with it, and needs nothing from the host to stay
+put. A press that never moves is still the menu it was: the badge holds it only long enough to see
+whether your hand goes anywhere, then hands it back.
 
 ## The Claude signal
 
@@ -120,15 +132,21 @@ empty. The list is a screen over the grid rather than a menu under the button, b
 covers is four live editors.
 
 Closing a project takes the tile away and keeps the entry, which is what makes reopening a
-click. A folder that has since been deleted is dropped from the list rather than offered.
+click. A folder that has since been deleted is dropped from the list rather than offered. Three
+ways to close one: the **×** in the tile's own corner, the **×** on its chip in the strip, and
+`⌃⌘W` for the focused one.
 
 There is **one project order** behind the strip, the grid, the number shortcuts and the saved
 list, and each view offers exactly one gesture to change it:
 
-- **Single view: drag a chip along the strip.** It inserts, the chips it passes shifting
-  along, and a gap opens where it will land.
-- **Grid: drag a tile's badge onto another tile.** They swap. A grid has nothing to shift
-  along, and an insert would shuffle every project in between.
+- **Single view: drag a chip along the strip.** It inserts, the chips it passes shifting along
+  under your hand. The chip lifts out of the row and follows the cursor, and the hole it leaves is
+  where it will land - the placeholder reflows through the strip as you go.
+- **Grid: drag a tile by its identity badge, onto another tile.** They swap. A grid has nothing to
+  shift along, and an insert would shuffle every project in between. Here the tiles themselves are
+  the feedback - they trade places as you cross into one - because a tile is a native view painted
+  above the app's own page and nothing outside one can draw a highlight on it. The maximized
+  column is a slot like any other, so a tile dropped on it takes it.
 
 `Esc` abandons a drag. The order is persisted.
 

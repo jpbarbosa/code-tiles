@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { gridResize, gridShape, gridSplitters, shapeKey, tileRects, METRICS } from '../src/main/layout.js';
+import { gridResize, gridShape, gridSplitters, rectAt, shapeKey, tileRects, METRICS } from '../src/main/layout.js';
 
 const window = { width: 1600, height: 1000 };
 
@@ -207,4 +207,29 @@ test('the master column is dragged from its own default, not from an even one', 
   const [master] = tileRects({ ...shape, masterIndex: 0 });
   const even = tileRects({ ...window, count: 4 })[0];
   assert.ok(master.width > even.width * 1.3, `master ${master.width} against an even ${even.width}`);
+});
+
+// Where a tile drag lands. Main hit-tests the cursor against the rects it placed the views from,
+// so this is the whole of what a drop over a tile means.
+test('a point lands in the tile it is over, and in no gutter', () => {
+  const rects = tileRects({ ...window, count: 4 });
+  rects.forEach((rect, index) => {
+    const middle = [rect.x + rect.width / 2, rect.y + rect.height / 2];
+    assert.equal(rectAt(rects, ...middle), index, `the middle of tile ${index}`);
+    assert.equal(rectAt(rects, rect.x, rect.y), index, `the top left corner of tile ${index}`);
+    // The far edge is already the gutter: a tile owning the pixel its neighbour starts on would
+    // make a drop over it depend on which of the two was asked first.
+    assert.equal(rectAt(rects, rect.x + rect.width, rect.y), -1, `the right edge of tile ${index}`);
+    assert.equal(rectAt(rects, rect.x, rect.y + rect.height), -1, `the bottom edge of tile ${index}`);
+  });
+
+  assert.equal(rectAt(rects, 0, 0), -1, 'the strip is nobody\'s tile');
+  assert.equal(rectAt(rects, window.width, window.height), -1, 'past the last tile');
+});
+
+test('a hidden tile is no drop target', () => {
+  const rects = tileRects({ ...window, count: 3, mode: 'single', focusedIndex: 1 });
+  assert.equal(rectAt(rects, window.width / 2, window.height / 2), 1);
+  // Every other rect is the zero one every hidden tile carries, and the origin is inside it.
+  assert.equal(rectAt(rects, 0, 0), -1);
 });

@@ -23,7 +23,23 @@ What the tree does today, what comes next, and what to check when the server is 
   Not the menu's zoom roles - those move whichever window holds the keyboard, and the shell
   holding it would put its gutters somewhere else than the tiles. `⌘0` is the editor's own Focus
   into Primary Side Bar, so the `zoom` seam gives that chord back in every profile's keybindings.
-- The shell: strip, chips, view control, the focused tile's glow, the empty state.
+- Rearranging, one gesture per view and one project order behind both. In the strip a chip is
+  dragged along the row and INSERTS: it lifts out as a clone under the hand and the hole it leaves
+  is the placeholder it will drop into, reflowing as the others shift around it. In the grid a
+  tile is dragged by its own identity BADGE and SWAPS with the one it is let go over - the wide
+  column included, which changes hands when a tile is dropped on it. There the tiles are the
+  feedback, since nothing outside one can draw on it: they trade places as the cursor crosses.
+  That gesture starts INSIDE a window, so the seam reports the press and the release and nothing
+  between, and main follows the cursor from the OS and hit-tests the rects it already placed the
+  views from - no position crosses the boundary, and a zoomed tile has nothing to scale. The badge
+  is the editor's menu button, so a press is HELD rather than taken: `preventDefault` on the
+  pointerdown suppresses the mousedown the menu opens on, and a release that never moved gives
+  that press back. `Esc` puts back the order the press began with, in either view.
+- A close × on every tile, in its top right corner on a plate of the project's own hue: the chips
+  are single view's, so the grid had `⌃⌘W` and nothing else.
+- The shell: strip, view control, the focused tile's glow, the empty state - and the chips, each
+  wearing the same mark its window wears on its badge inside: the project's favicon, or its
+  initial on its own hue, with the Claude ring around it either way.
 - The layout control: the editor's own three title bar buttons, in the strip, flipping the side
   bar, the panel or the secondary side bar in every open project at once. A part nobody has
   chosen for is left alone, and the buttons show the focused window's own answer, so a Cmd+B
@@ -52,7 +68,7 @@ What the tree does today, what comes next, and what to check when the server is 
   open project that holds it. Focusing a project clears a finished turn; a question is only
   cleared by answering it. Drawn twice: the ring on each window's own badge, and the dot on the
   chip in the strip, which is where you see a project you are not looking at.
-- Fifteen seams, verified in a live window rather than from a screenshot:
+- Sixteen seams, verified in a live window rather than from a screenshot:
   `dark` (your desktop's theme, a dark one only as the fallback under it, auto-detect off, and
   the colour scheme of every document the window holds - web's default theme is the light one,
   and a webview that says nothing shows Chromium's white canvas through every pixel its own page
@@ -88,10 +104,18 @@ What the tree does today, what comes next, and what to check when the server is 
   not seen, and is absent otherwise. The badge is that one element's `::before` and the ring is
   its `::after`, so neither can fall out of step with the other, and the ring is a rounded
   rectangle concentric with the card - which is why the comet turns by its own angle rather than
-  by a transform, a mask being something that turns with the element it masks),
+  by a transform, a mask being something that turns with the element it masks. The badge is also
+  the tile's own drag handle, which costs it no node: the listener goes on the button the badge is
+  drawn on, delegated off the workbench because the menubar is rebuilt whenever the menu changes),
   `chat-icon` (the same three states on the Claude chat tab's own icon, which is the extension's
   `panelTab.iconPath` pointed at SVGs that animate themselves - a patch to the extension's bundle,
   since a still image is all VS Code has and stepping one through frames blinks over http),
+  `close` (the × that closes this project, in the corner the window keeps for itself, on a plate
+  of the project's own hue - the one the branch pills and the side bar's title row already wear,
+  so the app's marks in a window read as one hand. One button belonging to the WINDOW rather than
+  an item in a part's toolbar: a tile with Claude's chat beside the code is two editor groups, and
+  a close in each group's actions would be two ways to close one project, neither of them about
+  the tile - with the room for it taken out of the editor's title row rather than laid over it),
   `maximize` (the app's one item in the activity bar's own list, first, under the badge - built
   from the classes the editor builds its items with, so it takes the bar's size, its hover pill
   and the accent an active view wears, and needs no slot cut for it; the restore half is
@@ -110,20 +134,17 @@ What the tree does today, what comes next, and what to check when the server is 
 
 ## Next, in order
 
-1. **The badge's drag, and its monogram.** The icon and its ring are both pseudo-elements of the
-   menu button, which is what keeps them alive through a workbench rebuild. A drag handle is more
-   than a pseudo can carry, so that is the step where the badge becomes a node: one node, kept by
-   an observer, removed with the seam. The monogram a project with no favicon should wear belongs
-   to the same step; today it keeps the hamburger, and its ring still says what Claude is doing.
-2. **Drag to reorder.** Chip drag in the strip (insert) is host-only. Badge drag in the grid
-   (swap) starts in the guest, so the seam reports pointer positions to main, main hit-tests
-   against the rects it already owns, and the shell draws nothing over a tile.
-3. **Profile upkeep.** The mirror is rewritten at start and restored by a watcher if the
+1. **The badge's monogram.** A project with no favicon keeps the editor's hamburger inside its
+   window, where the picker already draws that project's initial on its own hue. The badge and
+   its ring are both pseudo-elements of the menu button, which is what keeps them alive through a
+   workbench rebuild; the step is whether a monogram can stay one too, or has to be the node the
+   badge has so far not needed to be.
+2. **Profile upkeep.** The mirror is rewritten at start and restored by a watcher if the
    workbench deletes it. Not yet handled: a desktop profile added while the app is running, and
    an extension whose desktop version moves on.
-4. **Chat titles.** The active chat's name per project, read by a seam from the editor tab it
+3. **Chat titles.** The active chat's name per project, read by a seam from the editor tab it
    already lives on, reported like the ground.
-5. **Packaging**: a signed `.app`, and a fetch of the pinned server into `vendor/`.
+4. **Packaging**: a signed `.app`, and a fetch of the pinned server into `vendor/`.
 
 ## Not doing
 

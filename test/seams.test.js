@@ -12,9 +12,11 @@ const seams = require('../src/guest/manifest.cjs');
 // the same require and the same render, off the same list.
 const contexts = [
   { folder: '/tmp/probe', name: 'probe', hue: 0, icon: null, claudeState: 'idle', focused: true,
-    maximized: true, layout: { sideBar: true, panel: true, secondarySideBar: false } },
+    tiled: true, maximized: true, layout: { sideBar: true, panel: true, secondarySideBar: false } },
+  // The window that is not one of several: single view, or the only project. Both of the app's
+  // own controls inside a window hang on that, so it is a shape every seam is rendered for.
   { folder: '', name: '', hue: 359, icon: null, claudeState: 'working', focused: false,
-    maximized: false, layout: { sideBar: null, panel: null, secondarySideBar: null } },
+    tiled: false, maximized: false, layout: { sideBar: null, panel: null, secondarySideBar: null } },
 ];
 
 test('every seam on the manifest loads and is named', () => {
@@ -84,4 +86,28 @@ test('the focus seam registers on every sweep, not once per document', () => {
   // The DOM only drops the repeat when type, callback AND capture all match.
   assert.equal(registered[0].listener, registered[1].listener);
   assert.deepEqual(registered.map((entry) => entry.capture), [true, true]);
+});
+
+// The × is in every window - a tile in the grid has no chip in the strip to close it from - and
+// the room it takes out of the editor's title row is its own size said again. The two are what
+// cannot drift apart: room for a button that is not there is a hole in the tab row nobody can
+// point at, and a plate wider than its room is a plate over the editor's own actions.
+test('the corner reserves exactly the room its button takes', () => {
+  const close = seams.find((seam) => seam.name === 'close');
+  const css = close.css(contexts[0]);
+  const room = Number(css.match(/--ct-close-room: (\d+)px/)[1]);
+  const width = Number(css.match(/\.ct-close \{[\s\S]*?width: (\d+)px/)[1]);
+
+  assert.equal(room, width);
+  assert.equal(close.css(contexts[1]), css, 'and a window that is not one of several has it too');
+});
+
+// The badge is the tile's handle only while there are other tiles to move it among. In single
+// view, and on a lone project, the press belongs to the menu underneath and nothing may say
+// otherwise - a grab cursor over a button that will not drag is the app lying about itself.
+test('the badge offers a grab only where there is something to rearrange', () => {
+  const identity = seams.find((seam) => seam.name === 'identity');
+
+  assert.match(identity.css({ ...contexts[0], tiled: true }), /menubar-menu-button \{ cursor: grab; \}/);
+  assert.doesNotMatch(identity.css({ ...contexts[0], tiled: false }), /cursor: grab/);
 });

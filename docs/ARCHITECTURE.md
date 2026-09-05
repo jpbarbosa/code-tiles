@@ -89,10 +89,12 @@ export default {
   badge, forwarding a click. It runs in the preload's isolated world with DOM access, and it
   is handed `api.onContext`, `api.send` and `api.whenReady`.
 
-`ctx` is the project context: `{ folder, name, hue, icon, claudeState, focused, maximized, layout }`.
-It arrives
-before the first paint (through `additionalArguments`) and is updated by IPC. A seam reads it
-and re-renders; it never asks main for it.
+`ctx` is the project context:
+`{ folder, name, hue, icon, claudeState, focused, tiled, maximized, layout }`. It arrives before
+the first paint (through `additionalArguments`) and is updated by IPC. A seam reads it and
+re-renders; it never asks main for it. `tiled` is the one fact both of the app's own controls in
+a window hang on - whether this is one of several tiles - and `maximized` says nothing while it
+is false.
 
 ### Why a preload, and not injection from the host
 
@@ -162,6 +164,11 @@ the project list or view mode, and applies the rects to the views. The shell pag
 same rects so it can draw the glow around the focused one, and the handles so it can put a
 cursor on each gutter - which is the only reason it knows either.
 
+`rectAt(rects, x, y)` is the same arithmetic answering the other question: which tile a point is
+in. A tile dragged by its grip is hit-tested with it, against the rects the views were placed
+from and against a cursor main reads from the OS - so a gesture that begins inside a window still
+costs no measurement across the boundary.
+
 `sizes` is the one thing about the grid that is a choice rather than a derivation: a share per
 column and per row, summing to one. A gutter drag sends main the POINTER's position, never a
 rect; `gridResize` turns it into shares, and only the two either side of that gutter move.
@@ -207,7 +214,9 @@ src/main/index.js       lifecycle, wiring
 src/main/server.js      code-server child: port, spawn, health, pidfile, orphan sweep
 src/main/window.js      the BrowserWindow and the shell page
 src/main/tiles.js       WebContentsView per project: create, place, focus, destroy
-src/main/layout.js      pure geometry
+src/main/layout.js      pure geometry, and which tile a point is in
+src/main/order.js       pure ordering: what each drag gesture means, and the slots a closed
+                        project keeps while the open ones are rearranged around it
 src/main/projects.js    the project list and its ordering
 src/main/activity.js    Claude's own hooks: installing them, and what each project's state is
 src/main/desktop.js     your VS Code install, read-only: profiles, associations, extension ids
@@ -228,7 +237,8 @@ src/shell/shell.js      one module, talks to main through window.ct
 src/shell/shell.css
 src/shell/usage.html    the usage panel: its own page in its own window, on the same preload
 src/shell/picker.html   the project picker: the same, one screen wide
-src/shell/format.js     what both pages agree on: the colour ramp and a reset time
+src/shell/format.js     what the pages agree on: the colour ramp, a reset time, and a project's
+                        mark - its favicon, or its initial on its own hue
 src/shell/preload.cjs   contextBridge: window.ct
 
 src/guest/manifest.js   the seam list. Adding a seam means adding a line here.

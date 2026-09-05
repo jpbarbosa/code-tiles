@@ -267,6 +267,8 @@
   </div>
 
   <script type="module">
+    import { projectMark } from './format.js';
+
     const list = document.getElementById('list');
     const none = document.getElementById('none');
 
@@ -286,7 +288,7 @@
       choose.type = 'button';
       choose.className = 'choose';
       choose.title = project.folder;
-      choose.append(mark(project), span('name', project.name), span('path', project.short));
+      choose.append(projectMark(project), span('name', project.name), span('path', project.short));
       // An open project is a tile you already have, so it takes the focus rather than a second
       // copy of itself. The app's own list makes opening one that is already open the same thing,
       // but only this way clears a turn that finished while you were looking elsewhere.
@@ -314,26 +316,6 @@
       });
       item.append(forget);
       return item;
-    }
-
-    // The favicon its badge wears inside the window, or the initial on the project's own hue -
-    // which is sampled from that favicon when there is one, so the two never disagree on a colour.
-    function mark(project) {
-      if (project.icon) {
-        const image = document.createElement('img');
-        image.src = project.icon;
-        image.alt = '';
-        // A .ico Chromium cannot decode would otherwise leave a broken-image glyph in the row.
-        image.addEventListener('error', () => image.replaceWith(monogram(project)));
-        return image;
-      }
-      return monogram(project);
-    }
-
-    function monogram(project) {
-      const node = span('monogram', (project.name.trim()[0] || '?').toUpperCase());
-      node.style.background = `oklch(0.62 0.15 ${project.hue})`;
-      return node;
     }
 
     function span(className, text) {
