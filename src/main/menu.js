@@ -1,14 +1,14 @@
 import { Menu, app } from 'electron';
 
 // Ctrl+Cmd throughout, so nothing here shadows the editor's own Cmd+1, Cmd+W or Cmd+O inside a
-// tile. Cmd+` is the deliberate exception: it is macOS's "next window in this app", and a tile
-// is a window.
+// tile. Two deliberate exceptions, both of them chords macOS owns: Cmd+` is "next window in this
+// app", and a tile is a window; Cmd+, is Preferences, and the check below is what makes it free.
 //
 // The editor wins any chord it binds itself, since its dispatcher sees the key before the menu
 // does, and Ctrl+Cmd is not the free family it looks like: Ctrl+Cmd+I is Chat and Ctrl+Cmd+1 and
 // Ctrl+Cmd+9 move an editor between groups. Devtools sits on Alt+Cmd+I for that reason, which is
 // also the chord a browser puts them on. docs/CONSTRAINTS.md says how to check a chord.
-export function installMenu(desk) {
+export function installMenu({ desk, preferences }) {
   const projectNumbers = Array.from({ length: 9 }, (_, i) => ({
     label: `Project ${i + 1}`,
     accelerator: `Control+Command+${i + 1}`,
@@ -16,7 +16,26 @@ export function installMenu(desk) {
   }));
 
   Menu.setApplicationMenu(Menu.buildFromTemplate([
-    { role: 'appMenu' },
+    // Not `role: 'appMenu'`, which has no room for a Preferences item. Cmd+, is the one chord
+    // outside the Ctrl+Cmd family safe to take plainly: the web build binds it to nothing at all
+    // (2048|82 is in no part of the bundle), so the editor's dispatcher lets it through and the
+    // item fires from inside a tile as readily as from the strip.
+    {
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { label: 'Preferences…', accelerator: 'Command+,', click: () => preferences.open() },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
     {
       label: 'File',
       submenu: [

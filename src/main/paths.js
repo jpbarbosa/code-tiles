@@ -10,6 +10,7 @@ export const files = {
   shellPage: path.join(ROOT, 'src/shell/index.html'),
   usagePage: path.join(ROOT, 'src/shell/usage.html'),
   pickerPage: path.join(ROOT, 'src/shell/picker.html'),
+  preferencesPage: path.join(ROOT, 'src/shell/preferences.html'),
   shellPreload: path.join(ROOT, 'src/shell/preload.cjs'),
   guestRuntime: path.join(ROOT, 'src/guest/runtime.cjs'),
 };

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Preferences</title>
+  <!-- Its own window, so it carries its own style rather than pulling the strip's in. The colours
+       are the usage panel's and the picker's, which are the other two windows this app draws. -->
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #d6d6d8;
+      --ink-quiet: #8b8b90;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 14px 16px 16px;
+      background: #232325;
+      color: var(--ink);
+      font: 12px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      user-select: none;
+      cursor: default;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--ink-quiet);
+    }
+
+    .sub { margin: -6px 0 0; color: var(--ink-quiet); }
+
+    #dials { display: flex; flex-direction: column; gap: 13px; }
+
+    .dial { display: flex; flex-direction: column; gap: 6px; }
+    .dial .name { font-weight: 500; }
+    .dial .why { color: var(--ink-quiet); font-size: 11px; }
+
+    /* One track holding three equal rungs, so the row reads as one control rather than as three
+       buttons that happen to be adjacent. */
+    .rungs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      padding: 2px;
+      border-radius: 7px;
+      background: rgb(255 255 255 / 0.05);
+    }
+
+    .rungs label {
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 5px;
+      color: var(--ink-quiet);
+    }
+
+    /* The input is the control and the span is its face: hidden rather than removed, so the
+       radio group keeps its arrow keys, its focus and its labels. */
+    .rungs input { position: absolute; opacity: 0; pointer-events: none; }
+    .rungs label:hover { background: rgb(255 255 255 / 0.07); }
+    .rungs label:has(input:checked) { background: rgb(255 255 255 / 0.12); color: var(--ink); }
+    .rungs label:has(input:focus-visible) { outline: 1px solid rgb(255 255 255 / 0.28); outline-offset: -1px; }
+
+    footer {
+      border-top: 1px solid rgb(255 255 255 / 0.09);
+      padding-top: 10px;
+      color: var(--ink-quiet);
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Project colour</h1>
+  <p class="sub">Every project wears the hue its own favicon is mostly made of. How much of that
+    hue a window wears:</p>
+
+  <div id="dials"></div>
+
+  <footer>Every open window follows at once, with no reload. What tells two windows apart with
+    both dials down is the project's icon on its badge and its name on the side bar's title row -
+    neither is painted, so neither has a rung here.</footer>
+
+  <script type="module">
+    // The rungs and the dial keys are the same strings here, over IPC and in the store, so a
+    // rung is spelled once for the whole app - and what one is worth in a mix is the tint seam's,
+    // which is the only place that ever turns a name into a number.
+    const RUNGS = ['subtle', 'medium', 'strong'];
+    const DIALS = [
+      ['focused', 'The tile you are in',
+       'Its parts, its chrome, and the ground they float on.'],
+      ['quiet', 'Every other tile',
+       'Below the tile you are in is what makes focus read across the grid.'],
+    ];
+
+    const dials = document.getElementById('dials');
+    const inputs = {};
+
+    for (const [dial, name, why] of DIALS) {
+      const row = document.createElement('div');
+      row.className = 'dial';
+      row.innerHTML = '<span class="name"></span><span class="why"></span><div class="rungs"></div>';
+      row.querySelector('.name').textContent = name;
+      row.querySelector('.why').textContent = why;
+
+      const track = row.querySelector('.rungs');
+      inputs[dial] = RUNGS.map((rung) => {
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = dial;
+        input.value = rung;
+        const face = document.createElement('span');
+        face.textContent = rung[0].toUpperCase() + rung.slice(1);
+        label.append(input, face);
+        track.append(label);
+        input.addEventListener('change', () => {
+          if (input.checked) window.ct.call('preferences:set', { dial, rung });
+        });
+        return input;
+      });
+      dials.append(row);
+    }
+
+    function show(levels) {
+      for (const [dial] of DIALS) {
+        const wanted = levels?.[dial];
+        const hit = inputs[dial].find((input) => input.value === wanted) || inputs[dial][1];
+        hit.checked = true;
+      }
+      // The window is sized by what the page drew, so nothing here counts rows.
+      window.ct.call('preferences:height', { height: document.documentElement.scrollHeight });
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') window.close();
+    });
+
+    show(await window.ct.call('preferences:state'));
+  </script>
+</body>
+</html>

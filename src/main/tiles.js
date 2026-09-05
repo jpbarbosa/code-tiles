@@ -155,6 +155,9 @@ function contextOf(project) {
     // window is, said in the one place inside it that a glance lands on.
     icon: project.icon || null,
     focused: Boolean(project.focused),
+    // How much of that hue to wear, from the app's own preference: the rung for the state this
+    // window is IN, never both. A window with none takes the seam's own middle rung.
+    tint: project.tint || 'medium',
     // Whether this window is one of SEVERAL tiles, which is what both of the app's own controls
     // inside it hang on: the item that widens it, and the grip that moves it among the rest.
     tiled: Boolean(project.tiled),

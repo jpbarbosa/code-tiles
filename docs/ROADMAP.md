@@ -44,6 +44,13 @@ What the tree does today, what comes next, and what to check when the server is 
   bar, the panel or the secondary side bar in every open project at once. A part nobody has
   chosen for is left alone, and the buttons show the focused window's own answer, so a Cmd+B
   inside a tile moves them.
+- Project colour, the app's one preference (`⌘,`): how much of its hue a window wears, on a dial
+  for the tile you are in and a dial for the tiles you are not, three rungs each. A rung is a
+  MULTIPLIER on every amount the tint spends - the veil over a part, the wash on a plate, the
+  ground, the ink on it, the chat bubble's chroma - so `medium` on both is exactly what the app
+  painted before the dial existed and a step means the same thing wherever it is set. A window is
+  handed the ONE rung that applies to it, never the preference, so which dial it came off stays
+  the app's business. Persisted, and every open window follows the moment it moves, with no reload.
 - The usage meter: a 5-hour and a 7-day bar, live from `/api/oauth/usage` behind the app's own
   PKCE login, one poll for the account with a five minute floor and a back-off on 429. The grant
   is encrypted with `safeStorage`. Clicking opens the panel - exact numbers, reset times,
@@ -105,14 +112,19 @@ What the tree does today, what comes next, and what to check when the server is 
   Claude Code - is simply absent),
   `ground` (the theme's shell colour reported back so the app's ground matches it),
   `tint` (the project's hue mixed into the parts' own surfaces and their chrome, into every
-  active tab, and into the focused window's ground - which the activity bar wears too, being
-  shell rather than a part; the terminal takes the same colour from a `lighten` overlay, its
+  active tab, and into the window's ground - which the activity bar wears too, being
+  shell rather than a part - at a share of it on a tile nobody is in, so the ground is what
+  answers "where am I"; the terminal takes the same colour from a `lighten` overlay, its
   canvas having taken its own at construction and letting no stylesheet in; and the activity
   bar's resting icons are re-derived over that ground, which a theme's own grey is 1.3:1 against -
-  the same ink the side bar's title row wears;
+  the same ink the side bar's title row wears, at half the chroma on a tile nobody is in;
   and a webview under a part - the Claude panel - gets the same mix again inside its own document,
   on every background the theme wrote there rather than the three, its canvas being the surface it
-  actually shows),
+  actually shows, plus the one surface no mix can reach: your own turns, which the theme ships at
+  `input.background` and a theme is free to make the very colour of the page, so they are PAINTED -
+  the page stepped a tenth of the way toward its own text and rotated to the hue, which is a
+  lighter bubble on a dark theme and a darker one on a light theme from the same number. Every
+  amount above is a MULTIPLE of the rung the Project colour bullet above sets),
   `identity` (the project's name on the side bar's title row, and its favicon in place of the
   hamburger's glyph at the top of the activity bar - the button underneath is still the editor's,
   so it still opens the menu - with a ring around that favicon for what Claude is doing here: it

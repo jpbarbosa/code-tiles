@@ -14,6 +14,8 @@ const EMPTY = {
   // The grid's proportions, per grid SHAPE: { "2x2": { cols: [...], rows: [...] } }. Shares,
   // never pixels, so a resized window keeps them.
   sizes: {},
+  // How much of its colour a window wears, one rung per state. The only preference the app has.
+  tint: { focused: 'medium', quiet: 'medium' },
   serverPort: null,   // reused so the origin, and so the login, is stable
 };
 

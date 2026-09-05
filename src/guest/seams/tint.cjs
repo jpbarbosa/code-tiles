@@ -2,18 +2,43 @@
 
 const STYLE_ID = 'code-tiles-tint';
 
+// How much of its colour a window wears. A rung is a MULTIPLIER on every amount below, so
+// `medium` is exactly what the app painted before there was a dial. A window is handed the one
+// rung that applies to it; which of the app's two dials that came off is the app's business.
+const RUNGS = { subtle: 0.55, medium: 1, strong: 1.5 };
+
+// The project's share of each mix at `medium`. `color-mix` is written the other way round - how
+// much of the THEME survives - so each is spent as its complement.
+const SHARE = {
+  veil: 7,     // over the whole of a part
+  wash: 26,    // on a plate: the side bar's title row, the menubar, an active tab
+  // The gaps the parts float in, which is the surface focus is read off - so this is the one
+  // amount that is already two before any dial moves it.
+  ground: { focused: 38, quiet: 15 },
+};
+// A mark ON that ground is a colour rather than a mix, so its own dial is chroma.
+const INK = { focused: 0.05, quiet: 0.025 };
+// Your own turn in the chat is a BLOCK in the reading column, so what makes it a bubble is its
+// distance from the page rather than its colour: the step is held while the dial moves the
+// chroma. TOWARD THE TEXT rather than up, so one number lifts it on a dark theme and drops it on
+// a light one.
+const TURN = { step: 10, chroma: 0.028 };
+
+const rungOf = (context) => RUNGS[context.tint] || RUNGS.medium;
+const stateOf = (context) => (context.focused ? 'focused' : 'quiet');
+// What is left of the theme once the project's colour has taken its share.
+const survives = (share, rung) => `${Math.round((100 - share * rung) * 100) / 100}%`;
+const chroma = (amount, rung) => Math.round(amount * rung * 10000) / 10000;
+
 // The tokens, said once and spent in two sheets: a frame shares no cascade with the document
 // holding it, so the workbench's block and a webview's own each have to declare them.
-const tokens = (hue) => `  --ct-brand: oklch(0.62 0.15 ${hue});
+const tokens = (context) => `  --ct-brand: oklch(0.62 0.15 ${context.hue});
   /* How much of the theme's own colour survives the hue, wherever the hue lands on a surface. */
-  --ct-wash: 74%;
+  --ct-wash: ${survives(SHARE.wash, rungOf(context))};
   /* The same hue over the whole of a part rather than over its chrome, at a quarter of the
      strength: enough that a side bar reads as this project's, little enough that the plate
      below still reads as a plate on top of it. */
-  --ct-veil: 93%;
-  /* The same ground on a tile nobody is in, quieter: visible as this project's, well below the
-     62% focus spends. */
-  --ct-trace: 85%;`;
+  --ct-veil: ${survives(SHARE.veil, rungOf(context))};`;
 
 const veiled = (source) => `color-mix(in oklab, var(${source}) var(--ct-veil), var(--ct-brand))`;
 
@@ -87,7 +112,7 @@ function rawsFrom(root) {
 // page it paints as `--app-primary-background: var(--vscode-sideBar-background)` there, so a
 // rewrite one element down is inherited by nothing it uses.
 // !important because those properties are written INLINE, which no stylesheet outranks otherwise.
-function frameCss(hue, surface, raws) {
+function frameCss(context, surface, raws) {
   const mixed = (value) => `color-mix(in oklab, ${value} var(--ct-veil), var(--ct-brand))`;
   const lines = Object.keys(raws).map((name) => `  ${name}: ${mixed(raws[name])} !important;`);
   const canvas = raws[surface]
@@ -97,24 +122,52 @@ function frameCss(hue, surface, raws) {
     : '';
   return `
 :root {
-${tokens(hue)}
+${tokens(context)}
 ${lines.join('\n')}
 ${canvas}
+}
+${turnCss(context, raws[surface] && mixed(raws[surface]))}`;
+}
+
+// YOUR OWN TURNS, painted rather than tinted: the extension paints the bubble with
+// `input.background`, which a theme is free to make the very colour of the page behind it - Dark
+// 2026 and Monokai Pro both do - and one mix over two equal colours leaves them equal. `page` is
+// the tinted surface this frame is drawn over, so the bubble is a step off what the eye meets.
+//
+// What is redefined is the EXTENSION'S own variable, on the bubble alone, so its own rule spends
+// it - and so do the two things that read the variable rather than the element: a collapsed turn's
+// truncation fade, and an attachment pill's 85% mix.
+//
+// The class hash is per build, so the stable half is what is matched, and the trailing underscore
+// is load-bearing: it keeps this off `userMessageContainer_` and `userMessageAttachments_`, which
+// share the prefix. Claude's own turns wear the same `message_` as yours and so cannot be told
+// apart - one painted side is enough. [claude-code 2.1.261]
+function turnCss(context, page) {
+  if (!page) return '';
+  const step = `color-mix(in oklab, ${page} ${100 - TURN.step}%, var(--vscode-foreground, #fff))`;
+  return `
+[class*="userMessage_"] {
+  --app-input-background: oklch(from ${step} l ${chroma(TURN.chroma, rungOf(context))} ${context.hue});
+  /* The hairline was the whole separation; on a painted bubble it reads as a second surface. On
+     the element rather than on --app-input-border, which the pills inside it also read. */
+  border-color: transparent;
 }
 `;
 }
 
-// The project's colour, worn by the parts and - when this window is the focused one - by the
-// ground its parts float on.
+// The project's colour, worn by the parts, by the ground they float on - louder on the tile you
+// are in than on the ones you are not, which is what makes focus read across a grid - and by your
+// own turns in its chat.
 //
 // Every value is MIXED INTO the theme's own colour rather than set outright, so a light theme
 // gets a light chrome and a dark one a dark chrome, and a theme change carries the tint with it
-// without anything here being told.
+// without anything here being told. How much of it is worn is the one thing here that is a
+// preference rather than a derivation, and it arrives as `tint`: see RUNGS at the top.
 module.exports = {
   name: 'tint',
   css: (context) => `
 .monaco-workbench {
-${tokens(context.hue)}
+${tokens(context)}
   --ct-plate: color-mix(in oklab, var(--vscode-sideBar-background) var(--ct-wash), var(--ct-brand));
 
   /* The surfaces, which the modern UI paints from the theme's own variables and with an
@@ -133,14 +186,33 @@ ${tokens(context.hue)}
      side bar's title row. A theme picks its foregrounds for its own near-black surfaces, and on
      the ground focus puts there they measure 1.3:1 - a smudge rather than a glyph; walking from
      that ground back toward the theme's own icon colour lands the right way up in a light theme
-     too, and the hue arrives at a chroma low enough to read as a wash. */
+     too, and the hue arrives at a chroma low enough to read as a wash.
+     A quiet tile wears the same mark at half the chroma: the ground under it is already the
+     quieter one, so the tie is the only thing left to say more softly. */
+  --ct-ink-chroma: ${chroma(INK[stateOf(context)], rungOf(context))};
   --ct-ink: oklch(from color-mix(in oklab, var(--ct-source-icon) 80%, var(--modern-ui-shell-background))
-    l 0.05 ${context.hue});
+    l var(--ct-ink-chroma) ${context.hue});
 
   & > * {
     --vscode-sideBar-background: ${veiled('--ct-source-sidebar')};
     --vscode-editor-background: ${veiled('--ct-source-editor')};
     --vscode-panel-background: ${veiled('--ct-source-panel')};
+
+    /* The activity bar's icons follow the ground the bar wears, focused or not, and the ink is
+       dimmer than the colour a checked view wears - so the view you are in stays the brightest
+       thing in the column. */
+    --vscode-activityBar-inactiveForeground: var(--ct-ink);
+  }
+
+  /* That variable reaches the menubar's glyph and nothing else, because every view's icon is
+     written INLINE on its label from JS: a codicon paints with color, and an extension's own icon
+     is a mask that paints with background-color. Held at (0,7,0), below the editor's own checked
+     and hover rules, so those two states stay the theme's. */
+  & .part.activitybar .monaco-action-bar .action-item {
+    & .action-label.codicon { color: var(--vscode-activityBar-inactiveForeground) !important; }
+    & .action-label.uri-icon {
+      background-color: var(--vscode-activityBar-inactiveForeground) !important;
+    }
   }
 
   /* Every part writes its background INLINE, as a literal, from JS. The modern UI's own
@@ -206,41 +278,19 @@ ${tokens(context.hue)}
     border-radius: var(--vscode-cornerRadius-small, 4px);
   }
 }
-${context.focused ? `
+
 /* Focus is the ground: the gaps between this window's own parts take the hue while every part
-   inside it stays as the theme painted it. !important because the title bar service writes this
-   variable INLINE on the workbench container, which a stylesheet cannot otherwise outrank. */
+   inside it stays as the theme painted it - and a tile nobody is in wears the same ground at a
+   fraction of it, so it still reads as this project's without answering "you are here". One
+   variable, because it is the one name everything that is ground already reads: the editor paints
+   the grid view from it, and the activity bar is pointed at it above. !important because the
+   title bar service writes this variable INLINE on the workbench container, which a stylesheet
+   cannot otherwise outrank. */
 .monaco-workbench {
-  --modern-ui-shell-background:
-    color-mix(in oklab, var(--vscode-titleBar-activeBackground) 62%, var(--ct-brand)) !important;
-
-  /* The activity bar's icons follow the ground for the same reason the bar does, and the ink is
-     dimmer than the colour a checked view wears, so the view you are in stays the brightest
-     thing in the column. */
-  & > * {
-    --vscode-activityBar-inactiveForeground: var(--ct-ink);
-  }
-
-  /* That variable reaches the menubar's glyph and nothing else, because every view's icon is
-     written INLINE on its label from JS: a codicon paints with color, and an extension's own
-     icon is a mask that paints with background-color. Held at (0,7,0), below the editor's own
-     checked and hover rules, so those two states stay the theme's - which is what keeps the
-     view you are in the brightest thing in the column. */
-  & .part.activitybar .monaco-action-bar .action-item {
-    & .action-label.codicon { color: var(--vscode-activityBar-inactiveForeground) !important; }
-    & .action-label.uri-icon {
-      background-color: var(--vscode-activityBar-inactiveForeground) !important;
-    }
-  }
-}` : `
-/* The same ground focus paints, at a fraction of it: a quiet tile still reads as this project's.
-   One variable, because it is the one name everything that is ground already reads - the editor
-   paints the grid view from it, and the activity bar is pointed at it above. !important for the
-   reason the focused block gives: the title bar service writes it INLINE on the workbench. */
-.monaco-workbench {
-  --modern-ui-shell-background:
-    color-mix(in oklab, var(--vscode-titleBar-activeBackground) var(--ct-trace), var(--ct-brand)) !important;
-}`}
+  --modern-ui-shell-background: color-mix(in oklab,
+    var(--vscode-titleBar-activeBackground) ${survives(SHARE.ground[stateOf(context)], rungOf(context))},
+    var(--ct-brand)) !important;
+}
 `,
   // The stylesheet stops at a frame, so the same tint is said again inside every webview. The
   // element goes on documentElement rather than head: the editor's own applyStyles runs before a
@@ -257,7 +307,7 @@ ${context.focused ? `
         element = document.createElement('style');
         element.id = STYLE_ID;
       }
-      const css = frameCss(api.context.hue, surface, raws);
+      const css = frameCss(api.context, surface, raws);
       if (element.textContent !== css) element.textContent = css;
       if (element.parentElement !== root) root.appendChild(element);
     });

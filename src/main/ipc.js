@@ -4,7 +4,7 @@ import { pickerRows } from './picker-rows.js';
 
 // The whole surface between the app's three layers: one channel, one table. A new feature adds
 // a row here, never a channel, and the shell never talks to a guest directly.
-export function installIpc({ desk, usage, popover, picker }) {
+export function installIpc({ desk, usage, popover, picker, preferences }) {
   const projects = desk.projects;
   const rows = () => pickerRows(projects.all());
   // The folder dialog, from the picker's last row or in place of a picker with nothing in it.
@@ -26,6 +26,15 @@ export function installIpc({ desk, usage, popover, picker }) {
     'usage:connect': () => { popover.pin(); return usage.connect(); },
     'usage:code': ({ code }) => usage.submit(code),
     'usage:disconnect': () => usage.disconnect(),
+    // The preferences window, which is a window of its own for the reason the other two are. A
+    // dial moved re-renders the desk, which is what carries the new rung into every open window.
+    'preferences:state': () => preferences.levels,
+    'preferences:set': ({ dial, rung }) => {
+      const levels = preferences.set(dial, rung);
+      desk.render();
+      return levels;
+    },
+    'preferences:height': ({ height }) => preferences.fit(height),
     'mode:set': ({ mode }) => desk.setMode(mode),
     // A window's maximize item, saying what it will do rather than what it is, so the state has
     // one copy and it is the window's own.

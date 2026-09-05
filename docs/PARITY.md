@@ -82,7 +82,7 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 | Tint inside the chat's iframe | yes | yes | same, said again in each frame's own document |
 | Tint on the dimmed icons and labels | yes | **partial** | the activity bar's icons, re-derived over the tinted ground, and only in the focused window - plus the side bar's title row, which wears the same ink everywhere. Unselected tab labels, in the editor's row and the terminal strip alike, are left the theme's |
 | Tint on the 1px edges of the parts | yes | **no** | |
-| Your own turns in the chat painted apart from Claude's | yes | **no** | |
+| Your own turns in the chat painted apart from Claude's | yes | yes | the same reason in both: a theme is free to ship `input.background` as the very colour of the page, so no veil can break the tie. Painted here by redefining the extension's OWN variable on the bubble, so its own rule spends it and the truncation fade and the attachment pills follow - the page stepped a tenth of the way toward its own text, which is a lighter bubble on a dark theme and a darker one on a light theme from one number |
 | Status bar painted the project's colour | yes | **n/a** | there is no status bar |
 | Terminals as tabs across the panel header | yes | yes | same `<select>` mirror, same select-then-wait close |
 | Maximize Panel taken off that header | yes | **no** | it hides the editor part rather than growing the panel, and undoes itself under a Claude chat |
@@ -138,7 +138,7 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 | Which profile a folder opens under | seeded associations | **named in the URL** | `?folder=...&payload=[["profile","..."]]`, so the app says it on every load |
 | The profile registry seeded into browser storage | yes | yes | before the first tile in both |
 | One shared extensions directory, installed from Open VSX, pruned | yes | yes | |
-| Per-surface tint strength, six dials, `⌘,` | yes | **by design** | |
+| Tint strength on a dial, `⌘,` | six dials, four rungs, per surface | **two dials, three rungs** | the tile you are in and the tiles you are not, each a multiplier on every amount the tint spends rather than a level per surface. `medium` on both is what the app paints with nothing set |
 
 ## Server, process, lifecycle
 
@@ -213,11 +213,12 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 
 ## Dropped on purpose
 
-**The tint preferences.** Six dials, four levels, a second window and a persisted matrix, to
-answer a question the tint now answers with two tokens. The dials existed because the old
-tint rewrote the theme's own variables and could not know what it would land on; this one
-mixes over the theme's colour and keeps its lightness, so there is nothing to calibrate per
-project. If one dial comes back it is the wash, not the matrix.
+**The tint MATRIX.** Six dials, four levels and a level per surface, to answer a question this
+tint answers with two tokens: it mixes over the theme's own colour and keeps its lightness, so
+there is nothing to calibrate per surface or per project. What did come back is the amount - two
+dials, three rungs, one multiplier over every amount at once - because how loud a tile should be
+is a taste and not a derivation, and because the answer differs between the tile you are in and
+the tiles you are not. That is the dial the note here always said would be the one to return.
 
 **Symlinked desktop settings.** Two-way sharing meant a watcher whose job was to survive VS
 Code replacing a symlink with a plain file on every atomic save, and it meant a setting this

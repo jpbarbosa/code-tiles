@@ -250,7 +250,10 @@ is stored as a sum, `mac:{primary:N}` with CtrlCmd 2048, Shift 1024, Alt 512, Wi
 KeyA 31 (so KeyI 39) and Digit0 21. A chord worth more than the workaround is taken back rather
 than worked around: a seam's `keybindings` write `-command` into every profile's file, which the
 web build honours for DEFAULT bindings, and the menu then sees the key. That is how Actual Size
-holds Cmd+0, which the editor binds to Focus into Primary Side Bar. **[checked]**
+holds Cmd+0, which the editor binds to Focus into Primary Side Bar. The check also comes back
+NEGATIVE sometimes, which is the cheap outcome: Cmd+, is 2048|82 = 2130, and neither that number
+nor that expression is anywhere in the bundle - the web build binds Preferences to nothing, so the
+app's own item fires from inside a tile with no chord to take back. **[checked]**
 
 **Chromium keeps a zoom level per HOST, and every tile is one host.** Setting it on any tile
 sets it on every other, and a project opened later comes up already at it, so the app zooms as one
@@ -360,7 +363,12 @@ chat input is `--app-input-background: var(--vscode-input-background)` and stays
 `--vscode-*background*` is tinted instead, 277 of them in Dark 2026, minus the ground. What that
 still cannot do is SEPARATE two surfaces a theme shipped equal - `input.background` and
 `sideBar.background` are both `#191a1b` here, and `#222222` in Monokai Pro - because one veil over
-both keeps them equal. A surface that has to read as lifted has to be painted, not tinted.
+both keeps them equal. A surface that has to read as lifted has to be painted, not tinted - and
+the way to paint one without a selector on a background is to redefine the EXTENSION'S own
+variable on that element. Its own rule then spends the new value, and so does everything that
+reads the variable rather than the element: a collapsed turn's truncation fade ends on it, an
+attachment pill mixes 85% of it, and a `background-color` of ours would have left both a full step
+behind the block they sit in.
 **[checked]**
 
 **The editor's own frame moves between versions.** The inset it floats its parts in was 4px on

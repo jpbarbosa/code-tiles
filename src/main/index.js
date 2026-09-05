@@ -11,6 +11,7 @@ import { Store } from './store.js';
 import { Tiles } from './tiles.js';
 import { Usage } from './usage.js';
 import { Picker } from './picker.js';
+import { Preferences } from './preferences.js';
 import { UsagePopover } from './popover.js';
 import { createWindow } from './window.js';
 import { installIpc } from './ipc.js';
@@ -114,7 +115,8 @@ app.whenReady().then(async () => {
   const projects = new Projects(store, { profileFor, claudeStates: (folders) => activity.states(folders) });
   const window = createWindow();
   const tiles = new Tiles({ window, server });
-  const desk = new Desk({ window, projects, tiles, activity });
+  const preferences = new Preferences({ store, parent: window });
+  const desk = new Desk({ window, projects, tiles, activity, preferences });
   activity.start();
 
   // Account-global, so it is the app's poll rather than one per tile, and it publishes on its
@@ -131,10 +133,11 @@ app.whenReady().then(async () => {
   installIpc({
     desk,
     usage,
+    preferences,
     popover: new UsagePopover({ parent: window }),
     picker: new Picker({ parent: window }),
   });
-  installMenu(desk);
+  installMenu({ desk, preferences });
 
   window.webContents.on('did-finish-load', () => desk.render());
   for (const event of ['resize', 'enter-full-screen', 'leave-full-screen']) {

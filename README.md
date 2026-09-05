@@ -61,12 +61,20 @@ chip and the keyboard, and focus is shown by **colour on the ground, never by a 
 
 Every project carries its own hue, sampled from the colours its own favicon is mostly made of
 and hashed from its path when there is no favicon to take one from - derived either way, so it
-is stable across restarts and never stored. The hue appears in six places and nowhere else: the
-chip, the focused tile's ground and glow, the sidebar title row inside the window, the branch
-pills under its file tree, the ring around the identity badge, and the ACTIVE tab wherever
-there is one - a file, a Claude
+is stable across restarts and never stored. Only the ANGLE is taken: every project spends it at
+one lightness and one chroma, so a pastel favicon and a saturated one give two tiles of the same
+weight and nothing but the colour tells them apart. The hue appears in seven places and nowhere
+else: the chip, the tile's ground and glow, the sidebar title row inside the window, the branch
+pills under its file tree, the ring around the identity badge, your own turns in its Claude chat,
+and the ACTIVE tab wherever there is one - a file, a Claude
 session, a terminal, the side bar's own view switcher. An inactive tab keeps the theme's colour,
 so in every row the hue marks the one thing you are working in.
+
+**How much of it is worn is the app's one preference** (`⌘,`): a dial for the tile you are in and
+a dial for the tiles you are not, three rungs each. Every open window follows at once, with no
+reload, and the middle rung on both is what the app paints with nothing set. The tiles you are not
+in are quieter than the one you are at every rung, which is what keeps focus readable across a
+grid however far the dials are pushed.
 
 The **chip in the strip wears that same mark**: the project's favicon, or its initial on its own
 hue where there is no favicon to take one from - and the hue is sampled from the favicon, so the
@@ -174,7 +182,10 @@ What the app changes about a stock editor is small, deliberate, and listed in on
 - **The editor's title bar and status bar are gone**, because the strip already names the
   project and the status bar carries per-file detail nobody reads from a tile they are
   glancing at. Both are turned off through the editor's own settings, not clipped.
-- **The window is tinted** with the project's hue: the parts wear it, the ground does not.
+- **The window is tinted** with the project's hue: the parts wear a veil of it, their chrome
+  more of it, and the ground they float on carries focus - louder on the tile you are in than on
+  the ones you are not. Your own turns in the Claude chat are PAINTED rather than veiled, because
+  a theme is free to ship that bubble as the very colour of the page behind it.
 - **The identity badge and its ring** are drawn in the activity bar, and the Claude chat tab's
   icon carries the same signal.
 - **The branch is put where it can be seen**, under the file tree, since the status bar that

@@ -19,6 +19,7 @@ export class Desk {
   #projects;
   #tiles;
   #activity;
+  #preferences;
   #ground = null;
   // null is "nobody has chosen for this part yet", which leaves every window the layout it
   // remembers. Not persisted: a fresh launch follows the windows rather than the last session.
@@ -30,11 +31,12 @@ export class Desk {
   // gesture is abandoned. Nothing about it is persisted - it lives and dies with the press.
   #drag = null;
 
-  constructor({ window, projects, tiles, activity = null }) {
+  constructor({ window, projects, tiles, activity = null, preferences = null }) {
     this.#window = window;
     this.#projects = projects;
     this.#tiles = tiles;
     this.#activity = activity;
+    this.#preferences = preferences;
   }
 
   get projects() {
@@ -49,11 +51,15 @@ export class Desk {
     // inside it hang on: the item that widens this one, and the grip that moves it among the
     // rest. Single view, or a lone project, has neither to offer.
     const tiled = mode !== 'single' && open.length > 1;
+    // Which of the two dials this window is on is answered HERE, so a window is handed the one
+    // rung that applies to it and never the preference itself.
+    const levels = this.#preferences?.levels || {};
 
     this.#tiles.sync(
       open.map((project) => ({
         ...project,
         focused: project.folder === focused,
+        tint: project.folder === focused ? levels.focused : levels.quiet,
         tiled,
         maximized: mode === 'master' && project.folder === master,
         layout: this.#layout,

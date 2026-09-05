@@ -181,6 +181,33 @@ const READ = `(() => {
       return fill ? getComputedStyle(fill).backgroundColor : null;
     })(),
     shellGround: workbench ? getComputedStyle(workbench).getPropertyValue('--modern-ui-shell-background').trim() : null,
+    // The tint's own dial, read where it is spent rather than off the context that set it. The
+    // middle rung is 93% / 74% / 0.05 on a focused window, which is also where a window that was
+    // told nothing at all lands.
+    tintRung: workbench ? ['--ct-veil', '--ct-wash', '--ct-ink-chroma']
+      .map((name) => getComputedStyle(workbench).getPropertyValue(name).trim()) : null,
+    // Your own turns in the chat, which are the one surface a mix cannot lift: read as the
+    // variable the extension's own rule paints the bubble with, against the page in the same
+    // document. Two equal values is the seam's rule not reaching that frame - which is what the
+    // theme shipped and what this exists to break. Null while no chat is open.
+    chatTurn: (() => {
+      const walk = (doc) => {
+        const bubble = doc.querySelector('[class*="userMessage_"]');
+        if (bubble) {
+          const view = doc.defaultView;
+          return [view.getComputedStyle(bubble).getPropertyValue('--app-input-background').trim(),
+            view.getComputedStyle(doc.documentElement).getPropertyValue('--vscode-input-background').trim()];
+        }
+        let frames;
+        try { frames = doc.querySelectorAll('iframe'); } catch { return null; }
+        for (const frame of frames) {
+          try { if (frame.contentDocument) { const hit = walk(frame.contentDocument); if (hit) return hit; } }
+          catch { /* cross-origin */ }
+        }
+        return null;
+      };
+      return walk(document);
+    })(),
     // The activity bar's icons, which are written inline from JS and so are read off the label
     // rather than off a variable. On the focused window every unchecked one carries the hue; the
     // checked one is the theme's, and a column of identical colours means the tie was lost.
