@@ -12,7 +12,7 @@ written down.
 **Where it stands: the product is there, the last mile is not.** Every mechanism the old app
 proved is rebuilt and several are better founded. What is missing is no longer a gesture: it is
 two patches of someone else's bundle - Claude's own column, the shared secret store - half a
-dozen stylesheets over it, and the app's own edges: popups, the dock badge, a signed `.app`.
+dozen stylesheets over it, and the app's own edges: the dock badge, a signed `.app`.
 
 Legend: **yes** the same feature, however differently built. **partial** the feature exists
 with something named missing from it. **no** not in this tree. **by design** deliberately not
@@ -159,15 +159,15 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 | | old | new | |
 |---|---|---|---|
 | An external link goes to the default browser | yes | yes | |
-| A popup that keeps its opener stays in this session | yes | **no** | every popup is denied here, so an auth flow started inside a tile lands in the browser, on the wrong origin and the wrong partition |
-| `will-navigate` holds the top frame to its origin | yes | **no** | a `target=_self` link navigates the tile off the workbench with no way back |
-| Schemes other than http, https and mailto refused | yes | **partial** | everything but an http(s) popup is denied, `mailto:` with the rest, so a mail link in a tile does nothing - and nothing guards navigation |
+| A popup that keeps its opener stays in this session | yes | yes | `noopener` is the discriminator in both, and the child inherits the view's session but not its preload, so the grant lands on the server's origin in this partition and no seam runs on a sign-in page |
+| `will-navigate` holds the top frame to its origin | yes | yes | main frame only in both, so the editor's webviews still navigate themselves. A target with no readable origin - `about:blank`, a `data:` page - is another place here rather than an abstention |
+| Schemes other than http, https and mailto refused | yes | yes | and a bare `mailto:` is handed to your mail client rather than given a window of its own, which the old policy would have tried on a popup that kept its opener |
 
 ## Build and tooling
 
 | | old | new | |
 |---|---|---|---|
-| A test suite | none | **74 tests** | geometry, seams, settings, keybindings, both patch kinds, activity, icon, usage |
+| A test suite | none | **84 tests** | geometry, seams, settings, keybindings, both patch kinds, activity, icon, usage |
 | Read a change back out of a live window | by hand | `CT_PROBE=1 npm start` | `scripts/dev-probe.js` reads every seam's effect out of each guest |
 | The pinned code-server fetched into `vendor/` | yes | yes | |
 | A packaged, signed `Code Tiles.app` | yes | **no** | roadmap item 4. The signing rules the old tree paid for (a real identity so TCC grants survive, no `--deep`, packager rewriting the vendor symlinks) are in that repo's README |
@@ -183,11 +183,11 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
    thing about working in a tile that the old tree fixed.
 3. **The extension secret merge.** Silent, intermittent, and it looks like an extension bug:
    a secret written in one tile disappears when another writes any secret of its own.
-4. **Popups and navigation.** An auth flow started inside a tile cannot complete, and a
-   `target=_self` link is a tile with no way back.
-5. **The dock badge**, which is the only part of the Claude signal that reaches you with the
+4. **The dock badge**, which is the only part of the Claude signal that reaches you with the
    app in the background.
-6. **The chat title**, which is the one thing the old chips carried that no tile does.
+5. **The chat title**, which is the one thing the old chips carried that no tile does.
+6. **A project's window booting lazily.** A view is created for every open project at startup,
+   visible or not, so every one of them loads a workbench against the one server at once.
 7. **Packaging.** Until then this runs from source, which also means it holds no TCC grants.
 
 ## What this tree has that the old one never did
@@ -214,7 +214,7 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
   half-applied, each naming what it degrades to.
 - **The maximize item is the editor's own**, built from the classes the activity bar builds
   its items with, so it takes the bar's size, hover and accent for free.
-- **74 tests and a probe** that reads every seam's effect out of a live window.
+- **84 tests and a probe** that reads every seam's effect out of a live window.
 
 ## Dropped on purpose
 

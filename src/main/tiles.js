@@ -1,6 +1,7 @@
 import { WebContentsView, shell } from 'electron';
 
 import { PARTITION, files } from './paths.js';
+import { routeNavigation, routePopup } from './links.js';
 
 // Half a level per press, as every browser's zoom steps, and a ceiling either side of actual
 // size: Chromium clamps neither end, so a held key reaches 3834%.
@@ -113,10 +114,24 @@ export class Tiles {
     // argument rather than a message. Forgetting what was sent makes the next render say it again.
     view.webContents.on('did-finish-load', () => this.#contexts.delete(project.folder));
 
-    // A link out of a project belongs in the browser. Nothing opens a second Electron window.
-    view.webContents.setWindowOpenHandler(({ url }) => {
-      if (/^https?:/.test(url)) shell.openExternal(url);
-      return { action: 'deny' };
+    // Where a link out of this project goes - src/main/links.js is the whole policy. An auth
+    // popup keeps its opener and so stays HERE, on the server's origin in this partition, which
+    // is where the secret it writes has to land. The child inherits this view's session and not
+    // its preload, so no seam runs on a sign-in page. [Electron 44]
+    view.webContents.setWindowOpenHandler((details) => {
+      const routed = routePopup(details);
+      if (routed.external) openExternal(routed.external);
+      if (routed.action !== 'allow') return { action: 'deny' };
+      return { action: 'allow', overrideBrowserWindowOptions: routed.options };
+    });
+
+    // The top frame only, by construction: a subframe raises `will-frame-navigate` instead, so
+    // the editor's own webviews still navigate themselves freely.
+    view.webContents.on('will-navigate', (event, url) => {
+      const routed = routeNavigation({ url, from: view.webContents.getURL() });
+      if (routed.action === 'allow') return;
+      event.preventDefault();
+      if (routed.external) openExternal(routed.external);
     });
 
     this.#views.set(project.folder, view);
@@ -124,6 +139,10 @@ export class Tiles {
     view.webContents.loadURL(this.#server.urlFor(project.folder, project.profile));
     return view;
   }
+}
+
+function openExternal(url) {
+  shell.openExternal(url).catch((error) => console.error('[link] openExternal:', error.message));
 }
 
 // What a window is told about itself: meaning, never measurements.

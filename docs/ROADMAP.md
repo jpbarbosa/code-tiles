@@ -58,6 +58,13 @@ What the tree does today, what comes next, and what to check when the server is 
   rather than a box under the +: the scrim is what makes a list of paths readable over four live
   editors, and it is the target that dismisses the thing. Nothing to pick from is not a screen
   worth showing, so an empty list is the folder dialog, which is also the list's last row.
+- Links out of a tile, in one policy (`src/main/links.js`, with tests): an external link goes to
+  your browser, but a popup that KEEPS its opener stays here, because the grant it is about to
+  write belongs on the server's origin in this partition and a sign-in finished in Safari writes
+  it where no tile can read it. The discriminator is `noopener`, which the editor puts on every
+  external link. The child inherits the view's session and not its preload, so nothing of ours
+  runs on a sign-in page. The top frame is held to the origin it is on for the same reason: a
+  view is loaded once when it is created, so a tile that navigates away has no way back.
 - Your VS Code, mirrored: every desktop profile reproduced on the server, its extensions
   installed from Open VSX into one shared directory, and each tile opened on the profile your
   desktop already associates with that folder.
