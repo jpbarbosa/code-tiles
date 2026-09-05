@@ -80,6 +80,10 @@ html, body {
    still allowed: past that the chips ellipsize rather than pushing anything off. */
 #chips {
   display: flex;
+  /* The row is the strip's full height while its chips stay centred in it, so nothing moves: the
+     clip below is what the height is for - it lands on the strip's edges rather than on the chips'
+     own, and the focused chip's foot survives it. */
+  align-self: stretch;
   align-items: center;
   gap: 4px;
   flex: 0 1 auto;
@@ -185,10 +189,17 @@ html, body {
 @keyframes ct-ring-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.34; } }
 
 /* Focused is a FILLED pill: the same hue the tile's ground and glow are wearing, so the eye
-   matches the chip to the window without a second cue. */
+   matches the chip to the window without a second cue. Its foot is square, because the row is
+   shown in single view only and what is under it there is the window it names. */
 .chip[aria-current="true"] {
   background: oklch(0.42 0.09 var(--hue));
   color: #fff;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  /* The row of ground between the chip's foot and the halo's own 3px of bleed, painted the halo's
+     colour so the two meet. A shadow rather than a taller chip or a border, because both of those
+     would move the label; this changes no box at all. */
+  box-shadow: 0 1px 0 oklch(0.45 0.09 var(--hue));
 }
 
 /* The chip being dragged is not in the row any more - a clone is following the hand - so what is
@@ -215,10 +226,14 @@ html, body {
 body[data-sorting] .chip,
 body[data-sorting] .chip .close { cursor: grabbing; }
 
+/* The chip centres this BOX and nothing in it, so the glyph's 13px line sat at the top of a 15px
+   box and painted 1px high - visible only under the hover plate, which draws the box. */
 .chip .close {
   opacity: 0;
   width: 15px;
   height: 15px;
+  display: grid;
+  place-items: center;
   border: 0;
   border-radius: 4px;
   background: transparent;
