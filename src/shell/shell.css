@@ -317,6 +317,19 @@ html, body {
   box-shadow: 0 0 22px 6px oklch(0.45 0.09 var(--hue) / 0.55);
 }
 
+/* A screen over the stage is a window, and it stops where the stage does so the traffic lights
+   stay usable. That leaves the strip lit, and with it the 22px of focus halo that reaches up into
+   the strip's row - measured, and not clippable at the stage's edge without cutting the halo off
+   in a hard line. So the shell dims its own row to match. Last in the page because #stage paints
+   after #strip, so the halo would otherwise paint over anything the strip put on top of itself. */
+#strip-scrim {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: var(--strip);
+  background: rgb(0 0 0 / 0.55);
+  pointer-events: none;
+}
+
 /* The gutters, as things you can take hold of. 8px is all there is: a view swallows every press
    inside its own rect, so a hit area wider than the gutter would be a hit area under a tile. */
 #splitters {

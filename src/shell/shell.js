@@ -9,6 +9,7 @@ const empty = document.getElementById('empty');
 const stage = document.getElementById('stage');
 const usage = document.getElementById('usage');
 const splitters = document.getElementById('splitters');
+const stripScrim = document.getElementById('strip-scrim');
 
 let state = { projects: [], rects: [], splitters: [], mode: 'grid', focused: null, strip: 36, parts: {} };
 let drag = null;
@@ -197,6 +198,9 @@ usage.addEventListener('click', () => {
 
 window.ct.onEvent((message) => {
   if (message?.type === 'usage') return void renderUsage(message.payload);
+  // The picker's window covers the stage and stops at the strip, so this row's half of its scrim
+  // is drawn here.
+  if (message?.type === 'picker') return void (stripScrim.hidden = !message.payload.open);
   if (message?.type !== 'state') return;
   state = message.payload;
   document.documentElement.style.setProperty('--strip', `${state.strip}px`);

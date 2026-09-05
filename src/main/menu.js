@@ -20,7 +20,7 @@ export function installMenu(desk) {
     {
       label: 'File',
       submenu: [
-        { label: 'Open Project...', accelerator: 'Control+Command+O', click: () => desk.pick() },
+        { label: 'Open Project...', accelerator: 'Control+Command+O', click: () => desk.browse() },
         { label: 'Close Project', accelerator: 'Control+Command+W', click: () => desk.closeFocused() },
       ],
     },

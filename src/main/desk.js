@@ -131,7 +131,9 @@ export class Desk {
     this.focus(open[next].folder);
   }
 
-  async pick() {
+  // The folder dialog, which is how a folder that has never been open here gets in. The picker
+  // is the other way, and it offers this as its last row.
+  async browse() {
     const picked = await dialog.showOpenDialog(this.#window, {
       properties: ['openDirectory', 'createDirectory'],
       buttonLabel: 'Open project',

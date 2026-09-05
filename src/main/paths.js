@@ -9,6 +9,7 @@ export const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 export const files = {
   shellPage: path.join(ROOT, 'src/shell/index.html'),
   usagePage: path.join(ROOT, 'src/shell/usage.html'),
+  pickerPage: path.join(ROOT, 'src/shell/picker.html'),
   shellPreload: path.join(ROOT, 'src/shell/preload.cjs'),
   guestRuntime: path.join(ROOT, 'src/guest/runtime.cjs'),
 };

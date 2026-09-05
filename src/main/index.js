@@ -10,6 +10,7 @@ import { Projects } from './projects.js';
 import { Store } from './store.js';
 import { Tiles } from './tiles.js';
 import { Usage } from './usage.js';
+import { Picker } from './picker.js';
 import { UsagePopover } from './popover.js';
 import { createWindow } from './window.js';
 import { installIpc } from './ipc.js';
@@ -127,7 +128,12 @@ app.whenReady().then(async () => {
   });
   usage.start();
 
-  installIpc({ desk, usage, popover: new UsagePopover({ parent: window }) });
+  installIpc({
+    desk,
+    usage,
+    popover: new UsagePopover({ parent: window }),
+    picker: new Picker({ parent: window }),
+  });
   installMenu(desk);
 
   window.webContents.on('did-finish-load', () => desk.render());

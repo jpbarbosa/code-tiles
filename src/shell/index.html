@@ -17,7 +17,7 @@
       </button>
     </div>
     <nav id="chips" aria-label="Projects"></nav>
-    <button id="add" title="Open a project (⌃⌘O)" aria-label="Open a project">+</button>
+    <button id="add" title="Open a project" aria-haspopup="dialog" aria-label="Open a project">+</button>
 
     <div id="right">
       <button id="usage" data-connected="false" aria-label="Claude usage">
@@ -65,6 +65,8 @@
       <button id="empty-add">Open a project</button>
     </section>
   </main>
+
+  <div id="strip-scrim" hidden></div>
 
   <script type="module" src="shell.js"></script>
 </body>

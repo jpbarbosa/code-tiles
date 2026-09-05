@@ -111,11 +111,13 @@ show the focused project's own answer, so a ⌘B pressed inside a tile moves the
 
 ## Opening, closing, reordering
 
-**+** opens the picker: every folder ever opened here, newest first, each with the icon its
-chip wears and the path that tells two folders of the same name apart. A project that is open
-is marked, and clicking it focuses that tile rather than opening a second copy. **Open
-folder...** is the last row of that list, not a footer, and it is what **+** does directly
-while the list is still empty.
+**+** opens the picker: every folder ever opened here, in the same project order the strip and
+the number shortcuts read, each with the icon its chip wears - or its initial on its own hue -
+and the path that tells two folders of the same name apart. A project that is open is marked,
+and clicking it focuses that tile rather than opening a second copy. **Open folder...** is the
+last row of that list, not a footer, and it is what **+** does directly while the list is still
+empty. The list is a screen over the grid rather than a menu under the button, because what it
+covers is four live editors.
 
 Closing a project takes the tile away and keeps the entry, which is what makes reopening a
 click. A folder that has since been deleted is dropped from the list rather than offered.

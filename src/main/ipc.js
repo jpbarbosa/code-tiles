@@ -1,12 +1,18 @@
 import { ipcMain } from 'electron';
 
+import { pickerRows } from './picker-rows.js';
+
 // The whole surface between the app's three layers: one channel, one table. A new feature adds
 // a row here, never a channel, and the shell never talks to a guest directly.
-export function installIpc({ desk, usage, popover }) {
+export function installIpc({ desk, usage, popover, picker }) {
   const projects = desk.projects;
+  const rows = () => pickerRows(projects.all());
+  // The folder dialog, from the picker's last row or in place of a picker with nothing in it.
+  // The screen goes first either way: a folder dialog behind a scrim reads as two dialogs.
+  const browse = () => { picker.close(); return desk.browse(); };
 
   const commands = {
-    'state': () => { desk.render(); usage.publish(); },
+    'state': () => { desk.render(); usage.publish(); picker.publish(); },
     'ground': ({ ground }) => desk.setGround(ground),
     // A window saying it was clicked into. Its own focus is already there.
     'focus': (_payload, folder) => desk.adoptFocus(folder),
@@ -34,7 +40,11 @@ export function installIpc({ desk, usage, popover }) {
     'project:open': ({ folder }) => desk.open(folder),
     'project:move': ({ folder, index }) => { projects.move(folder, index); desk.render(); },
     'project:swap': ({ a, b }) => { projects.swap(a, b); desk.render(); },
-    'project:pick': () => desk.pick(),
+    // The picker, which is a window of its own for the reason the usage panel is. Nothing to
+    // pick from is not a screen worth showing, so an empty list goes straight to the dialog.
+    'project:pick': () => (rows().length ? picker.toggle() : browse()),
+    'picker:list': () => rows(),
+    'project:browse': browse,
   };
 
   const dispatch = async (message) => {

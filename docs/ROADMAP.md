@@ -34,6 +34,14 @@ What the tree does today, what comes next, and what to check when the server is 
   per-model buckets, and the sign-in itself - which is a WINDOW of its own, because a panel drawn
   in the shell page would sit behind the tiles. It sizes itself to what it drew and dismisses on
   blur, except while a sign-in is in flight, since that blur is you fetching the code.
+- The picker: every folder ever opened here, in the one project order, each with its favicon or
+  its initial on its own hue, the path that tells two of the same name apart, and a mark on the
+  ones already open - which a click focuses rather than opening twice. A folder that is no longer
+  there is dropped from the list rather than forgotten, so an unmounted volume brings its projects
+  back with it. It is a WINDOW, for the reason the usage panel is one, and it covers the stage
+  rather than a box under the +: the scrim is what makes a list of paths readable over four live
+  editors, and it is the target that dismisses the thing. Nothing to pick from is not a screen
+  worth showing, so an empty list is the folder dialog, which is also the list's last row.
 - Your VS Code, mirrored: every desktop profile reproduced on the server, its extensions
   installed from Open VSX into one shared directory, and each tile opened on the profile your
   desktop already associates with that folder.

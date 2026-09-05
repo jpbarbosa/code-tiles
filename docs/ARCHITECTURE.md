@@ -113,13 +113,13 @@ your setup down into it. It is reproduced instead, on every start, from the VS C
 have - which is read and never written to.
 
 ```
-src/main/desktop.js      reads your install: which profiles exist, what each enables, which
+src/main/desktop.js     reads your install: which profiles exist, what each enables, which
                          folder uses which. Pure, no side effects, no Electron.
-src/main/extensions.js   ONE extensions directory for the app, holding the union of every
+src/main/extensions.js  ONE extensions directory for the app, holding the union of every
                          profile's set. Installs what is missing, prunes what nothing wants.
-src/main/profiles.js     the mirror on the server's disk: one directory per profile, holding
+src/main/profiles.js    the mirror on the server's disk: one directory per profile, holding
                          settings, keybindings, snippets and an extension subset.
-src/main/registry.js     the other half of a profile, which is browser state.
+src/main/registry.js    the other half of a profile, which is browser state.
 ```
 
 The ordering is the whole thing, and each step is load-bearing:
@@ -192,9 +192,10 @@ Two channels, not twenty.
 - `ct:call` - renderer or guest to main, request and response, with a command name and a
   payload. The command table is in `src/main/ipc.js` and it is the whole surface.
 - `ct:event` - main to renderer or guest, broadcast. One shape: `{ type, payload }`. `state` is
-  the desk's picture, `context` is what a window is told about itself, and `usage` is the
+  the desk's picture, `context` is what a window is told about itself, `usage` is the
   account's meter, which is on its own type because a reading every five minutes must not
-  re-place the views.
+  re-place the views, and `picker` is whether that screen is up, which the shell needs because
+  the screen is a window that stops at the strip and the strip's half of its scrim is drawn here.
 
 A new feature adds a command to the table or a type to the event union. It does not add a
 channel, and the shell never talks to a guest directly.
@@ -202,35 +203,38 @@ channel, and the shell never talks to a guest directly.
 ## Files
 
 ```
-src/main/index.js      lifecycle, wiring
-src/main/server.js     code-server child: port, spawn, health, pidfile, orphan sweep
-src/main/window.js     the BrowserWindow and the shell page
-src/main/tiles.js      WebContentsView per project: create, place, focus, destroy
-src/main/layout.js     pure geometry
-src/main/projects.js   the project list and its ordering
-src/main/activity.js   Claude's own hooks: installing them, and what each project's state is
-src/main/desktop.js    your VS Code install, read-only: profiles, associations, extension ids
-src/main/extensions.js the one shared extensions directory: install, prune
-src/main/profiles.js   the profile mirror on the server's disk, and keeping it alive
-src/main/registry.js   seeding the profile registry into the tiles' partition
-src/main/store.js      persistence
-src/main/oauth.js      the usage wire: PKCE, the token endpoint, /api/oauth/usage. No Electron.
-src/main/usage.js      the account's one poll: the grant, the five minute floor, the back-off
-src/main/popover.js    the usage panel's window: anchored under the widget, sized by its page
-src/main/ipc.js        the command table
-src/main/menu.js       the menu and every accelerator
+src/main/index.js       lifecycle, wiring
+src/main/server.js      code-server child: port, spawn, health, pidfile, orphan sweep
+src/main/window.js      the BrowserWindow and the shell page
+src/main/tiles.js       WebContentsView per project: create, place, focus, destroy
+src/main/layout.js      pure geometry
+src/main/projects.js    the project list and its ordering
+src/main/activity.js    Claude's own hooks: installing them, and what each project's state is
+src/main/desktop.js     your VS Code install, read-only: profiles, associations, extension ids
+src/main/extensions.js  the one shared extensions directory: install, prune
+src/main/profiles.js    the profile mirror on the server's disk, and keeping it alive
+src/main/registry.js    seeding the profile registry into the tiles' partition
+src/main/store.js       persistence
+src/main/oauth.js       the usage wire: PKCE, the token endpoint, /api/oauth/usage. No Electron.
+src/main/usage.js       the account's one poll: the grant, the five minute floor, the back-off
+src/main/popover.js     the usage panel's window: anchored under the widget, sized by its page
+src/main/picker.js      the project picker's window: the stage, and the scrim over it
+src/main/picker-rows.js what that window lists: the project order, minus what is no longer there
+src/main/ipc.js         the command table
+src/main/menu.js        the menu and every accelerator
 
-src/shell/index.html   strip, gutters, glow, picker
-src/shell/shell.js     one module, talks to main through window.ct
+src/shell/index.html    strip, gutters, glow, the empty state
+src/shell/shell.js      one module, talks to main through window.ct
 src/shell/shell.css
-src/shell/usage.html   the usage panel: its own page in its own window, on the same preload
-src/shell/format.js    what both pages agree on: the colour ramp and a reset time
-src/shell/preload.cjs  contextBridge: window.ct
+src/shell/usage.html    the usage panel: its own page in its own window, on the same preload
+src/shell/picker.html   the project picker: the same, one screen wide
+src/shell/format.js     what both pages agree on: the colour ramp and a reset time
+src/shell/preload.cjs   contextBridge: window.ct
 
-src/guest/manifest.js  the seam list. Adding a seam means adding a line here.
-src/guest/runtime.cjs  the preload: loads seams, owns the style element, owns the context
-src/guest/seams/*.js   one seam per file
-src/guest/disk/        the seams' parts that land before the server starts: their settings and
+src/guest/manifest.js   the seam list. Adding a seam means adding a line here.
+src/guest/runtime.cjs   the preload: loads seams, owns the style element, owns the context
+src/guest/seams/*.js    one seam per file
+src/guest/disk/         the seams' parts that land before the server starts: their settings and
                        keybindings, merged into its files and every profile's, and the patches to
                        the server's own bundle and to an extension's
 ```
