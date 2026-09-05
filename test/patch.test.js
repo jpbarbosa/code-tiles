@@ -40,6 +40,13 @@ const SHAPES = {
   'ct:secret-fresh': 'class LocalStorageSecretStorageProvider{'
     + 'constructor(crypto){this.crypto=crypto;this.storageKey="secrets.provider";'
     + 'this.type="persisted";this.secretsPromise=this.load()}}',
+  'ct:bar-views': 'class CompositeBar extends Widget{'
+    + 'updateCompositeSwitcher(){'
+    + 'const bar=this.compositeSwitcherBar;if(!bar||!this.dimension)return;'
+    + 'let toShow=this.model.visibleItems.filter(c=>c.pinned||this.model.activeItem'
+    + '&&this.model.activeItem.id===c.id).map(c=>c.id),'
+    + 'maxVisible=toShow.length,total=toShow.length,size=0,'
+    + 'limit=this.options.orientation===1?this.dimension.height:this.dimension.width}}',
   'ct:no-walkthroughs': 'class GettingStartedPage extends EditorPane{'
     + 'buildGettingStartedWalkthroughsList(){'
     + 'const list=this.gettingStartedList.value=new Index({klass:"getting-started",limit:5});'
