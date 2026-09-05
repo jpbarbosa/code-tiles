@@ -71,6 +71,21 @@ const READ = `(() => {
       const before = getComputedStyle(el, '::before');
       return { size: [before.width, before.height], image: before.backgroundImage.slice(0, 34) };
     })(),
+    // The ring around that badge: what Claude is doing in this project. Read off the animations
+    // the document is actually RUNNING rather than off the rule, because a declared animation
+    // that never started and a live one are the same string in CSS - and because an animation
+    // still running for a project with nothing to say is a frame per tick, forever.
+    ring: (() => {
+      const el = document.querySelector('.part.activitybar .menubar .menubar-menu-button > .menubar-menu-title');
+      if (!el) return null;
+      const after = getComputedStyle(el, '::after');
+      return {
+        drawn: after.content !== 'none',
+        size: after.width,
+        running: document.getAnimations().map((animation) => animation.animationName)
+          .filter((name) => name.startsWith('ct-ring')),
+      };
+    })(),
     // The maximize seam: the item this app adds to the activity bar's own list. Read the way the
     // bar reads it - a row in the list, first - plus the glyph the app's state asked for.
     maximize: (() => {

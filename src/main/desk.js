@@ -13,16 +13,18 @@ export class Desk {
   #window;
   #projects;
   #tiles;
+  #activity;
   #ground = null;
   // null is "nobody has chosen for this part yet", which leaves every window the layout it
   // remembers. Not persisted: a fresh launch follows the windows rather than the last session.
   #layout = { sideBar: null, panel: null, secondarySideBar: null };
   #parts = new Map();
 
-  constructor({ window, projects, tiles }) {
+  constructor({ window, projects, tiles, activity = null }) {
     this.#window = window;
     this.#projects = projects;
     this.#tiles = tiles;
+    this.#activity = activity;
   }
 
   get projects() {
@@ -100,6 +102,9 @@ export class Desk {
 
   focus(folder) {
     this.#projects.focused = folder;
+    // Landing on a project is what clears a turn that finished while you were elsewhere. Both
+    // ways in say so, because a click into a window is as much an answer as the strip is.
+    this.#activity?.seen(folder);
     this.render();
     this.#tiles.focus(folder);
   }
@@ -109,6 +114,7 @@ export class Desk {
   adoptFocus(folder) {
     if (folder === this.#projects.focused) return;
     this.#projects.focused = folder;
+    this.#activity?.seen(folder);
     this.render();
   }
 

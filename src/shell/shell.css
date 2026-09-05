@@ -118,7 +118,44 @@ html, body {
   border-radius: 50%;
   flex: 0 0 auto;
   background: oklch(0.68 0.15 var(--hue));
+  position: relative;
+
+  /* The ring the badge inside the window wears, around the dot out here: the state is the motion
+     and the hue only ever says Claude, so the dot underneath keeps saying which project it is.
+     Round here and a rounded rectangle in there, each concentric with the mark it stands off -
+     a favicon card in the window, a dot in the strip. A circle can just turn, so this one does. */
+  &:is([data-claude="working"], [data-claude="attention"], [data-claude="finished"])::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 15px;
+    height: 15px;
+    margin: -7.5px 0 0 -7.5px;
+    border-radius: 50%;
+    mask: radial-gradient(farthest-side, #0000 calc(100% - 2px), #000 calc(100% - 2px));
+    background: var(--claude);
+  }
+
+  /* Stepped, like the badge's: what a ring costs is per-frame compositing, so the frame count is
+     the only lever on it. */
+  &[data-claude="working"]::after {
+    background: conic-gradient(from 0deg, rgba(217, 119, 87, 0) 0deg, rgba(217, 119, 87, 0) 35deg, var(--claude) 330deg, rgba(217, 119, 87, 0) 360deg);
+    animation: ct-ring-turn 1.8s steps(36) infinite;
+  }
+
+  &[data-claude="attention"]::after { animation: ct-ring-pulse 2.4s ease-in-out infinite; }
+  &[data-claude="finished"]::after { animation: ct-ring-breathe 4.8s steps(96) infinite; }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::after { animation: none; }
+    &[data-claude="attention"]::after { opacity: 0.45; }
+  }
 }
+
+@keyframes ct-ring-turn { to { transform: rotate(360deg); } }
+@keyframes ct-ring-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes ct-ring-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.34; } }
 
 /* Focused is a FILLED pill: the same hue the tile's ground and glow are wearing, so the eye
    matches the chip to the window without a second cue. */

@@ -31,7 +31,14 @@ What the tree does today, what comes next, and what to check when the server is 
 - Your VS Code, mirrored: every desktop profile reproduced on the server, its extensions
   installed from Open VSX into one shared directory, and each tile opened on the profile your
   desktop already associates with that folder.
-- Fourteen seams, verified in a live window rather than from a screenshot:
+- What Claude is doing, per project: its own hooks write one marker per session into the app's
+  data directory, main watches that directory and answers with a state per project - working, a
+  question, a turn that ended you have not seen, or an open session with nothing to say. A
+  session belongs to the folder it STARTED in, so a `cd` does not move it, and to the deepest
+  open project that holds it. Focusing a project clears a finished turn; a question is only
+  cleared by answering it. Drawn twice: the ring on each window's own badge, and the dot on the
+  chip in the strip, which is where you see a project you are not looking at.
+- Fifteen seams, verified in a live window rather than from a screenshot:
   `dark` (your desktop's theme, a dark one only as the fallback under it, auto-detect off, and
   the colour scheme of every document the window holds - web's default theme is the light one,
   and a webview that says nothing shows Chromium's white canvas through every pixel its own page
@@ -62,7 +69,15 @@ What the tree does today, what comes next, and what to check when the server is 
   actually shows),
   `identity` (the project's name on the side bar's title row, and its favicon in place of the
   hamburger's glyph at the top of the activity bar - the button underneath is still the editor's,
-  so it still opens the menu),
+  so it still opens the menu - with a ring around that favicon for what Claude is doing here: it
+  turns while a turn runs, pulses while it waits on you, breathes on a turn that ended you have
+  not seen, and is absent otherwise. The badge is that one element's `::before` and the ring is
+  its `::after`, so neither can fall out of step with the other, and the ring is a rounded
+  rectangle concentric with the card - which is why the comet turns by its own angle rather than
+  by a transform, a mask being something that turns with the element it masks),
+  `chat-icon` (the same three states on the Claude chat tab's own icon, which is the extension's
+  `panelTab.iconPath` pointed at SVGs that animate themselves - a patch to the extension's bundle,
+  since a still image is all VS Code has and stepping one through frames blinks over http),
   `maximize` (the app's one item in the activity bar's own list, first, under the badge - built
   from the classes the editor builds its items with, so it takes the bar's size, its hover pill
   and the accent an active view wears, and needs no slot cut for it; the restore half is
@@ -81,23 +96,20 @@ What the tree does today, what comes next, and what to check when the server is 
 
 ## Next, in order
 
-1. **The badge's ring, and its drag.** The icon is drawn: `identity` swaps the hamburger's own
-   glyph for the project's favicon, on the band the compact menu bar leaves at `y=0`. The ring
-   and the grid's drag handle are more than a pseudo-element can carry, so that is the step where
-   the badge becomes a node: one node, kept by an observer, removed with the seam. The monogram a
-   project with no favicon should wear belongs to the same step; today it keeps the hamburger.
-2. **Claude state.** Hooks in `~/.claude/settings.json` write a marker per project; main watches
-   and pushes `claudeState` into the context. The ring is CSS on the badge, four behaviours, one
-   hue.
-3. **Drag to reorder.** Chip drag in the strip (insert) is host-only. Badge drag in the grid
+1. **The badge's drag, and its monogram.** The icon and its ring are both pseudo-elements of the
+   menu button, which is what keeps them alive through a workbench rebuild. A drag handle is more
+   than a pseudo can carry, so that is the step where the badge becomes a node: one node, kept by
+   an observer, removed with the seam. The monogram a project with no favicon should wear belongs
+   to the same step; today it keeps the hamburger, and its ring still says what Claude is doing.
+2. **Drag to reorder.** Chip drag in the strip (insert) is host-only. Badge drag in the grid
    (swap) starts in the guest, so the seam reports pointer positions to main, main hit-tests
    against the rects it already owns, and the shell draws nothing over a tile.
-4. **Profile upkeep.** The mirror is rewritten at start and restored by a watcher if the
+3. **Profile upkeep.** The mirror is rewritten at start and restored by a watcher if the
    workbench deletes it. Not yet handled: a desktop profile added while the app is running, and
    an extension whose desktop version moves on.
-5. **Chat titles.** The active chat's name per project, read by a seam from the editor tab it
+4. **Chat titles.** The active chat's name per project, read by a seam from the editor tab it
    already lives on, reported like the ground.
-6. **Packaging**: a signed `.app`, and a fetch of the pinned server into `vendor/`.
+5. **Packaging**: a signed `.app`, and a fetch of the pinned server into `vendor/`.
 
 ## Not doing
 
@@ -123,3 +135,14 @@ The pinned version is in `scripts/fetch-code-server.sh`. After a bump, in this o
    and nothing has to remember that it happened.
 4. Try deleting a workaround. Each one names the version it was written against; a bump is the
    only moment anyone will ever check.
+
+## When the Claude Code extension updates
+
+It updates itself, into a fresh versioned directory, so the `chat-icon` patch is gone and the
+next start applies it again to a bundle nobody has read. Nothing has to be done by hand, and
+nothing is silent about failing: a shape that moved is one `[extension]` line at startup naming
+what it could not match, and the tab wears the extension's own still logo until the anchor is
+re-derived from the code around it - `applyTabIcon`, `update_session_state`. Both are matched by
+shape and required to hit exactly ONCE, so a bundle that grew a second copy of either is refused
+rather than guessed at. The pristine bundle sits beside it as `extension.js.ct-orig`; delete both
+that and the patched file to make the app's own installer fetch a clean one.

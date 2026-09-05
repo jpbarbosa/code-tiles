@@ -84,7 +84,8 @@ Finished breathes rather than sitting still: a static ring makes the one state t
 reach you the least visible of the three. The icon itself never animates.
 
 The signal comes from Claude Code's own hooks, so it works for the CLI and the extension
-alike, and it is the same ring on the chip in single view.
+alike, and it is the same ring on the chip in single view. It is the same three states again on
+the **chat tab's own icon** inside the window, where your eye already is while you work.
 
 ## Usage
 
@@ -154,7 +155,8 @@ What the app changes about a stock editor is small, deliberate, and listed in on
   project and the status bar carries per-file detail nobody reads from a tile they are
   glancing at. Both are turned off through the editor's own settings, not clipped.
 - **The window is tinted** with the project's hue: the parts wear it, the ground does not.
-- **The identity badge and its ring** are drawn in the activity bar.
+- **The identity badge and its ring** are drawn in the activity bar, and the Claude chat tab's
+  icon carries the same signal.
 - **The branch is put where it can be seen**, under the file tree, since the status bar that
   used to carry it is gone. It is the editor's own entry off that bar, mirrored into a pill the
   side bar makes real room for, so clicking it still checks out or syncs.

@@ -339,3 +339,30 @@ cannot be a setting. It has to be a seam, or a profile. *[inherited]*
 **Terminals live in the server, not the window.** Reloading a window keeps its terminals and
 its agent session; killing the server does not. Restarting the app for a main-process change
 is therefore cheap for the window and expensive for the sessions. *[inherited]*
+
+**A mask turns with the element it masks, and a stepped repaint is cheaper than that sounds.** A
+ring that is a rounded rectangle therefore cannot be spun by `transform` - the shape rotates with
+the gradient and the corners wobble round - so the comet turns by an angle inside its own
+`conic-gradient`, registered with `@property`. That cannot be composited, which the previous tree
+measured at **24.6% of a core for two rings** and answered with a masked box holding a rotating
+CHILD, a node and an observer to keep it alive. Re-measured here at `steps(36)`, four rings on
+screen, two rounds: **0.5-0.6% of a core against 0.1-0.2%** for that child, and 0% for no ring at
+all. The 24.6% was smooth interpolation; stepping to 20fps is what makes the pseudo-element
+affordable, and 20fps is indistinguishable from 60 on a 27px shape. **[checked]**
+
+**A tab icon is a still image, but an SVG rendered as one animates ITSELF.** VS Code has no
+animated `iconPath` and no API for one, and the obvious way round it - swapping the path through
+numbered frames on a timer - blinks in code-server, where every swap is a fresh URL over http
+decoded and painted by a workbench that re-renders the tab around it. Desktop VS Code hides that
+behind instant `file://` reads. One SVG set once has no tick to miss and animates at display rate
+rather than at the timer's. *[inherited]*
+
+**Claude Code fires no hook when you interrupt a turn.** ESC is documented as an exclusion and
+there is no interrupt event, so the last marker a session wrote says `working` and goes on saying
+it - for the hour its own staleness cap allows. The only trace is the transcript, where the turn
+ends in a **user** record whose text is exactly `[Request interrupted by user]`, and matching
+anything looser is worse than not matching: in one real 2.1 MB transcript **17 lines mention that
+sentence and exactly one is the record**, the rest being a conversation about this very feature.
+Anything that resumes the session writes a newer marker, so reading it un-latches on its own. The
+other half of the same file: a hook's stdout is fed BACK to Claude on some events, so a hook that
+prints anything is a hook that talks. **[checked]**

@@ -9,10 +9,12 @@ import { iconFor } from './icon.js';
 export class Projects {
   #store;
   #profileFor;
+  #claudeStates;
 
-  constructor(store, profileFor = () => null) {
+  constructor(store, { profileFor = () => null, claudeStates = () => ({}) } = {}) {
     this.#store = store;
     this.#profileFor = profileFor;
+    this.#claudeStates = claudeStates;
     this.#write(this.#entries().filter((entry) => fs.existsSync(entry.folder)));
   }
 
@@ -61,17 +63,23 @@ export class Projects {
 
   // Everything ever opened here, in project order: the picker's list.
   all() {
-    const focused = this.focused;
-    return this.#entries().map((entry) => this.#describe(entry, focused));
+    return this.#describeAll(this.#entries());
   }
 
   // The tiles, in the same order.
   open() {
-    const focused = this.focused;
-    return this.#entries().filter((entry) => entry.open).map((entry) => this.#describe(entry, focused));
+    return this.#describeAll(this.#entries().filter((entry) => entry.open));
   }
 
-  #describe(entry, focused) {
+  // In one pass, because which project a Claude session belongs to is answered against the whole
+  // list at once: a session in a nested folder belongs to the deeper of two open projects.
+  #describeAll(entries) {
+    const focused = this.focused;
+    const claude = this.#claudeStates(entries.map((entry) => entry.folder));
+    return entries.map((entry) => this.#describe(entry, focused, claude));
+  }
+
+  #describe(entry, focused, claude) {
     return {
       folder: entry.folder,
       name: path.basename(entry.folder),
@@ -82,6 +90,9 @@ export class Projects {
       profile: this.#profileFor(entry.folder),
       open: Boolean(entry.open),
       focused: entry.folder === focused,
+      // What Claude is doing in this folder, or 'idle' where it is doing nothing and where the
+      // hooks were never installed. Derived like the rest of this: nothing is stored.
+      claudeState: claude[entry.folder] || 'idle',
     };
   }
 

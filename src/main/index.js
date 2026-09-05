@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { app, dialog, nativeTheme, session } from 'electron';
 
+import { Activity } from './activity.js';
 import { CodeServer } from './server.js';
 import { Desk } from './desk.js';
 import { Extensions } from './extensions.js';
@@ -15,7 +16,8 @@ import { installIpc } from './ipc.js';
 import { installMenu } from './menu.js';
 import { readDesktop } from './desktop.js';
 import { seedProfileRegistry } from './registry.js';
-import { PARTITION, desktopPaths, resolveCodeServer, userPaths } from './paths.js';
+import { PARTITION, claudePaths, desktopPaths, resolveCodeServer, userPaths } from './paths.js';
+import { patchExtensions } from '../guest/disk/extension.js';
 import { patchServer } from '../guest/disk/patch.js';
 import { writeSettings } from '../guest/disk/settings.js';
 
@@ -24,6 +26,7 @@ if (!app.requestSingleInstanceLock()) app.quit();
 let server = null;
 let mirror = null;
 let usage = null;
+let activity = null;
 
 app.whenReady().then(async () => {
   // The app's half of dark: the traffic lights, the file dialog and every guest's
@@ -63,6 +66,12 @@ app.whenReady().then(async () => {
     // HTTP cache only: the login and every window's layout live in this partition's storage.
     await session.fromPartition(PARTITION).clearCache();
   }
+  // The same door, on an extension's own bundle rather than the server's: what an extension does
+  // inside a window and offers no way into. Applied here because the extension host reads these
+  // files as a window loads, and nothing re-reads them until one does.
+  const rewritten = patchExtensions(paths.extensions);
+  if (rewritten.length) console.log(`[extension] ${rewritten.join(', ')}`);
+
   mirror = new ProfileMirror({ home: paths.profiles, profiles: desktop.profiles, extensions });
   mirror.write();
 
@@ -88,10 +97,21 @@ app.whenReady().then(async () => {
     }
   }
 
-  const projects = new Projects(store, profileFor);
+  // What Claude is doing in each project, from its own hooks. A project asks for its state the
+  // way it asks for its hue - derived, never stored - and a marker landing on disk re-renders the
+  // desk, which is what carries a new state into the window that has to draw it.
+  activity = new Activity({
+    dir: paths.activity,
+    script: paths.activityHook,
+    settings: claudePaths().settings,
+    onChange: () => desk.render(),
+  });
+
+  const projects = new Projects(store, { profileFor, claudeStates: (folders) => activity.states(folders) });
   const window = createWindow();
   const tiles = new Tiles({ window, server });
-  const desk = new Desk({ window, projects, tiles });
+  const desk = new Desk({ window, projects, tiles, activity });
+  activity.start();
 
   // Account-global, so it is the app's poll rather than one per tile, and it publishes on its
   // own channel: a reading every five minutes must not re-place the views.
@@ -124,5 +144,5 @@ app.whenReady().then(async () => {
 // window that matters quits on its own `closed`.
 app.on('window-all-closed', () => {});
 
-app.on('before-quit', () => { usage?.stop(); mirror?.stop(); server?.stop(); });
+app.on('before-quit', () => { usage?.stop(); activity?.stop(); mirror?.stop(); server?.stop(); });
 process.on('exit', () => server?.stop());

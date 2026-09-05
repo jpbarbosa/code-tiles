@@ -55,6 +55,7 @@ export default {
   defaults: { 'workbench.colorTheme': 'Dark 2026' },    // proposed to the editor; your file wins
   settings: { 'workbench.statusBar.visible': false },   // written to disk before the server starts
   patch: { file, marker, find, replace },               // the server's own bundle, same moment
+  extension: { id, file, marker, apply },               // an extension's bundle, same moment
   css: (ctx) => `...`,                                  // one stylesheet, appended last
   init: (ctx, api) => { ... },                          // runs in the guest, after the workbench
 };
@@ -71,6 +72,10 @@ export default {
   do, for the case where the editor has the thing and offers no way in: it is matched by shape,
   applied by `src/guest/disk/patch.js` before the server starts, and refused rather than
   half-applied. A seam that declares one says what it degrades to without it.
+- **`extension`** is that door on an EXTENSION's bundle, applied by `src/guest/disk/extension.js`
+  in the same moment and on the same terms, plus one: an extension replaces itself, so the
+  pristine bundle is kept beside it and every patch is applied to that. A shape that stops
+  matching restores the stock file rather than leaving an edit nobody can reason about.
 - **`css(ctx)`** returns plain CSS. The runtime concatenates every seam's CSS into ONE
   `<style>` element and keeps that element **last in `<head>`**, so our rules win on cascade
   order rather than on `!important`. `!important` in a seam is a smell and should carry a
@@ -198,6 +203,7 @@ src/main/window.js     the BrowserWindow and the shell page
 src/main/tiles.js      WebContentsView per project: create, place, focus, destroy
 src/main/layout.js     pure geometry
 src/main/projects.js   the project list and its ordering
+src/main/activity.js   Claude's own hooks: installing them, and what each project's state is
 src/main/desktop.js    your VS Code install, read-only: profiles, associations, extension ids
 src/main/extensions.js the one shared extensions directory: install, prune
 src/main/profiles.js   the profile mirror on the server's disk, and keeping it alive
@@ -220,5 +226,6 @@ src/guest/manifest.js  the seam list. Adding a seam means adding a line here.
 src/guest/runtime.cjs  the preload: loads seams, owns the style element, owns the context
 src/guest/seams/*.js   one seam per file
 src/guest/disk/        the seams' parts that land before the server starts: their settings, merged
-                       into its file and every profile's, and the one patch to its bundle
+                       into its file and every profile's, and the patches to the server's own
+                       bundle and to an extension's
 ```

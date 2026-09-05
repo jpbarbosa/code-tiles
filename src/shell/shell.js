@@ -61,6 +61,9 @@ function renderChips(open) {
 
     const ring = document.createElement('span');
     ring.className = 'ring';
+    // What Claude is doing there, on the mark that is already the project's. In single view the
+    // tile that needs you is usually the one you cannot see.
+    ring.dataset.claude = project.claudeState;
 
     const name = document.createElement('span');
     name.className = 'name';
