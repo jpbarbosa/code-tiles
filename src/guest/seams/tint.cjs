@@ -10,7 +10,10 @@ const tokens = (hue) => `  --ct-brand: oklch(0.62 0.15 ${hue});
   /* The same hue over the whole of a part rather than over its chrome, at a quarter of the
      strength: enough that a side bar reads as this project's, little enough that the plate
      below still reads as a plate on top of it. */
-  --ct-veil: 93%;`;
+  --ct-veil: 93%;
+  /* The same ground on a tile nobody is in, quieter: visible as this project's, well below the
+     62% focus spends. */
+  --ct-trace: 85%;`;
 
 const veiled = (source) => `color-mix(in oklab, var(${source}) var(--ct-veil), var(--ct-brand))`;
 
@@ -229,7 +232,15 @@ ${context.focused ? `
       background-color: var(--vscode-activityBar-inactiveForeground) !important;
     }
   }
-}` : ''}
+}` : `
+/* The same ground focus paints, at a fraction of it: a quiet tile still reads as this project's.
+   One variable, because it is the one name everything that is ground already reads - the editor
+   paints the grid view from it, and the activity bar is pointed at it above. !important for the
+   reason the focused block gives: the title bar service writes it INLINE on the workbench. */
+.monaco-workbench {
+  --modern-ui-shell-background:
+    color-mix(in oklab, var(--vscode-titleBar-activeBackground) var(--ct-trace), var(--ct-brand)) !important;
+}`}
 `,
   // The stylesheet stops at a frame, so the same tint is said again inside every webview. The
   // element goes on documentElement rather than head: the editor's own applyStyles runs before a
