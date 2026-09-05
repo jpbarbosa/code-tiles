@@ -29,6 +29,8 @@ const SHAPES = {
     + 'theme=ColorThemeData.createUnloadedThemeForThemeType(scheme)}'
     + 'return this.applyTheme(theme,void 0,!0)}}',
   'ct:webview-dark': '<html lang="en" style="width: 100%; height: 100%;">',
+  'ct:frame-share': 'var FLOATING_MARGIN=4,NO_MARGIN=0;'
+    + 'function isHorizontal(position){return position===2||position===3}',
   'ct:no-walkthroughs': 'class GettingStartedPage extends EditorPane{'
     + 'buildGettingStartedWalkthroughsList(){'
     + 'const list=this.gettingStartedList.value=new Index({klass:"getting-started",limit:5});'

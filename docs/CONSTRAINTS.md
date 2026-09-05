@@ -330,8 +330,27 @@ both keeps them equal. A surface that has to read as lifted has to be painted, n
 
 **The editor's own frame moves between versions.** The inset it floats its parts in was 4px on
 every side in one release and flush left and top with 8px on the right in the next. Nothing
-here may depend on that number: the app's gutter is its own, and the seam that neutralises the
-editor's is the only place aware such a number exists. *[inherited]*
+here may depend on that number: the app's gutter is its own, and the `frame` seam is the only
+place aware such a number exists. *[inherited]*
+
+**That frame is kept TWICE, and the two halves are not equivalent.** A margin says where a part's
+box sits; the layout service sizes the part from a constant in the bundle. Widths reflow on their
+own, so left and right move with a stylesheet alone - heights do not, and halving the top margin
+by itself slid the editor up and stranded its bottom at 12px. Vertical needs the patch. It is why
+`frame` is the one seam that is a stylesheet AND a patch. **[checked]**
+
+**The browser runs `out/vs/code/browser/workbench/workbench.js`, not
+`out/vs/workbench/workbench.web.main.internal.js`.** Both are ~18MB of the same minified code, so
+a patch on the second matches its shape, reports success and is served - and never executes,
+because no script tag asks for it. A patch that seems to do nothing is this before it is anything
+else: check `performance.getEntriesByType('resource')` in a live window, not the file on disk.
+**[checked]**
+
+**A patch outlives every `git checkout`,** because it is written into `vendor/`, which is
+gitignored and holds no tracked files. Reverting a seam leaves its patch applied, and only
+`npm run fetch-code-server` or reversing the edit by hand takes it back out. `ct:dark-first` sits
+in `workbench.js` today for exactly this reason, put there by a seam version that no longer names
+that file. **[checked]**
 
 **One `--user-data-dir` is one settings file for every tile**, so a per-project difference
 cannot be a setting. It has to be a seam, or a profile. *[inherited]*

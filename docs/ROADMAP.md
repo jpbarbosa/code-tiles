@@ -136,6 +136,13 @@ The pinned version is in `scripts/fetch-code-server.sh`. After a bump, in this o
 4. Try deleting a workaround. Each one names the version it was written against; a bump is the
    only moment anyone will ever check.
 
+## The frame inside a tile
+
+`frame` halves the inset the editor floats its parts in, so the space beside a tile is the app's
+gutter plus 4px rather than plus 8px. `FRAME_SHARE` at the top of the seam is the whole knob, read
+by both the stylesheet and the patch. Scaling the unit catches the seam BETWEEN a window's own
+parts as well, since the editor spells that with the same one, so the seam puts it back.
+
 ## When the Claude Code extension updates
 
 It updates itself, into a fresh versioned directory, so the `chat-icon` patch is gone and the
