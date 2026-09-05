@@ -43,9 +43,11 @@ module.exports = {
   /* The activity bar's COLUMN is reserved by the layout service from the scaled unit, while the
      bar's own width is the activity-bar-width variable plus a different token that does not
      scale with it. The reservation shrinks, the bar does not, and the two land flush - so its
-     neighbour takes the difference back and the column reads as a stock window's does. Only
-     the bar has a rule of this shape, and only on the side it is docked to. */
-  & .part.sidebar.left:not(.floating-part-outer-left) {
+     neighbour takes the difference back and the column reads as a stock window's does. The
+     doubled margin belongs to whichever part is that neighbour, which is the editor once the
+     side bar is hidden: at a single unit it lands flush and the bar loses the gap on its right. */
+  & .part.sidebar.left:not(.floating-part-outer-left),
+  &.nosidebar > .monaco-grid-view .part.editor {
     margin-left: calc(var(--ct-frame-unit) * 2);
   }
 }

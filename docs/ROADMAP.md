@@ -207,6 +207,11 @@ gutter plus 4px rather than plus 8px. `FRAME_SHARE` at the top of the seam is th
 by both the stylesheet and the patch. Scaling the unit catches the seam BETWEEN a window's own
 parts as well, since the editor spells that with the same one, so the seam puts it back.
 
+The activity bar is the one part the scaling lands unevenly on: the column the layout service
+reserves for it shrinks with the unit and the bar's own width does not, so the part beside it gets
+a doubled margin to take the difference back. That part is the side bar, or the editor once the
+side bar is hidden - which is why the doubled margin is written against both.
+
 ## When the Claude Code extension updates
 
 It updates itself, into a fresh versioned directory, so both patches on it - `chat-icon` and
