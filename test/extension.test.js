@@ -10,16 +10,27 @@ import { declaredExtensions, patchExtensions } from '../src/guest/disk/extension
 const require = createRequire(import.meta.url);
 const seams = require('../src/guest/manifest.cjs');
 
-// The shapes the two seams that patch this bundle anchor on, in the spellings this minifier
-// produces: the resting icon pick, an update_session_state branch with a body between its decode
-// and its call, and the column fallback in createPanel. Not the real bundle - a version that
-// moves these is caught by running the app, not by a test - but enough to hold the mechanism and
-// both seams' edits to their contract.
-const ICON = 'applyTabIcon(){let X="claude-logo.svg";'
+// The spellings the two seams that patch this bundle anchor on. Not the real bundle - a version
+// that moves these is caught by running the app, not by a test - but enough to hold the mechanism
+// and both seams' edits to their contract.
+//
+// The resting icon has had TWO spellings, and both are kept on purpose: 2.1.260 wrote an if/else
+// chain settling on a variable, 2.1.261 replaced it with a lookup table indexed by a state name.
+// Anchoring on the chain is exactly what broke on that bump, so the anchor is held here to the
+// family rather than to whichever spelling shipped last.
+const ICON_TABLE = 'applyTabIcon(){if(!this.panelTab)return;'
+  + 'let s=pick$(this.lastRenameTabFlags,this.tabBadgeAnchor,{});'
+  + 'this.panelTab.iconPath=_$.Uri.file(z6.join(this.context.extensionPath,"resources",names$[s]))}';
+
+const ICON_CHAIN = 'applyTabIcon(){let X="claude-logo.svg";'
   + 'if(this.hasPendingPermissions)X="claude-logo-pending.svg";else if(J)X="claude-logo-done.svg";'
-  + 'else X="claude-logo.svg";this.panelTab.iconPath=_$.Uri.file(z6.join(this.context.extensionPath,"resources",X))}'
-  + 'onMessage($){if($.request.type==="update_session_state"){let J=S1$($.request);'
-  + 'if(J){if(J.panelNoLongerHost)this.applyTabIconIfPanel()}this.onSessionStateChanged(J)}}';
+  + 'else X="claude-logo.svg";'
+  + 'this.panelTab.iconPath=_$.Uri.file(z6.join(this.context.extensionPath,"resources",X))}';
+
+// The state branch as 2.1.261 spells it: a body between the decode and an optional call.
+const STATE = 'onMessage($){if($.request.type==="update_session_state"){let Q=decode$($.request);'
+  + 'if(Q){let{anchor:X}=badge$(this.tabBadgeAnchor,Q);'
+  + 'if(this.tabBadgeAnchor=X,this.onSessionStateChanged?.(Q.sessionId,Q.state))return}}}';
 
 // `W` is startedInNewColumn and is declared !1 here, which is what makes dropping its assignment
 // enough: the caller reads it and locks the group only when it is true.
@@ -27,7 +38,7 @@ const COLUMN = 'createPanel($,J,Q){let W=!1,K;if(Q!==void 0)K=Q;'
   + 'else{K=O4.ViewColumn.Beside;let V=ih$();if(V)K=V.viewColumn;else K=this.findUnusedColumn(),W=!0}'
   + 'let U=O4.window.createWebviewPanel("claudeVSCodePanel","Claude Code",K,{});return{startedInNewColumn:W}}';
 
-const BUNDLE = `class T{${ICON}${COLUMN}}\n`;
+const BUNDLE = `class T{${ICON_TABLE}${STATE}${COLUMN}}\n`;
 
 function tree(bundle = BUNDLE) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ct-extension-'));
@@ -58,7 +69,7 @@ test('two seams on one bundle are spent in one pass and both edits survive', () 
   const { dir, file } = tree();
   assert.deepEqual(patchExtensions(dir), ['chat-icon + chat-column in anthropic.claude-code-9.9.9-darwin-arm64']);
   const patched = read(file);
-  assert.match(patched, /__CT_CHAT_ICON_1__/);
+  assert.match(patched, /__CT_CHAT_ICON_2__/);
   assert.match(patched, /__CT_CHAT_COLUMN_1__/);
   assert.equal(read(`${file}.ct-orig`), BUNDLE, 'one pristine copy, not one per seam');
 });
@@ -74,11 +85,26 @@ test('the column fallback becomes the main group and stops asking for the lock',
   assert.match(patched, /if\(Q!==void 0\)K=Q;/, 'an explicit column is no longer honoured');
 });
 
+// The bump that broke this seam was a refactor of the code AROUND the anchor, not of the anchor
+// itself. Holding both spellings is what stops the next one costing an evening.
+test('the icon anchor holds a family of spellings, not the one that shipped last', () => {
+  for (const [label, icon] of [['lookup table', ICON_TABLE], ['if/else chain', ICON_CHAIN]]) {
+    const { dir, file } = tree(`class T{${icon}${STATE}${COLUMN}}\n`);
+    assert.equal(patchExtensions(dir).length, 1, label);
+    const patched = read(file);
+    assert.match(patched, /__CT_CHAT_ICON_2__/, label);
+    // The resting icon is recorded, and only painted while no animated one is up - which is what
+    // stops a title change stamping the still logo over the spin.
+    assert.match(patched, /this\.__ctRest=/, label);
+    assert.match(patched, /this\.__ctIcon\|\|\(this\.panelTab\.iconPath=/, label);
+  }
+});
+
 test('one seam whose shape has moved does not take the other down', () => {
   const { dir, file } = tree(BUNDLE.replace('K=this.findUnusedColumn(),W=!0', 'K=this.pickColumn(),W=!0'));
   assert.deepEqual(patchExtensions(dir), ['chat-icon in anthropic.claude-code-9.9.9-darwin-arm64']);
   const patched = read(file);
-  assert.match(patched, /__CT_CHAT_ICON_1__/, 'the seam that still matches was skipped too');
+  assert.match(patched, /__CT_CHAT_ICON_2__/, 'the seam that still matches was skipped too');
   assert.doesNotMatch(patched, /__CT_CHAT_COLUMN_1__/);
 });
 
@@ -88,7 +114,7 @@ test('a patch lands once, keeps the original beside it, and is idempotent', () =
   assert.equal(first.length, 1, 'nothing was patched');
 
   const patched = read(file);
-  assert.match(patched, /__CT_CHAT_ICON_1__/);
+  assert.match(patched, /__CT_CHAT_ICON_2__/);
   assert.ok(fs.existsSync(path.join(path.dirname(file), 'resources/ct-claude-working.svg')));
   // The animation is the icon: a still SVG here is the whole feature missing.
   assert.match(read(path.join(path.dirname(file), 'resources/ct-claude-working.svg')), /animateTransform/);
@@ -102,7 +128,7 @@ test('a shape that has moved restores the stock bundle rather than leaving an ol
   patchExtensions(dir);
   // The next version of the extension, patched by the version of this patcher that is now gone.
   const moved = BUNDLE
-    .replace('else X="claude-logo.svg";', 'else X="claude-logo-v2.svg";')
+    .replace('this.panelTab.iconPath=', 'this.panelTab.icon=')
     .replace('K=this.findUnusedColumn(),W=!0', 'K=this.pickColumn(),W=!0');
   fs.writeFileSync(`${file}.ct-orig`, moved);
 
@@ -123,7 +149,7 @@ test('a patched bundle whose original is gone is left alone', () => {
 test('an anchor that matches twice is refused, because the wrong one is unrecoverable', () => {
   const { dir, file } = tree(BUNDLE + BUNDLE);
   assert.deepEqual(patchExtensions(dir), []);
-  assert.doesNotMatch(read(file), /__CT_CHAT_ICON_1__/);
+  assert.doesNotMatch(read(file), /__CT_CHAT_ICON_2__/);
   assert.ok(!fs.existsSync(`${file}.ct-orig`), 'a refused patch left a copy behind');
 });
 

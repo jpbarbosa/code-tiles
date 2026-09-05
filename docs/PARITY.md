@@ -92,7 +92,7 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 | Welcome page's walkthrough column emptied | CSS | patch | |
 | An "Open Claude Code" entry under Start | yes | **no** | |
 | Claude opens in the main editor group, never a locked split | extension patch | yes | the same one edit, the fallback column: an explicit column and an existing Claude group are both still honoured, and the flag the caller locks on is left the `!1` its own declaration gave it |
-| The chat tab's icon carries Claude's state | extension patch | yes | rebuilt, matched by shape, requires exactly one hit |
+| The chat tab's icon carries Claude's state | extension patch | yes | rebuilt, matched by shape, requires exactly one hit - anchored on the assignment rather than on the pick above it, which is what survives the editor refactoring that pick |
 | Extension secrets merged across windows | bundle patch | yes | the write re-reads inside a per-window queue instead of trusting the snapshot it loaded with, and a `storage` listener keeps the read fresh too - which the old tree also carried |
 | Side bar / panel / secondary side bar flipped in every window at once | yes | yes | same keybinding dispatch, driven from the strip |
 | Restricted mode off | seeded setting | setting | without it there is no Claude Code in a tile at all |

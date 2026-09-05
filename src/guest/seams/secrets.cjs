@@ -26,11 +26,6 @@ const MERGING = `async set(k,v){await this.__ctMerge(m=>{m[k]=v})}`
   + `.catch(()=>{}).then(async()=>{let m=await this.load();f(m),`
   + `this.secretsPromise=Promise.resolve(m),await this.save()})}`;
 
-// The constructor's own tail, said back literally: it holds no minified name, so there is
-// nothing to carry across from the match.
-const CONSTRUCTED = 'this.storageKey="secrets.provider";this.type="persisted";'
-  + 'this.secretsPromise=this.load()';
-
 module.exports = {
   name: 'secrets',
   patch: [{
@@ -46,7 +41,12 @@ module.exports = {
     file: 'lib/vscode/out/vs/code/browser/workbench/workbench.js',
     marker: FRESH,
     find: /this\.storageKey="secrets\.provider";this\.type="persisted";this\.secretsPromise=this\.load\(\)/,
-    replace: `${CONSTRUCTED};try{window.addEventListener("storage",(e)=>{`
-      + `if(e.key===this.storageKey)this.secretsPromise=this.load()})}catch{}/*${FRESH}*/`,
+    // The marker goes INSIDE the matched text rather than after it. A patch has to erase the
+    // shape it matched, or the anchor is still there afterwards and only the marker guard stands
+    // between the bundle and a second listener - which is a `find` that can never be trusted to
+    // say whether a bundle is patched.
+    replace: `this.storageKey="secrets.provider";this.type="persisted";/*${FRESH}*/`
+      + 'this.secretsPromise=this.load();try{window.addEventListener("storage",(e)=>{'
+      + 'if(e.key===this.storageKey)this.secretsPromise=this.load()})}catch{}',
   }],
 };

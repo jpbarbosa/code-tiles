@@ -15,7 +15,7 @@
 // Two edits, each anchored by SHAPE and required to match exactly once, since every name around
 // them is minifier output. Refused rather than half-applied: the tab then keeps the extension's
 // own still logo, which is what a machine that never ran this app shows. [claude-code 2.1.260]
-const MARKER = '__CT_CHAT_ICON_1__';
+const MARKER = '__CT_CHAT_ICON_2__';
 
 const WORKING = 'ct-claude-working.svg';
 const WAITING = 'ct-claude-waiting.svg';
@@ -54,12 +54,19 @@ const REST = {
   'claude-logo-done.svg': FINISHED,
 };
 
-// The three-way pick of a resting icon, down to the assignment it ends with. The two aliases it
-// hands over - the vscode module and node's path - are the ones the injected function needs, and
-// they are named differently in every build; the backreference ties the variable the pick settles
-// on to the one the assignment reads. Every identifier class is [\w$], never \w: $ is a legal
-// identifier character and this minifier does use it (2.1.245 named the path alias `d$`).
-const ICON_RE = /(else ([\w$]+)="claude-logo\.svg";)(this\.panelTab\.iconPath=([\w$]+)\.Uri\.file\(([\w$]+)\.join\(this\.context\.extensionPath,"resources",\2\)\))/;
+// The one assignment to the tab's icon, and nothing above it. Anchored on property paths and a
+// string literal - `panelTab`, `iconPath`, `context.extensionPath`, "resources" - because those
+// survive minification, where the PICK that feeds it does not: 2.1.260 spelled it as an if/else
+// chain settling on a variable, 2.1.261 as a lookup table indexed by a state name. Anchoring on
+// the chain is what broke on that bump.
+//
+// So the resting NAME is taken as an expression rather than as a variable, and the grammar
+// accepts accessor chains only - a call would not match - which is what makes evaluating it twice
+// in the rewrite below free of side effects by construction.
+//
+// Every identifier class is [\w$], never \w: $ is a legal identifier character and this minifier
+// does use it (2.1.245 named the path alias `d$`, 2.1.261 the icon table `mg$`).
+const ICON_RE = /this\.panelTab\.iconPath=([\w$]+)\.Uri\.file\(([\w$]+)\.join\(this\.context\.extensionPath,"resources",((?:this\.)?[\w$]+(?:\.[\w$]+|\[[\w$.]+\])*)\)\)/;
 
 // The update_session_state branch, newest spelling first. 2.1.238 rewrote it from a comma
 // expression into a block that decodes the request into a local, which moved the state to read;
@@ -87,24 +94,33 @@ function inject(vscode, join) {
 
 const hits = (source, re) => (source.match(new RegExp(re.source, 'g')) || []).length;
 
+// The resting assignment, rewritten as ONE expression so it is safe wherever the original sat.
+// It records what the extension settled on - translated through REST, so a resting state wears
+// our own still SVG - and then assigns it only while no animated icon is up, which is what stops
+// a title change stamping the still logo over the spin.
+function resting(vscode, join, name) {
+  return `(this.__ctRest=${JSON.stringify(REST)}[${name}]||${name},this.__ctIcon||`
+    + `(this.panelTab.iconPath=${vscode}.Uri.file(${join}.join(this.context.extensionPath,`
+    + '"resources",this.__ctRest))))';
+}
+
 function apply(source) {
   const icon = ICON_RE.exec(source);
-  if (!icon) return { refused: 'the resting-icon pick has moved' };
-  if (hits(source, ICON_RE) !== 1) return { refused: 'the resting-icon pick matches more than once' };
+  if (!icon) return { refused: 'the tab icon assignment has moved' };
+  if (hits(source, ICON_RE) !== 1) return { refused: 'the tab icon assignment matches more than once' };
 
   const shape = STATE_SHAPES.find((candidate) => candidate.re.test(source));
   if (!shape) return { refused: 'the update_session_state branch has moved' };
   if (hits(source, shape.re) !== 1) return { refused: 'the update_session_state branch matches more than once' };
 
-  const [, head, variable, assign, vscode, join] = icon;
+  const [, vscode, join, name] = icon;
   const branch = shape.re.exec(source);
   const call = `(this.__ctSpin=this.__ctSpin||${inject(vscode, join)}).call(this,${shape.state(branch)}),`;
-  const rest = `${variable}=${JSON.stringify(REST)}[${variable}]||${variable}`;
 
   // Every replacement is a function: the anchors are minified source, and a bare $ in one would
-  // be read as a $& / $' substitution.
+  // be read as a $& / $' substitution - and these bundles are full of $.
   const patched = source
-    .replace(icon[0], () => `${head}this.__ctRest=${rest};if(!this.__ctIcon)${assign}`)
+    .replace(icon[0], () => resting(vscode, join, name))
     .replace(branch[0], () => branch[0].replace(/this\.onSessionStateChanged$/, () => `${call}this.onSessionStateChanged`));
 
   return { source: patched };

@@ -184,12 +184,16 @@ The pinned version is in `scripts/fetch-code-server.sh`. After a bump, in this o
    added there rather than a look.
 2. `chrome` is the seam most likely to break: it depends on the workbench deciding that nothing
    needs a title bar. If a new feature claims that row, the setting for it goes in the seam.
-3. `npm test` is the gate on both patches, each matched by SHAPE because every name in that
-   bundle is minified: `branch` teaches `Part.create` to adopt the footer it draws, and `welcome`
-   hands the welcome page an empty walkthrough list. A shape that no longer matches is re-derived
-   from the code around it - `setFooterArea`, `buildGettingStartedWalkthroughsList` - never
-   guessed at. The fetch script re-extracts the tree, so the next start patches the new bundle
-   and nothing has to remember that it happened.
+3. `npm test` is the gate on the server patches, each matched by SHAPE because every name in
+   that bundle is minified: `branch` teaches `Part.create` to adopt the footer it draws, `welcome`
+   hands the welcome page an empty walkthrough list, `dark` fixes the light-first fallback and the
+   webview frame, `frame` scales the editor's own inset, and `secrets` makes an extension secret
+   write merge instead of overwrite. A shape that no longer matches is re-derived from the code
+   around it - `setFooterArea`, `buildGettingStartedWalkthroughsList` - never guessed at. Every
+   patch must also ERASE the shape it matched, which the same test checks: a replacement that
+   re-emits its own anchor leaves `find` matching forever, so nothing but the marker can tell a
+   patched bundle from an unpatched one. The fetch script re-extracts the tree, so the next start
+   patches the new bundle and nothing has to remember that it happened.
 4. Try deleting a workaround. Each one names the version it was written against; a bump is the
    only moment anyone will ever check.
 
@@ -202,11 +206,23 @@ parts as well, since the editor spells that with the same one, so the seam puts 
 
 ## When the Claude Code extension updates
 
-It updates itself, into a fresh versioned directory, so the `chat-icon` patch is gone and the
-next start applies it again to a bundle nobody has read. Nothing has to be done by hand, and
-nothing is silent about failing: a shape that moved is one `[extension]` line at startup naming
-what it could not match, and the tab wears the extension's own still logo until the anchor is
-re-derived from the code around it - `applyTabIcon`, `update_session_state`. Both are matched by
-shape and required to hit exactly ONCE, so a bundle that grew a second copy of either is refused
-rather than guessed at. The pristine bundle sits beside it as `extension.js.ct-orig`; delete both
-that and the patched file to make the app's own installer fetch a clean one.
+It updates itself, into a fresh versioned directory, so both patches on it - `chat-icon` and
+`chat-column` - are gone and the next start applies them again to a bundle nobody has read. They
+share the file, so they are spent in ONE pass over one pristine source: patched a seam at a time
+from the backup, each would start over and only the last edit would survive. A seam whose shape
+has moved is skipped by name and the other still lands.
+
+Nothing has to be done by hand, and nothing is silent about failing: a shape that moved is one
+`[extension]` line at startup naming what it could not match and what it degrades to. Each is
+required to hit exactly ONCE, so a bundle that grew a second copy is refused rather than guessed
+at. The pristine bundle sits beside it as `extension.js.ct-orig`; delete both that and the
+patched file to make the app's own installer fetch a clean one.
+
+**Anchor on names the minifier cannot touch.** 2.1.261 replaced the if/else chain that picked a
+resting icon with a lookup table, and `chat-icon` broke - because it was anchored on the chain
+rather than on what the chain fed. It now anchors on the one assignment to `this.panelTab.iconPath`
+and takes the resting name as an EXPRESSION, so a variable and a table lookup both match; the
+grammar accepts accessor chains only, never a call, which is what makes reading it twice safe.
+Property paths on `this`, VS Code API names and string literals survive minification. Control flow
+does not. Both spellings are kept in `test/extension.test.js` so the anchor is held to a family
+rather than to whichever one shipped last.

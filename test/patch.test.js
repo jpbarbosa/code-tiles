@@ -60,6 +60,12 @@ test('every patch rewrites its shape once, into code that parses', () => {
     }
     // Idempotence is the marker's job, and the marker has to survive its own patch.
     assert.ok(patched.includes(patch.marker) && !shape.includes(patch.marker));
+    // And the patch has to ERASE the shape it matched. A replacement that re-emits its own
+    // anchor leaves `find` matching forever, so nothing but the marker can tell a patched
+    // bundle from an unpatched one - and the check below, against the bundle that ships,
+    // stops meaning anything the moment the app has run once.
+    assert.equal((patched.match(new RegExp(patch.find.source, 'g')) || []).length, 0,
+      `${name}: the replacement still carries the shape it matched`);
   }
 });
 
