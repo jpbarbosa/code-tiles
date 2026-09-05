@@ -50,7 +50,7 @@ from a screenshot alone.
 
 The app is normally already running with live sessions in its tiles; terminals live in the
 server, not in the window, so reloading the shell (⇧⌘R) is free and restarting the app is not.
-`⌃⌘I` opens devtools on the focused project's window and `⇧⌃⌘I` on the shell, both in a window of
+`⌥⌘I` opens devtools on the focused project's window and `⇧⌃⌘I` on the shell, both in a window of
 their own: a docked pane is part of the page, and the tiles paint over it.
 
 ## House rules that this tree is built on

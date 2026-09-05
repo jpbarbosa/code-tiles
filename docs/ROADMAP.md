@@ -75,7 +75,7 @@ What the tree does today, what comes next, and what to check when the server is 
   open project that holds it. Focusing a project clears a finished turn; a question is only
   cleared by answering it. Drawn twice: the ring on each window's own badge, and the dot on the
   chip in the strip, which is where you see a project you are not looking at.
-- Sixteen seams, verified in a live window rather than from a screenshot:
+- Eighteen seams, verified in a live window rather than from a screenshot:
   `dark` (your desktop's theme, a dark one only as the fallback under it, auto-detect off, and
   the colour scheme of every document the window holds - web's default theme is the light one,
   and a webview that says nothing shows Chromium's white canvas through every pixel its own page
@@ -137,7 +137,12 @@ What the tree does today, what comes next, and what to check when the server is 
   keybindings, acting on a change of instruction rather than on every render),
   `focus` (a press inside a window claims focus for its project, since a view paints above the
   shell's page and the shell never sees that press - registered on every document the runtime's
-  sweep reaches, because a press in the Claude panel lands two frames down in a webview).
+  sweep reaches, because a press in the Claude panel lands two frames down in a webview),
+  `frame` (the inset the editor floats its parts in, halved, so the space beside a tile is the
+  app's gutter and not the app's gutter plus the editor's - one share read by the stylesheet and
+  the patch alike; see *The frame inside a tile* below),
+  `zoom` (Cmd+0 given back off the editor, which binds it to Focus into Primary Side Bar and
+  would otherwise swallow the key before the View menu's Actual Size ever saw it).
 
 ## Next, in order
 
@@ -151,7 +156,7 @@ What the tree does today, what comes next, and what to check when the server is 
    an extension whose desktop version moves on.
 3. **Chat titles.** The active chat's name per project, read by a seam from the editor tab it
    already lives on, reported like the ground.
-4. **Packaging**: a signed `.app`, and a fetch of the pinned server into `vendor/`.
+4. **Packaging**: a signed `.app`. The pinned server already fetches into `vendor/`.
 
 ## Not doing
 

@@ -177,14 +177,16 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 
 ## What is missing, in the order it will be missed
 
-1. **The badge's monogram.** A project with no favicon keeps the editor's hamburger inside its
-   window; the picker already draws that project's initial.
-2. **Claude opening in a locked split column.** One extension patch, and the most visible
-   thing about working in a tile that the old tree fixed.
-3. **The extension secret merge.** Silent, intermittent, and it looks like an extension bug:
-   a secret written in one tile disappears when another writes any secret of its own.
-4. **The dock badge**, which is the only part of the Claude signal that reaches you with the
+1. **Claude opening in a locked split column.** One extension patch, and the most visible
+   thing about working in a tile that the old tree fixed: every session, every day.
+2. **The extension secret merge.** Silent, intermittent, and it looks like an extension bug:
+   a secret written in one tile disappears when another writes any secret of its own. One
+   patch to the server's own bundle, which is the door `branch` and `welcome` already use.
+3. **The dock badge**, which is the only part of the Claude signal that reaches you with the
    app in the background.
+4. **The badge's monogram.** A project with no favicon keeps the editor's hamburger inside its
+   window; the picker and the strip already draw that project's initial, so what is missing is
+   one mark in one place.
 5. **The chat title**, which is the one thing the old chips carried that no tile does.
 6. **A project's window booting lazily.** A view is created for every open project at startup,
    visible or not, so every one of them loads a workbench against the one server at once.
