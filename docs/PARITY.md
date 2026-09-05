@@ -91,7 +91,7 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 | Welcome page renamed and Coder's ad removed | injected | **flags** | `--app-name`, `--disable-getting-started-override` |
 | Welcome page's walkthrough column emptied | CSS | patch | |
 | An "Open Claude Code" entry under Start | yes | **no** | |
-| Claude opens in the main editor group, never a locked split | extension patch | **no** | a session still takes a column of its own and locks it |
+| Claude opens in the main editor group, never a locked split | extension patch | yes | the same one edit, the fallback column: an explicit column and an existing Claude group are both still honoured, and the flag the caller locks on is left the `!1` its own declaration gave it |
 | The chat tab's icon carries Claude's state | extension patch | yes | rebuilt, matched by shape, requires exactly one hit |
 | Extension secrets merged across windows | bundle patch | **no** | one origin, several windows, one `secrets.provider` blob: the last writer wins with a stale snapshot, which is how a theme's registration disappears |
 | Side bar / panel / secondary side bar flipped in every window at once | yes | yes | same keybinding dispatch, driven from the strip |
@@ -177,20 +177,18 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 
 ## What is missing, in the order it will be missed
 
-1. **Claude opening in a locked split column.** One extension patch, and the most visible
-   thing about working in a tile that the old tree fixed: every session, every day.
-2. **The extension secret merge.** Silent, intermittent, and it looks like an extension bug:
+1. **The extension secret merge.** Silent, intermittent, and it looks like an extension bug:
    a secret written in one tile disappears when another writes any secret of its own. One
    patch to the server's own bundle, which is the door `branch` and `welcome` already use.
-3. **The dock badge**, which is the only part of the Claude signal that reaches you with the
+2. **The dock badge**, which is the only part of the Claude signal that reaches you with the
    app in the background.
-4. **The badge's monogram.** A project with no favicon keeps the editor's hamburger inside its
+3. **The badge's monogram.** A project with no favicon keeps the editor's hamburger inside its
    window; the picker and the strip already draw that project's initial, so what is missing is
    one mark in one place.
-5. **The chat title**, which is the one thing the old chips carried that no tile does.
-6. **A project's window booting lazily.** A view is created for every open project at startup,
+4. **The chat title**, which is the one thing the old chips carried that no tile does.
+5. **A project's window booting lazily.** A view is created for every open project at startup,
    visible or not, so every one of them loads a workbench against the one server at once.
-7. **Packaging.** Until then this runs from source, which also means it holds no TCC grants.
+6. **Packaging.** Until then this runs from source, which also means it holds no TCC grants.
 
 ## What this tree has that the old one never did
 

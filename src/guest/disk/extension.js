@@ -18,20 +18,24 @@ const BACKUP = '.ct-orig';
 
 export function patchExtensions(dir) {
   const done = [];
-  for (const { name, extension } of declaredExtensions(seams)) {
-    for (const folder of folders(dir, extension.id)) {
+  for (const patches of bundles(declaredExtensions(seams))) {
+    for (const folder of folders(dir, patches[0].extension.id)) {
       const version = path.basename(folder);
       let status;
       try {
-        status = patchOne(folder, extension);
+        status = patchBundle(folder, patches);
       } catch (error) {
         status = { refused: error.message };
       }
       if (status.refused) {
-        console.error(`[extension] ${name}: ${version} not patched (${status.refused}) - ${extension.degrades}`);
+        const names = patches.map((patch) => patch.name).join(' + ');
+        console.error(`[extension] ${names}: ${version} not patched (${status.refused})`);
         continue;
       }
-      if (status.wrote) done.push(`${name} in ${version}`);
+      for (const refusal of status.refusals) console.error(`[extension] ${version}: ${refusal}`);
+      // A pass where every patch refused still WRITES, to put the stock bundle back - but it
+      // patched nothing, and saying so would name an edit that is not there.
+      if (status.wrote && status.applied.length) done.push(`${status.applied.join(' + ')} in ${version}`);
     }
   }
   return done;
@@ -41,47 +45,73 @@ export function declaredExtensions(list) {
   return list.filter((seam) => seam.extension).map((seam) => ({ name: seam.name, extension: seam.extension }));
 }
 
-function patchOne(folder, extension) {
-  const file = path.join(folder, extension.file);
+// Several seams can want the same bundle - the Claude tab's icon and the column its session opens
+// in are two changes to one file - so they are grouped here and spent in one pass. Patched from
+// the backup a seam at a time, each would start from the pristine source and only the last one's
+// edit would survive, silently.
+export function bundles(list) {
+  const groups = new Map();
+  for (const entry of list) {
+    const key = `${entry.extension.id.source}\u0000${entry.extension.file}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(entry);
+  }
+  return [...groups.values()];
+}
+
+function patchBundle(folder, patches) {
+  const name = patches[0].extension.file;
+  const file = path.join(folder, name);
   const backup = `${file}${BACKUP}`;
   const current = read(file);
-  if (current === null) return { refused: `no ${extension.file}` };
+  if (current === null) return { refused: `no ${name}` };
 
   // The backup IS the pristine source once it exists. Without one, the file on disk is pristine
   // unless it carries a stamp of ours - which would mean a patch whose original is gone, and
   // nothing here can undo an edit it cannot see the other side of.
   const original = read(backup);
-  if (original === null && extension.stamp.test(current)) {
+  if (original === null && patches.some(({ extension }) => extension.stamp.test(current))) {
     return { refused: `already patched and ${path.basename(backup)} is missing` };
   }
-  const source = original ?? current;
+  const pristine = original ?? current;
 
-  const result = extension.apply(source);
-  if (result.refused) {
-    // Stock beats an edit made by a patcher that no longer agrees with this one.
-    if (current !== source) write(file, source);
-    return { refused: result.refused };
+  // Each over what the one before it left. A seam whose shape has moved is skipped with its own
+  // reason rather than taking the others with it: they are separate changes that share a file.
+  let patched = pristine;
+  const applied = [];
+  const refusals = [];
+  const resources = {};
+  for (const { name: seam, extension } of patches) {
+    const result = extension.apply(patched);
+    if (result.refused) {
+      refusals.push(`${seam} not applied (${result.refused}) - ${extension.degrades}`);
+      continue;
+    }
+    patched = result.source;
+    applied.push(seam);
+    Object.assign(resources, extension.resources || {});
   }
 
-  // Byte for byte what is already there, which is the usual start: it parsed when it was written
-  // and nothing has to be spawned to learn that again.
-  const wrote = current !== result.source;
-  if (wrote) {
-    const broken = syntaxError(result.source);
+  const wrote = current !== patched;
+  // Nothing to check when every patch refused: what goes back is the bundle's own bytes, and
+  // stock beats an edit made by a patcher that no longer agrees with this one.
+  if (wrote && patched !== pristine) {
+    const broken = syntaxError(patched);
     if (broken) return { refused: `the patched bundle does not parse (${broken})` };
   }
 
-  if (original === null) write(backup, source);
-  if (wrote) write(file, result.source);
+  // Only where something landed, or a refused pass would leave a copy of a bundle nobody edited.
+  if (original === null && applied.length) write(backup, pristine);
+  if (wrote) write(file, patched);
   // After the code that reads them, never before: resources written for a patch that then refused
   // would be files nothing points at.
-  for (const [name, body] of Object.entries(extension.resources || {})) {
-    const target = path.join(folder, name);
+  for (const [resource, body] of Object.entries(resources)) {
+    const target = path.join(folder, resource);
     if (read(target) === body) continue;
     fs.mkdirSync(path.dirname(target), { recursive: true });
     write(target, body);
   }
-  return { wrote };
+  return { wrote, applied, refusals };
 }
 
 function folders(dir, id) {

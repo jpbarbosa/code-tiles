@@ -75,7 +75,7 @@ What the tree does today, what comes next, and what to check when the server is 
   open project that holds it. Focusing a project clears a finished turn; a question is only
   cleared by answering it. Drawn twice: the ring on each window's own badge, and the dot on the
   chip in the strip, which is where you see a project you are not looking at.
-- Eighteen seams, verified in a live window rather than from a screenshot:
+- Nineteen seams, verified in a live window rather than from a screenshot:
   `dark` (your desktop's theme, a dark one only as the fallback under it, auto-detect off, and
   the colour scheme of every document the window holds - web's default theme is the light one,
   and a webview that says nothing shows Chromium's white canvas through every pixel its own page
@@ -127,6 +127,10 @@ What the tree does today, what comes next, and what to check when the server is 
   from the classes the editor builds its items with, so it takes the bar's size, its hover pill
   and the accent an active view wears, and needs no slot cut for it; the restore half is
   `screen-normal`, since `panel-restore` has no icon registered in this build and paints nothing),
+  `chat-column` (a Claude session opening in the group you are already in rather than in a locked
+  column of its own - one edit to the extension's own fallback, which is what its command reads
+  before it runs `workbench.action.lockEditorGroup`; an explicit column and an existing Claude
+  group are both left as they were),
   `branch` (the branch and its sync as two pills at the bottom of the side bar, mirrored from the
   status bar entries that hiding the bar leaves alive, so a click still checks out or syncs - in
   a footer the side bar is taught to give REAL room to rather than an overlay over the tree),
