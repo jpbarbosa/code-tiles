@@ -1,6 +1,7 @@
-import { dialog, screen } from 'electron';
+import { app, dialog, screen } from 'electron';
 
 import { METRICS, gridResize, gridSplitters, rectAt, shapeKey, tileRects } from './layout.js';
+import { badgeFor } from './dock.js';
 
 // The parts the strip's layout control flips, and what a window shows before anyone has chosen:
 // the editor's own defaults, once the chrome seam has had its say on the secondary side bar.
@@ -23,6 +24,8 @@ export class Desk {
   // remembers. Not persisted: a fresh launch follows the windows rather than the last session.
   #layout = { sideBar: null, panel: null, secondarySideBar: null };
   #parts = new Map();
+  // What the dock is currently saying, so it is only ever written when the answer changes.
+  #badge = null;
   // A rearrangement in progress: which window's grip is held, and the order to put back if the
   // gesture is abandoned. Nothing about it is persisted - it lives and dies with the press.
   #drag = null;
@@ -40,6 +43,7 @@ export class Desk {
 
   render() {
     const { open, focused, mode, master, shape, sizes, rects } = this.#placement();
+    const projects = this.#projects.all();
 
     // Whether a window is one of SEVERAL tiles, which is what both of the app's own controls
     // inside it hang on: the item that widens this one, and the grip that moves it among the
@@ -63,10 +67,21 @@ export class Desk {
       strip: METRICS.strip,
       gap: METRICS.gap,
       focused,
-      projects: this.#projects.all(),
+      projects,
       rects,
       splitters: gridSplitters({ ...shape, sizes }),
     });
+    this.#dock(badgeFor(projects));
+  }
+
+  // The one part of the Claude signal that reaches you with the app behind something else. Set on
+  // CHANGE only: a gutter drag renders sixty times a second, and the dock is not something to
+  // write to sixty times a second. `app.dock` is macOS's alone, and this app is macOS's alone,
+  // but a headless run has none either.
+  #dock(badge) {
+    if (badge === this.#badge) return;
+    this.#badge = badge;
+    app.dock?.setBadge(badge);
   }
 
   // Where every tile is, and the few facts the answer is made of. One place, because the drag

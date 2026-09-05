@@ -10,9 +10,9 @@ says it against the thing it is replacing, which is the only place some of these
 written down.
 
 **Where it stands: the product is there, the last mile is not.** Every mechanism the old app
-proved is rebuilt and several are better founded. What is missing is no longer a gesture: it is
-two patches of someone else's bundle - Claude's own column, the shared secret store - half a
-dozen stylesheets over it, and the app's own edges: the dock badge, a signed `.app`.
+proved is rebuilt and several are better founded, and every patch of someone else's bundle the
+old tree carried is now carried here. What is left is not a mechanism: half a dozen stylesheets
+over the editor's own DOM, one mark inside a window, and a signed `.app`.
 
 Legend: **yes** the same feature, however differently built. **partial** the feature exists
 with something named missing from it. **no** not in this tree. **by design** deliberately not
@@ -113,7 +113,7 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 | An ESC read out of the transcript, since no hook fires for it | yes | yes | |
 | Per-state TTL on the markers | yes | yes | |
 | Expired markers swept | at start and every 5 min | **at start only** | a marker that expires mid-session is ignored but not deleted |
-| A dock badge counting the projects waiting on you | yes | **no** | |
+| A dock badge counting the projects waiting on you | yes | yes | the two states that are about YOU - a question nobody answered, a turn you have not seen - over the open projects, written only when the number changes |
 
 ## Usage
 
@@ -177,15 +177,13 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 
 ## What is missing, in the order it will be missed
 
-1. **The dock badge**, which is the only part of the Claude signal that reaches you with the
-   app in the background.
-2. **The badge's monogram.** A project with no favicon keeps the editor's hamburger inside its
+1. **The badge's monogram.** A project with no favicon keeps the editor's hamburger inside its
    window; the picker and the strip already draw that project's initial, so what is missing is
    one mark in one place.
-3. **The chat title**, which is the one thing the old chips carried that no tile does.
-4. **A project's window booting lazily.** A view is created for every open project at startup,
+2. **The chat title**, which is the one thing the old chips carried that no tile does.
+3. **A project's window booting lazily.** A view is created for every open project at startup,
    visible or not, so every one of them loads a workbench against the one server at once.
-5. **Packaging.** Until then this runs from source, which also means it holds no TCC grants.
+4. **Packaging.** Until then this runs from source, which also means it holds no TCC grants.
 
 ## What this tree has that the old one never did
 

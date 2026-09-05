@@ -73,8 +73,10 @@ What the tree does today, what comes next, and what to check when the server is 
   question, a turn that ended you have not seen, or an open session with nothing to say. A
   session belongs to the folder it STARTED in, so a `cd` does not move it, and to the deepest
   open project that holds it. Focusing a project clears a finished turn; a question is only
-  cleared by answering it. Drawn twice: the ring on each window's own badge, and the dot on the
-  chip in the strip, which is where you see a project you are not looking at.
+  cleared by answering it. Drawn three times: the ring on each window's own badge, the dot on the
+  chip in the strip, which is where you see a project you are not looking at, and a count on the
+  DOCK - the two states that are about you rather than about Claude - which is the only one of
+  the three that reaches you with the app behind something else.
 - Twenty seams, verified in a live window rather than from a screenshot:
   `dark` (your desktop's theme, a dark one only as the fallback under it, auto-detect off, and
   the colour scheme of every document the window holds - web's default theme is the light one,
