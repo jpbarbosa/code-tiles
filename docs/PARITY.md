@@ -11,8 +11,8 @@ written down.
 
 **Where it stands: the product is there, the last mile is not.** Every mechanism the old app
 proved is rebuilt and several are better founded. What is missing is no longer a gesture: it is
-four patches of someone else's bundle, and the app's own edges - popups, the dock badge, a
-signed `.app`.
+two patches of someone else's bundle - Claude's own column, the shared secret store - half a
+dozen stylesheets over it, and the app's own edges: popups, the dock badge, a signed `.app`.
 
 Legend: **yes** the same feature, however differently built. **partial** the feature exists
 with something named missing from it. **no** not in this tree. **by design** deliberately not
@@ -28,8 +28,8 @@ rebuilt, with the reason in the last section.
 | View control: grid or one project | yes | yes | `⌃⌘G` / `⌃⌘E` are new |
 | Maximize: one wide column, the rest live beside it | yes | yes | now an item in the editor's own activity bar list, not a host button over a slot cut in CSS |
 | Maximizing also makes that project active | yes | **by design** | the column is chosen and stays chosen; focus moves on its own |
-| Gutter drag to resize, double-click to even, `⌃⌘0` | no | yes | shares per grid shape, persisted |
-| Zoom every tile together, `⌘+` / `⌘-` / `⌘0` | no | yes | |
+| Gutter drag to resize, double-click to even | yes | yes | shares in both, persisted in both. New here: the key is the grid SHAPE rather than the track count, so the 2x2 you dragged with four projects is the one three of them fall back to; the geometry is a pure function with tests; and `⌃⌘0` evens both axes at once |
+| Zoom every tile together, `⌘+` / `⌘-` / `⌘0` | no | yes | the old `⌘+` landed on the focused guest alone, which is what `--gpx` and the dpr ratio existed to chase |
 | Focus glow in the gutter, tinted ground inside the tile | yes | yes | |
 | A close affordance on a tile in the grid | yes | yes | the app's own `×` in the window's top right corner, on a plate of the project's hue, drawn by a seam and given room by the editor's title row - the old one was a host button floated over a slot the guest cut for it, sized from a height measured in the window |
 | Empty state | yes | yes | |
@@ -80,7 +80,7 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 | Project tint on the parts' backgrounds | yes | yes | |
 | Tint inside the terminal's canvas | `lighten` overlay | yes | same mechanism |
 | Tint inside the chat's iframe | yes | yes | same, said again in each frame's own document |
-| Tint on the dimmed icons and labels | yes | yes | re-derived over the tinted ground |
+| Tint on the dimmed icons and labels | yes | **partial** | the activity bar's icons, re-derived over the tinted ground, and only in the focused window - plus the side bar's title row, which wears the same ink everywhere. Unselected tab labels, in the editor's row and the terminal strip alike, are left the theme's |
 | Tint on the 1px edges of the parts | yes | **no** | |
 | Your own turns in the chat painted apart from Claude's | yes | **no** | |
 | Status bar painted the project's colour | yes | **n/a** | there is no status bar |
@@ -161,16 +161,16 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 | An external link goes to the default browser | yes | yes | |
 | A popup that keeps its opener stays in this session | yes | **no** | every popup is denied here, so an auth flow started inside a tile lands in the browser, on the wrong origin and the wrong partition |
 | `will-navigate` holds the top frame to its origin | yes | **no** | a `target=_self` link navigates the tile off the workbench with no way back |
-| Schemes other than http, https and mailto refused | yes | **partial** | non-http popups are denied, but nothing guards navigation |
+| Schemes other than http, https and mailto refused | yes | **partial** | everything but an http(s) popup is denied, `mailto:` with the rest, so a mail link in a tile does nothing - and nothing guards navigation |
 
 ## Build and tooling
 
 | | old | new | |
 |---|---|---|---|
-| A test suite | none | **60 tests** | geometry, seams, settings, keybindings, both patch kinds, activity, icon, usage |
+| A test suite | none | **74 tests** | geometry, seams, settings, keybindings, both patch kinds, activity, icon, usage |
 | Read a change back out of a live window | by hand | `CT_PROBE=1 npm start` | `scripts/dev-probe.js` reads every seam's effect out of each guest |
 | The pinned code-server fetched into `vendor/` | yes | yes | |
-| A packaged, signed `Code Tiles.app` | yes | **no** | roadmap item 5. The signing rules the old tree paid for (a real identity so TCC grants survive, no `--deep`, packager rewriting the vendor symlinks) are in that repo's README |
+| A packaged, signed `Code Tiles.app` | yes | **no** | roadmap item 4. The signing rules the old tree paid for (a real identity so TCC grants survive, no `--deep`, packager rewriting the vendor symlinks) are in that repo's README |
 | An app icon | rendered in Blender, `.icns` and dock icon | **no** | |
 | The same Claude patches applied to desktop VS Code by a LaunchAgent | yes | **no** | `scripts/patch-vscode-claude.js` and its plist live in the old tree |
 | A data-directory migration script | yes | **n/a** | this tree has its own data directory and no history to move |
@@ -192,7 +192,7 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 
 ## What this tree has that the old one never did
 
-- **Gutter resizing**, in shares rather than pixels, kept per grid shape, and `⌃⌘0`.
+- **Gutter resizing keyed by the grid's SHAPE**, not by its track count, so a 2x2 dragged with four projects is the 2x2 three of them fall back to - and `⌃⌘0`, which evens both axes at once. The old tree had the gesture, in shares and persisted; what it had no key for was the shape.
 - **Zoom as one app.** Every tile moves together and a project opened later comes up at the
   same size, because Chromium keeps zoom per host and every tile is a window of one server.
 - **A seam contract.** One file per change, declared in `src/guest/manifest.cjs`, with its
@@ -214,7 +214,7 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
   half-applied, each naming what it degrades to.
 - **The maximize item is the editor's own**, built from the classes the activity bar builds
   its items with, so it takes the bar's size, hover and accent for free.
-- **60 tests and a probe** that reads every seam's effect out of a live window.
+- **74 tests and a probe** that reads every seam's effect out of a live window.
 
 ## Dropped on purpose
 
