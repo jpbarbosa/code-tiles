@@ -6,7 +6,8 @@ A macOS Electron app that shows several VS Code projects as live tiles in one wi
 tile is a window of ONE shared code-server, so all tiles share an origin, a partition and
 therefore a login. `README.md` is the product; `docs/ARCHITECTURE.md` is the shape of the code;
 `docs/CONSTRAINTS.md` is the list of things that will bite you; `docs/ROADMAP.md` is what is
-actually built.
+actually built; `docs/PARITY.md` is that same question asked against `~/Sites/code-tiles`, the
+app this one replaces.
 
 ## Commands
 
