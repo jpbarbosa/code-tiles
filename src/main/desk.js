@@ -171,12 +171,15 @@ export class Desk {
     if (index >= 0 && index < open.length) this.focus(open[index].folder);
   }
 
+  // The maximized grid moves the COLUMN too, because a stacked tile is 30% wide and focus alone
+  // would hand you a project you cannot work in. A click into one still moves only the focus.
   cycle(step) {
     const open = this.#projects.open();
     if (open.length < 2) return;
     const current = open.findIndex((project) => project.folder === this.#projects.focused);
-    const next = (current + step + open.length) % open.length;
-    this.focus(open[next].folder);
+    const next = open[(current + step + open.length) % open.length].folder;
+    if (this.#shape(open.length) === 'master') this.#projects.maximized = next;
+    this.focus(next);
   }
 
   // The folder dialog, which is how a folder that has never been open here gets in. The picker

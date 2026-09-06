@@ -27,7 +27,7 @@ rebuilt, with the reason in the last section.
 | Grid, `cols = ceil(sqrt(n))`, last tile spans the empty cells | yes | yes | pure and tested here (`src/main/layout.js`, `test/layout.test.js`) |
 | View control: grid or one project | yes | yes | `⌃⌘G` / `⌃⌘E` are new |
 | Maximize: one wide column, the rest live beside it | yes | yes | now an item in the editor's own activity bar list, not a host button over a slot cut in CSS |
-| Maximizing also makes that project active | yes | **by design** | the column is chosen and stays chosen; focus moves on its own |
+| Maximizing also makes that project active | yes | **by design** | the column is chosen and stays chosen; focus moves on its own. `⌘\`` is the one command that moves both |
 | Gutter drag to resize, double-click to even | yes | yes | shares in both, persisted in both. New here: the key is the grid SHAPE rather than the track count, so the 2x2 you dragged with four projects is the one three of them fall back to; the geometry is a pure function with tests; and `⌃⌘0` evens both axes at once |
 | Zoom every tile together, `⌘+` / `⌘-` / `⌘0` | no | yes | the old `⌘+` landed on the focused guest alone, which is what `--gpx` and the dpr ratio existed to chase |
 | Focus glow in the gutter, tinted ground inside the tile | yes | yes | |
@@ -150,7 +150,7 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 | A hardened PATH for the spawned server (Homebrew, fnm, login-shell PATH) | yes | **no** | the vendored server ships its own node, so it starts either way; what an integrated terminal and an extension inherit from a Finder launch is unverified |
 | `backgroundThrottling: false` on the guests | yes | **no** | whether a hidden tile's terminal keeps rendering in single view is unverified |
 | Single-instance lock | yes | yes | |
-| A second launch focuses the running window | yes | **no** | it quits silently instead |
+| A second launch focuses the running window | yes | yes | the lock refuses the second process in both. Only a genuinely new process reaches the handler - `open -n`, the binary, `npm start` beside the installed app - since the Dock and Spotlight surface a running app without Electron hearing about it |
 | `activate` re-creates the window | yes | **n/a** | the app is the window and quits with it |
 | A `<webview>` per project | yes | **by design** | `WebContentsView`, which is what removed the drag and dpr problems |
 
@@ -230,7 +230,10 @@ over a tile: anything that has to appear inside a window is a seam.
 
 **Maximize following focus.** In the old tree maximizing made a project active and clicking a
 stacked tile promoted it, so "where am I" and "what is wide" were one answer. They are two
-questions here, and the activity bar item is the only thing that answers the second.
+questions here: the activity bar item answers the second alone, and a click into a stacked
+window answers the first alone. `⌘\`` is the one command that answers both, kept from the old
+tree because a stacked tile is 30% wide and walking the order into one is walking into a project
+you cannot work in.
 
 **A per-project `settings.json`.** One server is one settings file. A per-project difference
 is a seam or a profile.

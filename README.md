@@ -163,7 +163,7 @@ list, and each view offers exactly one gesture to change it:
 | Key | Does |
 |---|---|
 | `⌃⌘1` ... `⌃⌘9` | focus project N (in both views) |
-| `⌘\`` / `⇧⌘\`` | focus the next / previous project, wrapping |
+| `⌘\`` / `⇧⌘\`` | the next / previous project, wrapping. Maximized, it moves the column too |
 | `⌃⌘G` | grid |
 | `⌃⌘E` | single view, on the focused project |
 | `⌃⌘O` | open a folder |
