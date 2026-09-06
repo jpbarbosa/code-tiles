@@ -1,227 +1,154 @@
 # Code Tiles
 
-Several VS Code projects, live, in one macOS window. Every project is a real editor with a
-working terminal, and they are all windows of **one shared code-server**, so one login, one
-set of settings and one extension host family serve every tile.
+Several VS Code projects open at once, as live tiles in one window.
 
-The app exists for the **grid**: a session opens with every project on screen at once, because
-the thing it is built for is running an agent in each of them and being able to see, without
-switching, which one is working, which one is waiting for you, and which one is done.
+Every tile is a real editor: your extensions, your settings, your keybindings, a working terminal.
+They are all windows onto **one shared code-server**, so you sign in once and every project has it.
 
-> Status: greenfield rewrite. The spec below is the whole product; `docs/ROADMAP.md` says what
-> the current tree actually does. The architecture that keeps the two apart is in
-> `docs/ARCHITECTURE.md`, and the facts that shape both are in `docs/CONSTRAINTS.md`.
+It exists for the grid. If you run a coding agent in more than one project at a time, the thing
+you keep losing is which one needs you - so you cycle through windows to find out. Here they are
+all on screen, and each tile says what its agent is doing without your having to open it.
+
+Runs on macOS, Windows and Linux.
 
 ## The window
 
-One window, one flat ground. The top strip, the gutters between tiles and the ground inside
-every tile are the same colour, and that colour is not chosen here: it is read from the theme
-the editor is running, so a tile edge never shows a step and a theme change carries the whole
-window with it.
+A strip across the top, and the rest is the grid. The strip holds one chip per open project, a
+button to open another, the layout buttons and a usage meter; it is also the window's title bar,
+so your OS draws its own window controls into it.
 
-- **The strip** (36px) holds, on one line: the traffic lights, the view control, the project
-  chips, the **+**, the layout control and the usage meter.
-- **The grid** fills the rest. `cols = ceil(sqrt(n))`, near square; the last tile stretches
-  across any empty trailing cells so the grid is always full.
-- **The gutter** is the app's own frame, not the editor's. Whatever inset the editor floats
-  its own parts in is neutralised, so a version bump cannot move the tile's edge.
-- **The gutters resize it.** Drag the one between two tiles and those two trade space, the rest
-  of the grid staying exactly where your eye left it; double-click it to even that axis again,
-  or `⌃⌘0` to even both. Sizes are **shares, not pixels**, so a resized window keeps them, and
-  they are remembered against the grid's **shape** rather than the project count - three
-  projects and four are both a 2x2, so closing one and reopening it lands back where you were.
-- **Maximize** gives one project a column of about seven tenths of the width and stacks the
-  others live beside it, so you can work in one while still watching the rest. The switch is an
-  item at the top of that window's own activity bar, under the badge: on a stacked project it
-  offers the column, and on the project that already holds it the same item is lit and hands the
-  even grid back. The wide one is **chosen and stays chosen** - clicking into a stacked tile
-  moves the focus and leaves the column where it is, so where you are and what is wide are two
-  answers rather than one. Dragging a tile onto the column is the other way to hand it over. The
-  gutters resize the master's column and the stack's rows the way they resize any grid, and those
-  proportions are remembered against the maximized shape rather than the even one it came from.
-- **Each tile closes from its own top right corner**: an **×** on a small plate in the project's
-  colour, the same plate the branch pills wear at the other corner. It is drawn inside the window,
-  because nothing outside a tile can paint on one, and the editor's own title row gives up the
-  room for it rather than being covered by it.
+Tiles are laid out as near square as the count allows. Four projects make two rows of two, nine
+make three of three; where a row would come up short the last tile stretches to fill it, so you
+never look at a gap. Drag the space between two tiles to give one more room than the other,
+double-click that space to even it up again, and the sizes stick - resize the window, close a
+project and reopen it, quit and come back, and the grid is how you left it.
 
-## Focus
+**Maximize** gives one project about seven tenths of the width and stacks the rest down the side,
+still live, so you can work in one and watch the others. It stays where you put it: clicking into
+a stacked tile moves the focus there without moving the big one.
 
-Exactly one project is focused, in both views. **Clicking into a tile focuses it**, as do the
-chip and the keyboard, and focus is shown by **colour on the ground, never by a border**:
+## Focus, and a colour per project
 
-- The focused tile's shell takes the project's hue: its margins and the gaps between its own
-  panels turn that colour, while every panel inside it stays exactly as the theme painted it.
-- Outside the tile the same hue continues as a **glow in the gutter**, at half the alpha of
-  the inside, so the two read as one light source and the tile's edge does not cut it off.
-- The focused chip in the strip is **filled** with the same hue. An unfocused chip is the
-  strip lifted a few percent with a wash of its project's hue in it: enough to tell three
-  projects apart, quiet enough that the filled one is the only chip that steps forward.
+One project is focused at a time. Click into a tile, click its chip, or use the keyboard.
 
-## Identity
+You can tell which one it is by colour rather than by a border: the focused tile's margins and the
+gaps between its panels pick up that project's own hue, the space around the tile glows faintly
+with it, and its chip in the strip is filled in.
 
-Every project carries its own hue, sampled from the colours its own favicon is mostly made of
-and hashed from its path when there is no favicon to take one from - derived either way, so it
-is stable across restarts and never stored. Only the ANGLE is taken: every project spends it at
-one lightness and one chroma, so a pastel favicon and a saturated one give two tiles of the same
-weight and nothing but the colour tells them apart. The hue appears in seven places and nowhere
-else: the chip, the tile's ground and glow, the sidebar title row inside the window, the branch
-pills under its file tree, the ring around the identity badge, your own turns in its Claude chat,
-and the ACTIVE tab wherever there is one - a file, a Claude
-session, a terminal, the side bar's own view switcher. An inactive tab keeps the theme's colour,
-so in every row the hue marks the one thing you are working in.
+Each project gets its colour from its favicon, so a project you know by its logo gets a tile that
+matches, and a project without one gets a stable colour derived from its path. The same hue shows
+up in a few deliberate places inside the editor - the sidebar header, the branch pill, the active
+tab - which is what stops you typing into the wrong project.
 
-**How much of it is worn is the app's one preference** (`⌘,`): a dial for the tile you are in and
-a dial for the tiles you are not, three rungs each. Every open window follows at once, with no
-reload, and the middle rung on both is what the app paints with nothing set. The tiles you are not
-in are quieter than the one you are at every rung, which is what keeps focus readable across a
-grid however far the dials are pushed.
+**Settings** has one preference: how strong that colour is, on a dial for the tile you are in and
+another for the ones you are not. Turn them both down and the tiles stay apart by their icons and
+names alone.
 
-The **chip in the strip wears that same mark**: the project's favicon, or its initial on its own
-hue where there is no favicon to take one from - and the hue is sampled from the favicon, so the
-two can never disagree about a colour. One glance matches a chip to a tile, which is the whole job
-of that row in single view, where the tile it names is the one you cannot see.
+## What your agent is doing
 
-The **identity badge** sits at the top of the activity bar, inside the window, where the
-editor's own title bar used to be. It is the project's favicon, or a monogram, and it is what you
-take hold of to move the tile among the others. It is drawn **by the guest**, not overlaid by the
-app: it belongs to the window it names, moves with it, and needs nothing from the host to stay
-put. A press that never moves is still the menu it was: the badge holds it only long enough to see
-whether your hand goes anywhere, then hands it back.
+Every tile shows a small ring around its project icon, and the ring's **movement** is the state:
 
-## The Claude signal
-
-A ring around the identity badge reports what Claude is doing in that project. **The state is
-the motion, not the colour** - one hue, four behaviours:
-
-| State | Ring |
+| The ring | Means |
 |---|---|
-| working | comet, spinning |
-| needs you | ring, blinking fully out on a 2.4s cycle |
-| finished | ring, breathing down to a third on a 4.8s cycle |
-| idle | no ring |
+| spinning | Claude is working |
+| blinking | it asked you something and is waiting |
+| slowly breathing | it finished a turn you have not read yet |
+| absent | nothing running |
 
-Finished breathes rather than sitting still: a static ring makes the one state that has to
-reach you the least visible of the three. The icon itself never animates.
+The same ring is on the chip in the strip, so you can see a project that is not on screen, and on
+the chat tab inside the editor, where you are already looking. When the whole app is behind
+something else the taskbar picks it up: a count on the Dock on macOS and on a Unity launcher,
+and a flashing taskbar button on Windows, which has no badge to set.
 
-The signal comes from Claude Code's own hooks, so it works for the CLI and the extension
-alike, and it is the same ring on the chip in single view. It is the same three states again on
-the **chat tab's own icon** inside the window, where your eye already is while you work.
+This reads Claude Code's own hooks, so it works whether you use the CLI or the extension.
 
-## Usage
+## Opening and closing projects
 
-A 5-hour and a 7-day bar sit at the right of the strip, left of the layout control,
-account-global rather than per project, ramping green to amber to orange to red as a window
-fills. Click for a panel with exact percentages, reset times and per-model buckets.
+The **+** button in the strip opens a search field over one list: the projects you have opened
+before, then folders on disk you have not. Type to narrow it. Type a name to match a name, or
+include a slash to match the path - `work/api` will find `~/work/acme/api` when no single name
+would. Start with a path and it browses instead, so `~/code/` lists what is in it and each `/`
+goes a level deeper.
 
-Numbers are live or absent. Without a connected account the widget is a single **Connect**
-button, and the panel it opens is where you sign in: it sends you to the browser you are already
-signed into and takes the code back. There is deliberately no estimate from local transcripts,
-because an estimate can only calibrate against your own biggest window ever run and reads 100%
-every time you set a new peak.
+Arrow keys move the selection, Return opens it, and the right arrow steps into a folder without
+opening it. Opening a project that is already open just focuses its tile.
 
-## The layout control
+Close a project with the **×** in its top right corner, the **×** on its chip, or the keyboard.
+Closing keeps it in the list, so reopening is one click; a folder you have deleted since drops off
+the list on its own.
 
-The three buttons VS Code puts at the right of its own title bar - side bar, panel, secondary
-side bar - sit at the right of the strip instead, and here each one drives **every open project
-at once**, so one click retiles the whole grid the same way. A project opened afterwards comes
-up in the state you chose.
+You can also point a tile somewhere else from inside it - File > Open Folder, or a row of the
+welcome page's Recent list. The tile stays where it is in the grid and becomes that project.
 
-Until you press one, nothing is imposed: every window keeps the layout it remembers. The buttons
-show the focused project's own answer, so a ⌘B pressed inside a tile moves them.
+**Rearranging** works one way per view. In the strip, drag a chip along the row and it slots in
+where you drop it. In the grid, drag a tile by its project icon onto another tile and the two
+swap places. Escape cancels either.
 
-## Opening, closing, reordering
+## Keyboard
 
-**+** opens the picker: every folder ever opened here, in the same project order the strip and
-the number shortcuts read, each with the icon its chip wears - or its initial on its own hue -
-and the path that tells two folders of the same name apart. A project that is open is marked,
-and clicking it focuses that tile rather than opening a second copy. **Open folder...** is the
-last row of that list, not a footer, and it is what **+** does directly while the list is still
-empty. The list is a screen over the grid rather than a menu under the button, because what it
-covers is four live editors.
+| | macOS | Windows and Linux |
+|---|---|---|
+| Focus project 1 to 9 | `⌃⌘1` … `⌃⌘9` | `Ctrl+Alt+1` … `Ctrl+Alt+9` |
+| Next / previous project | ``⌘` `` / ``⇧⌘` `` | ``Ctrl+Alt+` `` / ``Ctrl+Alt+Shift+` `` |
+| Grid / one project | `⌃⌘G` / `⌃⌘E` | `Ctrl+Alt+G` / `Ctrl+Alt+E` |
+| Open a project | `⌘O` | `Ctrl+O` |
+| Open a folder directly | `⌃⌘O` | `Ctrl+Alt+O` |
+| Close the focused project | `⌃⌘W` | `Ctrl+Alt+W` |
+| Even the tiles out again | `⌃⌘0` | `Ctrl+Alt+0` |
+| Zoom every tile together | `⌘+` `⌘-` `⌘0` | `Ctrl+=` `Ctrl+-` `Ctrl+0` |
+| Settings | `⌘,` | `Ctrl+,` |
 
-Closing a project takes the tile away and keeps the entry, which is what makes reopening a
-click. A folder that has since been deleted is dropped from the list rather than offered. Three
-ways to close one: the **×** in the tile's own corner, the **×** on its chip in the strip, and
-`⌃⌘W` for the focused one.
+The app deliberately sits one modifier above the editor's own, so nothing it binds shadows a
+shortcut you press inside a tile.
 
-There is **one project order** behind the strip, the grid, the number shortcuts and the saved
-list, and each view offers exactly one gesture to change it:
+## Inside a tile
 
-- **Single view: drag a chip along the strip.** It inserts, the chips it passes shifting along
-  under your hand. The chip lifts out of the row and follows the cursor, and the hole it leaves is
-  where it will land - the placeholder reflows through the strip as you go.
-- **Grid: drag a tile by its identity badge, onto another tile.** They swap. A grid has nothing to
-  shift along, and an insert would shuffle every project in between. Here the tiles themselves are
-  the feedback - they trade places as you cross into one - because a tile is a native view painted
-  above the app's own page and nothing outside one can draw a highlight on it. The maximized
-  column is a slot like any other, so a tile dropped on it takes it.
+It is stock VS Code, with a short list of changes that only make sense in a grid:
 
-`Esc` abandons a drag. The order is persisted.
+- **No title bar or status bar.** The strip already says which project this is, and the status bar
+  carries per-file detail you would not read from a tile you are glancing at.
+- **The activity bar keeps four views** - files, search, source control, extensions. The others
+  move into its own overflow menu rather than disappearing. A tile is narrow.
+- **The window wears the project's colour**, more of it when focused, less when not.
+- **The branch moved under the file tree**, since the status bar that used to carry it is gone.
+  Clicking it still checks out and syncs.
+- **Terminals are tabs across the top of the panel** instead of a list down its right edge, which
+  costs width in every tile at once.
+- **Maximize Panel and the Run button are hidden**, being two buttons a tile cannot honour. Their
+  commands and keyboard shortcuts still work.
 
-## Shortcuts
+Your setup comes with you: every profile in your desktop VS Code is copied over - settings,
+keybindings and extensions - and each project opens on the profile your desktop already uses for
+that folder. It is a copy, and your desktop VS Code is never written to.
 
-| Key | Does |
-|---|---|
-| `⌃⌘1` ... `⌃⌘9` | focus project N (in both views) |
-| `⌘\`` / `⇧⌘\`` | the next / previous project, wrapping. Maximized, it moves the column too |
-| `⌃⌘G` | grid |
-| `⌃⌘E` | single view, on the focused project |
-| `⌃⌘O` | open a folder |
-| `⌃⌘W` | close the focused project |
-| `⌃⌘0` | even the tiles out again |
+## Getting it running
 
-`Ctrl+Cmd` throughout, so nothing shadows the editor's own `⌘1`, `⌘W`, `⌘O` inside a tile.
-`⌘\`` is the deliberate exception: it is macOS's "next window in this app", and a tile is a
-window.
-
-## Inside a window
-
-What the app changes about a stock editor is small, deliberate, and listed in one place
-(`src/guest/manifest.js`). The shape of it:
-
-- **The editor's title bar and status bar are gone**, because the strip already names the
-  project and the status bar carries per-file detail nobody reads from a tile they are
-  glancing at. Both are turned off through the editor's own settings, not clipped.
-- **The window is tinted** with the project's hue: the parts wear a veil of it, their chrome
-  more of it, and the ground they float on carries focus - louder on the tile you are in than on
-  the ones you are not. Your own turns in the Claude chat are PAINTED rather than veiled, because
-  a theme is free to ship that bubble as the very colour of the page behind it.
-- **The identity badge and its ring** are drawn in the activity bar, and the Claude chat tab's
-  icon carries the same signal.
-- **The branch is put where it can be seen**, under the file tree, since the status bar that
-  used to carry it is gone. It is the editor's own entry off that bar, mirrored into a pill the
-  side bar makes real room for, so clicking it still checks out or syncs.
-- **Terminals are tabbed along the panel header** rather than listed down its right edge,
-  which costs width in every tile at once.
-
-Everything else is the editor as it ships. The test for whether something belongs in the
-guest layer at all: *would a stock code-server do this by itself?*
-
-## Requirements
-
-macOS on Apple Silicon, Node 20+ for tooling only (Electron ships its own), and a
-code-server build in `vendor/` (`npm run fetch-code-server`) or on `PATH`.
-
-## Run
+You need Node 20 or newer for the tooling, and a code-server for the app to serve the editors
+from.
 
 ```bash
 npm install
+npm run fetch-code-server
 npm start
 ```
 
-## Build
+On **macOS and Linux** `fetch-code-server` downloads the pinned build into `vendor/`, and the
+packaged app carries it. On **Windows** there is nothing to download - coder publishes no Windows
+build - so install one yourself with `npm install -g code-server` and Code Tiles will find it on
+your `PATH`, or point `CODE_TILES_CODE_SERVER` at it.
 
-```bash
-npm run install-app
-```
+| Command | Does |
+|---|---|
+| `npm start` | run it |
+| `npm test` | the test suite |
+| `npm run package` | build an app for this machine's platform |
+| `npm run package:mac` / `:win` / `:linux` | build for one specific platform |
+| `npm run install-app` | macOS only: package, sign, and install into `/Applications` |
+| `npm run patch-vscode` | apply this app's editor tweaks to your own desktop VS Code |
 
-Packages, signs and replaces `/Applications/Code Tiles.app`; `npm run package` alone leaves an
-unsigned bundle in `dist/`. The pinned server rides along as a resource, so the installed app
-reads nothing from the tree it was built in.
+Packaging for a platform other than your own works, but the code-server in `vendor/` is a native
+build for the machine you fetched it on, so it is left out of a cross-built app and that app looks
+on `PATH` instead.
 
-The signature uses a real identity - the JP7 team, overridable with `CODE_TILES_SIGN_IDENTITY`
-and `CODE_TILES_TEAM_ID` - and pins the designated requirement to that team rather than to a
-cdhash every rebuild changes, which is what carries the TCC grants from one build to the next.
-
-The bundle and `npm start` share `~/Library/Application Support/Code Tiles`, so they hold the
-same projects and the same login, and only one of them runs at a time.
+Early days, and built for one person's daily use. `docs/` has the architecture, the constraints
+worth knowing before changing anything, and what is actually built so far.
