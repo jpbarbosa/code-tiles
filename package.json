@@ -1,6 +1,6 @@
 {
-  "name": "code-tiles-next",
-  "productName": "Code Tiles Next",
+  "name": "code-tiles",
+  "productName": "Code Tiles",
   "version": "0.1.0",
   "description": "Several VS Code projects as live tiles in one macOS window, on one shared code-server.",
   "private": true,

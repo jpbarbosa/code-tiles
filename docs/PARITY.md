@@ -1,6 +1,6 @@
 # Parity with the previous tree
 
-`~/Sites/code-tiles` is the app this one replaces: 111 commits, ~9,100 lines across a
+`~/Sites/code-tiles-legacy` is the app this one replaces: 111 commits, ~9,100 lines across a
 renderer, a `src/vscode/` boundary and one 799-line main. This tree is ~6,500 lines across
 main, shell and guest, with a test suite the old one never had.
 
