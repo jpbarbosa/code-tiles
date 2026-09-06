@@ -221,7 +221,9 @@ The pinned version is in `scripts/fetch-code-server.sh`. After a bump, in this o
 `frame` halves the inset the editor floats its parts in, so the space beside a tile is the app's
 gutter plus 4px rather than plus 8px. `FRAME_SHARE` at the top of the seam is the whole knob, read
 by both the stylesheet and the patch. Scaling the unit catches the seam BETWEEN a window's own
-parts as well, since the editor spells that with the same one, so the seam puts it back.
+parts as well, since the editor spells that with the same one, so the seam puts it back: a margin
+sideways, where widths reflow, and a margin plus the layout service's own reservation above the
+panel, since a part's height is what is left of its slot once that reservation is taken.
 
 The activity bar is the one part the scaling lands unevenly on: the column the layout service
 reserves for it shrinks with the unit and the bar's own width does not, so the part beside it gets

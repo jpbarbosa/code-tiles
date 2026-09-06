@@ -31,6 +31,10 @@ const SHAPES = {
   'ct:webview-dark': '<html lang="en" style="width: 100%; height: 100%;">',
   'ct:frame-share': 'var FLOATING_MARGIN=4,NO_MARGIN=0;'
     + 'function isHorizontal(position){return position===2||position===3}',
+  'ct:frame-seam': 'function floatingGutters(layoutService,partId,window){'
+    + 'return{top:sideBarUnderPanel||panelUnderEditor?FLOATING_MARGIN:'
+    + 'topWindowEdge?FLOATING_MARGIN*2:NO_MARGIN,'
+    + 'bottom:hasNeighbourBelow?statusBar?FLOATING_MARGIN:FLOATING_MARGIN*2:NO_MARGIN}}',
   'ct:secret-merge': 'class LocalStorageSecretStorageProvider{'
     + 'async get(key){return(await this.secretsPromise)[key]}'
     + 'async set(key,value){let all=await this.secretsPromise;'

@@ -380,7 +380,9 @@ place aware such a number exists. *[inherited]*
 box sits; the layout service sizes the part from a constant in the bundle. Widths reflow on their
 own, so left and right move with a stylesheet alone - heights do not, and halving the top margin
 by itself slid the editor up and stranded its bottom at 12px. Vertical needs the patch. It is why
-`frame` is the one seam that is a stylesheet AND a patch. **[checked]**
+`frame` is the one seam that is a stylesheet AND a patch - twice over, since the gap above the
+panel is vertical too: restoring it took the margin and the reservation behind it, or the panel
+hung 2px past the frame's bottom. **[checked]**
 
 **The browser runs `out/vs/code/browser/workbench/workbench.js`, not
 `out/vs/workbench/workbench.web.main.internal.js`.** Both are ~18MB of the same minified code, so
