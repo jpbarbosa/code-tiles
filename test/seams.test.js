@@ -65,6 +65,23 @@ test('the badge wears a ring for what Claude is doing, and nothing when it is do
   }
 });
 
+test('the badge wears the project favicon, or its initial where there is none', () => {
+  const identity = seams.find((seam) => seam.name === 'identity');
+  const badge = (context) => identity.css({ ...contexts[0], ...context });
+
+  const icon = badge({ icon: 'data:image/png;base64,AAA', name: 'code-tiles', hue: 30 });
+  assert.match(icon, /background-image: url\("data:image\/png;base64,AAA"\)/);
+  assert.match(icon, /content: "" !important/, 'a favicon left a letter under it');
+
+  const letter = badge({ icon: null, name: 'code-tiles', hue: 30 });
+  assert.match(letter, /content: "C" !important/);
+  assert.match(letter, /background: oklch\(0\.62 0\.15 30\)/, 'the plate is not on the project hue');
+  assert.doesNotMatch(letter, /background-image/, 'a letter is drawn as an image');
+
+  // A folder whose name is empty still has a badge to draw, and the ring is placed against it.
+  assert.match(badge({ icon: null, name: '  ' }), /content: "\?" !important/);
+});
+
 // A webview rewrites its own document with document.open(), which keeps the Document OBJECT and
 // takes every listener registered on it. A seam that remembers having been inside a document
 // therefore goes deaf in exactly the frame the Claude panel lives in, and the tile stops

@@ -125,9 +125,11 @@ What the tree does today, what comes next, and what to check when the server is 
   the page stepped a tenth of the way toward its own text and rotated to the hue, which is a
   lighter bubble on a dark theme and a darker one on a light theme from the same number. Every
   amount above is a MULTIPLE of the rung the Project colour bullet above sets),
-  `identity` (the project's name on the side bar's title row, and its favicon in place of the
+  `identity` (the project's name on the side bar's title row, and its mark in place of the
   hamburger's glyph at the top of the activity bar - the button underneath is still the editor's,
-  so it still opens the menu - with a ring around that favicon for what Claude is doing here: it
+  so it still opens the menu. The mark is that project's favicon, or its initial on its own hue
+  where there is none, which is the plate the strip's chip draws at its own size - one box either
+  way, so the ring around it fits both. That ring says what Claude is doing here: it
   turns while a turn runs, pulses while it waits on you, breathes on a turn that ended you have
   not seen, and is absent otherwise. The badge is that one element's `::before` and the ring is
   its `::after`, so neither can fall out of step with the other, and the ring is a rounded
@@ -176,15 +178,10 @@ What the tree does today, what comes next, and what to check when the server is 
 
 ## Next, in order
 
-1. **The badge's monogram.** A project with no favicon keeps the editor's hamburger inside its
-   window, where the picker already draws that project's initial on its own hue. The badge and
-   its ring are both pseudo-elements of the menu button, which is what keeps them alive through a
-   workbench rebuild; the step is whether a monogram can stay one too, or has to be the node the
-   badge has so far not needed to be.
-2. **Profile upkeep.** The mirror is rewritten at start and restored by a watcher if the
+1. **Profile upkeep.** The mirror is rewritten at start and restored by a watcher if the
    workbench deletes it. Not yet handled: a desktop profile added while the app is running, and
    an extension whose desktop version moves on.
-3. **Chat titles.** The active chat's name per project, read by a seam from the editor tab it
+2. **Chat titles.** The active chat's name per project, read by a seam from the editor tab it
    already lives on, reported like the ground.
 
 ## Not doing

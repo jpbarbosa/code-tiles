@@ -1,13 +1,14 @@
 'use strict';
 
 // Which project this window is, said inside the window, because the strip outside it is not
-// visible from in here once your eye is in the editor. Twice: the project's own favicon at the
-// top of the activity bar, where the title bar used to be, and its name on the side bar's title
-// row - the one row every viewlet renders into, so switching to Search keeps it.
+// visible from in here once your eye is in the editor. Twice: the project's own mark - its
+// favicon, or its initial on its own hue where there is none - at the top of the activity bar,
+// where the title bar used to be, and its name on the side bar's title row - the one row every
+// viewlet renders into, so switching to Search keeps it.
 //
 // Both are pseudo-elements rather than inserted nodes: there is nothing to keep alive when the
 // workbench rebuilds a row, and nothing to clean up. The badge is the hamburger's own glyph
-// swapped for the icon, so the button underneath is still the editor's and still opens the menu.
+// swapped for that mark, so the button underneath is still the editor's and still opens the menu.
 // A third thing rides on the badge, for the same reason it is where a glance lands: what Claude
 // is doing here, as a ring around it. The badge is the ::before of that one element and the ring
 // is its ::after, so the two cannot fall out of step with each other.
@@ -23,6 +24,16 @@
 // synthetic `click` alone does not open it. [code-server 4.135.0]
 const HUE = '#d97757';
 const CLEAR = 'rgba(217, 119, 87, 0)';
+
+// The plate a project with no favicon wears instead: its initial, on the same colour the strip's
+// own chip draws it on - src/shell/format.js, said there in the page's units and here in the
+// window's, since neither side may read the other's.
+const MARK_LIGHTNESS = 0.62;
+const MARK_CHROMA = 0.15;
+
+function initial(name) {
+  return (name.trim()[0] || '?').toUpperCase();
+}
 
 // The badge, and the button it is drawn on: the editor's menu button at the top of the activity
 // bar, which the compact menu bar setting puts there and the tint paints as a card.
@@ -54,21 +65,27 @@ const RINGS = {
 module.exports = {
   name: 'identity',
   css: (context) => `
-${context.icon ? `
 .monaco-workbench .part.activitybar .menubar .menubar-menu-button > .menubar-menu-title::before {
-  /* The one !important here, and the rule that forced it: the product icon theme sets this same
-     pseudo's glyph with an !important of its own (content: var(--vscode-icon-menu-content)), so
-     a plain override loses and the hamburger paints on top of the icon. */
-  content: "" !important;
-  display: block;
+  /* The !importants here, and the rule that forced them: the product icon theme sets this same
+     pseudo's glyph AND the font it is drawn in with !importants of its own (content:
+     var(--vscode-icon-menu-content), font-family: var(--vscode-icon-menu-font-family)), so a
+     plain override loses and the hamburger paints on top of the mark - and a letter left in the
+     codicon font is a glyph nobody has. */
+  content: ${JSON.stringify(context.icon ? '' : initial(context.name))} !important;
+  display: grid;
+  place-items: center;
   width: 18px;
   height: 18px;
-  background-image: url("${context.icon}");
+  border-radius: 3px;
+  ${context.icon ? `background-image: url("${context.icon}");
   background-size: contain;
   background-repeat: no-repeat;
-  background-position: center;
-  border-radius: 3px;
-}` : ''}
+  background-position: center;` : `background: oklch(${MARK_LIGHTNESS} ${MARK_CHROMA} ${context.hue});
+  font-family: system-ui !important;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;`}
+}
 ${RINGS[context.claudeState] ? `
 .monaco-workbench .part.activitybar .menubar .menubar-menu-button > .menubar-menu-title {
   /* The editor already positions this box, and the ring is placed against it; said again so a

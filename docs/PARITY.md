@@ -57,7 +57,7 @@ rebuilt, with the reason in the last section.
 |---|---|---|---|
 | A hue per project, sampled from its favicon, hashed from the path otherwise | yes | yes | derived and never stored in both |
 | Favicon on the chip | yes | yes | the same mark the badge wears inside the window, drawn from one function both the strip and the picker call, with the Claude ring around it - and the project's initial on its own hue where there is no favicon, or where the one there is turns out not to decode |
-| A monogram where a project has no favicon | yes | **partial** | the picker draws one; the badge inside the window still keeps the editor's hamburger, which is roadmap item 1 |
+| A monogram where a project has no favicon | yes | yes | the picker, the strip and the badge inside the window, all on the project's own hue - the badge draws it as the same pseudo-element a favicon uses, so it survives a workbench rebuild and the ring still fits it |
 | Dragging the badge rearranges the grid | yes | yes | and in single view the press belongs to the menu underneath, as it did there |
 | Identity badge at the top of the activity bar | yes | yes | drawn by the guest as a pseudo-element, so nothing is overlaid and nothing is measured |
 | Project name on the side bar's title row | yes | yes | |
@@ -177,11 +177,8 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 
 ## What is missing, in the order it will be missed
 
-1. **The badge's monogram.** A project with no favicon keeps the editor's hamburger inside its
-   window; the picker and the strip already draw that project's initial, so what is missing is
-   one mark in one place.
-2. **The chat title**, which is the one thing the old chips carried that no tile does.
-3. **A project's window booting lazily.** A view is created for every open project at startup,
+1. **The chat title**, which is the one thing the old chips carried that no tile does.
+2. **A project's window booting lazily.** A view is created for every open project at startup,
    visible or not, so every one of them loads a workbench against the one server at once.
 
 ## What this tree has that the old one never did
