@@ -61,8 +61,11 @@ export function claudePaths() {
 // vendored build, then whatever is on PATH. Nothing else in the app knows where it came from.
 export function resolveCodeServer() {
   const onPath = (process.env.PATH || '').split(':').map((dir) => path.join(dir, 'code-server'));
+  // Packaged, the vendored server rides as an extra resource beside the app rather than under ROOT.
+  const packaged = app.isPackaged && path.join(process.resourcesPath, 'code-server/bin/code-server');
   const candidates = [
     process.env.CODE_TILES_CODE_SERVER,
+    packaged,
     path.join(ROOT, 'vendor/code-server/bin/code-server'),
     ...onPath,
   ].filter(Boolean);

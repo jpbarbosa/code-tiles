@@ -439,3 +439,10 @@ the next key pressed while that button still holds focus. The declaration and a 
 own are both in `shell.css`; `picker.html` and `usage.html` always had the declaration. **[checked]**
 - measured by reading the colour out of a light and a dark document, and by forcing the pseudo-class
 over CDP and dumping the pixels: `#e5972d` + `#ffffff` before, neither after.
+
+**The app writes Claude Code's hooks into `~/.claude/settings.json` with the absolute path of its
+own data directory**, and replaces its own entries rather than appending. So a second instance
+started on a throwaway `--user-data-dir` - which is how a packaged build is tried while the source
+one is up - repoints the machine's hooks at that directory, and deleting it afterwards leaves
+every hook failing on every tool call. Put the path back by hand, or start the real app once.
+**[checked]**

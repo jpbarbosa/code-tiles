@@ -168,6 +168,11 @@ What the tree does today, what comes next, and what to check when the server is 
   the patch alike; see *The frame inside a tile* below),
   `zoom` (Cmd+0 given back off the editor, which binds it to Focus into Primary Side Bar and
   would otherwise swallow the key before the View menu's Actual Size ever saw it).
+- Packaging: `npm run install-app` signs a `Code Tiles.app` into `/Applications`, with the pinned
+  server beside the app rather than in it. A real identity, so the designated requirement anchors
+  to the team instead of to a cdhash that every rebuild changes - which is what keeps the TCC
+  grants across builds. The bundle shares its data directory with `npm start`, so the two hold
+  the same projects and never run at once.
 
 ## Next, in order
 
@@ -181,7 +186,6 @@ What the tree does today, what comes next, and what to check when the server is 
    an extension whose desktop version moves on.
 3. **Chat titles.** The active chat's name per project, read by a seam from the editor tab it
    already lives on, reported like the ground.
-4. **Packaging**: a signed `.app`. The pinned server already fetches into `vendor/`.
 
 ## Not doing
 

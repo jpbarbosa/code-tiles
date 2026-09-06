@@ -12,7 +12,7 @@ written down.
 **Where it stands: the product is there, the last mile is not.** Every mechanism the old app
 proved is rebuilt and several are better founded, and every patch of someone else's bundle the
 old tree carried is now carried here. What is left is not a mechanism: half a dozen stylesheets
-over the editor's own DOM, one mark inside a window, and a signed `.app`.
+over the editor's own DOM and one mark inside a window.
 
 Legend: **yes** the same feature, however differently built. **partial** the feature exists
 with something named missing from it. **no** not in this tree. **by design** deliberately not
@@ -167,11 +167,11 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 
 | | old | new | |
 |---|---|---|---|
-| A test suite | none | **84 tests** | geometry, seams, settings, keybindings, both patch kinds, activity, icon, usage |
+| A test suite | none | **100 tests** | geometry, seams, settings, keybindings, both patch kinds, activity, icon, usage |
 | Read a change back out of a live window | by hand | `CT_PROBE=1 npm start` | `scripts/dev-probe.js` reads every seam's effect out of each guest |
 | The pinned code-server fetched into `vendor/` | yes | yes | |
-| A packaged, signed `Code Tiles.app` | yes | **no** | roadmap item 4. The signing rules the old tree paid for (a real identity so TCC grants survive, no `--deep`, packager rewriting the vendor symlinks) are in that repo's README |
-| An app icon | rendered in Blender, `.icns` and dock icon | **no** | |
+| A packaged, signed `Code Tiles.app` | yes | yes | `npm run install-app`. Every signing rule the old tree paid for carried over - a real identity so TCC grants survive, no `--deep`, packager rewriting the vendor symlinks - plus one it never hit: `ditto` MERGES, so a file the last build shipped and this one does not stays behind and breaks the seal |
+| An app icon | rendered in Blender, `.icns` and dock icon | yes | `assets/icon.icns` on the bundle, the same art the app's own tile wears |
 | The same Claude patches applied to desktop VS Code by a LaunchAgent | yes | **no** | `scripts/patch-vscode-claude.js` and its plist live in the old tree |
 | A data-directory migration script | yes | **n/a** | this tree has its own data directory and no history to move |
 
@@ -183,7 +183,6 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 2. **The chat title**, which is the one thing the old chips carried that no tile does.
 3. **A project's window booting lazily.** A view is created for every open project at startup,
    visible or not, so every one of them loads a workbench against the one server at once.
-4. **Packaging.** Until then this runs from source, which also means it holds no TCC grants.
 
 ## What this tree has that the old one never did
 

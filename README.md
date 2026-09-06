@@ -208,3 +208,20 @@ code-server build in `vendor/` (`npm run fetch-code-server`) or on `PATH`.
 npm install
 npm start
 ```
+
+## Build
+
+```bash
+npm run install-app
+```
+
+Packages, signs and replaces `/Applications/Code Tiles.app`; `npm run package` alone leaves an
+unsigned bundle in `dist/`. The pinned server rides along as a resource, so the installed app
+reads nothing from the tree it was built in.
+
+The signature uses a real identity - the JP7 team, overridable with `CODE_TILES_SIGN_IDENTITY`
+and `CODE_TILES_TEAM_ID` - and pins the designated requirement to that team rather than to a
+cdhash every rebuild changes, which is what carries the TCC grants from one build to the next.
+
+The bundle and `npm start` share `~/Library/Application Support/Code Tiles`, so they hold the
+same projects and the same login, and only one of them runs at a time.
