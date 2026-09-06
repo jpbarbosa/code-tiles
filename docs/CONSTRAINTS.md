@@ -60,6 +60,29 @@ bump is the moment to try deleting.
 
 ## Platform facts
 
+**`nativeImage` decodes neither a true ICO nor an SVG**, and says so only by returning an empty
+image. Both matter here because the two are what a project's mark is most often shipped as: all
+six real ICOs on this machine are BMP-encoded rather than PNG-in-ICO, and half the files named
+`favicon.ico` are PNGs wearing the wrong extension - which is why the type comes from the bytes.
+Chromium reads all of it, so the mark and its hue are read in an offscreen `BrowserWindow` through
+an `<img>` on a canvas. That is also the better sampler: a canvas weights a colour by the AREA it
+covers, where a text scan of an SVG would weight a 1px stroke like a full-bleed circle and would
+miss a `<style>` block entirely. It costs one renderer for the length of a learn pass and makes
+the reading asynchronous, which is why `learn` fills a cache the synchronous readers see.
+**[checked]**
+
+**An SVG favicon is often a TEMPLATE, not a picture.** It is the format people write as a single
+`#000000` mark for something else to recolour: a Blade layout substituting a tenant's colour, a
+`<style>` block swapping fill on `prefers-color-scheme`. Sampled, it has no hue at all, and drawn
+on a dark tile it is invisible. So a raster beside it wins, and a project's own root wins over a
+sub-app's - both orderings in `src/main/icon.js` exist for this and nothing else. Where an SVG
+here does carry a colour, the `.ico` beside it agrees to within 2/255, so the rule costs nothing
+on the projects either file would have served. **[checked]**
+
+**Laravel ships a ZERO-BYTE `public/favicon.ico`.** Read, it makes a well-formed data URL that
+draws nothing, and being a hit it stops the search before anything real is found. Any candidate
+list that walks a project needs the size check, not just the `statSync`. **[checked]**
+
 **A `WebContentsView` paints above the window's page, always.** There is no z-mixing with
 HTML, and a view swallows every mouse event inside its rect. Consequences, all deliberate:
 anything that must appear inside a tile is a seam; the shell draws only in the gutters and the

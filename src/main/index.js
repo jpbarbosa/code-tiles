@@ -7,6 +7,7 @@ import { Desk } from './desk.js';
 import { Extensions } from './extensions.js';
 import { ProfileMirror } from './profiles.js';
 import { Projects } from './projects.js';
+import { learn } from './icon.js';
 import { Store } from './store.js';
 import { Tiles } from './tiles.js';
 import { Usage } from './usage.js';
@@ -133,6 +134,10 @@ app.whenReady().then(async () => {
     settings: claudePaths().settings,
     onChange: () => desk.render(),
   });
+
+  // The favicons, decoded before the first render rather than after it: a project whose hue
+  // arrives late would draw once on its path's hash and again in its own colour.
+  await learn(store.state.entries.map((entry) => entry.folder));
 
   const projects = new Projects(store, { profileFor, claudeStates: (folders) => activity.states(folders) });
   window = createWindow();

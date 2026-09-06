@@ -195,8 +195,18 @@ window is handed only the one rung that applies to it.
 
 What is derivable is not stored. A project's **name** is its folder's basename and its **hue**
 is the average of the colourful pixels in its favicon - a hash of its path when there is no
-favicon, none Electron can decode (a true ICO, an SVG), or no colour in it. So neither can drift
-out of step with the folder, and neither needs a migration when the rule changes.
+favicon, or no colour in one. So neither can drift out of step with the folder, and neither needs
+a migration when the rule changes.
+
+Which favicon is a fixed list of literal relative paths, never a traversal: a `find` in a folder
+holding six apps picks one of them at random. The order IS the ruleset - directory-major with the
+root first, and rasters before the SVG inside each directory - and `src/main/icon.js` says why
+each half is that way round. Those bytes are decoded in an offscreen renderer
+(`src/main/sampler.js`) because Chromium is the only decoder in the process that reads a true ICO
+or an SVG, and because a canvas weights a colour by the area it covers. That makes the reading
+asynchronous, so `learn` fills a cache that `iconFor` and `hueFor` read synchronously: awaited
+before the first render, and awaited again when a project is added, which draws once on the
+path's hue and once more in the project's own.
 
 ## IPC
 
@@ -224,6 +234,10 @@ src/main/layout.js      pure geometry, and which tile a point is in
 src/main/order.js       pure ordering: what each drag gesture means, and the slots a closed
                         project keeps while the open ones are rearranged around it
 src/main/projects.js    the project list and its ordering
+src/main/icon.js        which file is a project's mark, and the cache a decode fills
+src/main/sampler.js     the offscreen renderer that reads those bytes: a hue, and a mark small
+                        enough for a command line
+src/main/hue.js         that colour as the angle an oklch() reads back, or the path's hash
 src/main/activity.js    Claude's own hooks: installing them, and what each project's state is
 src/main/desktop.js     your VS Code install, read-only: profiles, associations, extension ids
 src/main/extensions.js  the one shared extensions directory: install, prune

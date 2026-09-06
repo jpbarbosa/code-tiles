@@ -2,6 +2,7 @@ import { app, dialog, screen } from 'electron';
 
 import { METRICS, gridResize, gridSplitters, rectAt, shapeKey, tileRects } from './layout.js';
 import { badgeFor } from './dock.js';
+import { learn } from './icon.js';
 
 // The parts the strip's layout control flips, and what a window shows before anyone has chosen:
 // the editor's own defaults, once the chrome seam has had its say on the secondary side bar.
@@ -78,6 +79,15 @@ export class Desk {
       splitters: gridSplitters({ ...shape, sizes }),
     });
     this.#dock(badgeFor(projects));
+  }
+
+  // A folder that has never been here has no favicon read yet, so it draws on its path's hue and
+  // is drawn again once the decoder has had it. One extra render per new project, never a loop:
+  // `learn` answers a folder once and says whether it found anything to change.
+  #learn() {
+    learn(this.#projects.all().map((project) => project.folder))
+      .then((learned) => { if (learned) this.render(); })
+      .catch((error) => console.error('[icon] sampling failed:', error.message));
   }
 
   // The one part of the Claude signal that reaches you with the app behind something else. Set on
@@ -196,6 +206,7 @@ export class Desk {
   open(folder) {
     this.#projects.add(folder);
     this.render();
+    this.#learn();
   }
 
   // A window that re-pointed itself, reported by the view that did it. Taking the move is the
@@ -210,6 +221,7 @@ export class Desk {
       // that folder is opened again.
       this.#parts.delete(from);
       this.render();
+      this.#learn();
       return;
     }
     // Refused, so the tile goes back to the folder it holds. Where the refusal was another window

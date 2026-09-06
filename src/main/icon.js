@@ -1,35 +1,91 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-// A project's icon is a fact about its folder, read the way the name and the hue are read from
-// its path: nothing is stored, and a project with no favicon simply has none.
-//
-// The root first, then `public/` - which is where most of the projects on this machine keep one.
-const CANDIDATES = [
-  'favicon.ico', 'favicon.png', 'favicon.svg',
-  'public/favicon.ico', 'public/favicon.svg', 'public/favicon.png',
+// A project's icon is a fact about its folder, read the way its name and its hue are: nothing is
+// stored, and a project with no favicon simply has none. Directory-major, project root first, so
+// a sub-app's mark never outranks the project's own - both runtime-tinted SVGs on this machine
+// sit under one, beside a coloured .ico at the root. No `dist/` or `build/`, ever: a stale build
+// output would shadow the source it came from. docs/CONSTRAINTS.md carries the rest.
+const DIRS = [
+  '',
+  'public/',                                  // Laravel, Rails, Vite, CRA, Vue, Nuxt, Astro, Next
+  'static/',                                  // SvelteKit, Hugo, Gatsby, Django, Flask
+  'app/', 'src/app/',                         // Next.js app router
+  'src/',                                     // Angular 16 and older
+  'assets/', 'src/assets/',                   // Expo, Electron, Vue
+  'www/', 'wwwroot/', 'priv/static/',         // Cordova, ASP.NET Core, Phoenix
+  'web/public/', 'frontend/public/', 'client/public/',
+  'apps/web/public/', 'packages/web/public/',
 ];
 
-// The context rides on the window's COMMAND LINE, so an icon has a ceiling that a file on disk
-// does not: a megabyte of base64 in `additionalArguments` is a window that never starts.
-const LIMIT = 128 * 1024;
+// Rasters before the SVG, which is wrong on sharpness and right on colour: an SVG favicon is
+// often a tintable template. `favicon` before `icon`: an assets `icon.png` is the 1024px app one.
+const NAMES = ['favicon.ico', 'favicon.png', 'favicon.svg', 'icon.png', 'icon.svg', 'apple-touch-icon.png'];
+const CANDIDATES = DIRS.flatMap((dir) => NAMES.map((name) => dir + name));
 
-const answers = new Map();
+// The context rides the window's COMMAND LINE, so a mark has a ceiling a file on disk does not.
+// One over it is re-encoded small rather than dropped, which is why the two numbers differ.
+const SHIPPABLE = 128 * 1024;
+// What a decoder may be handed, which rides nothing: a hue is a number whatever it was read from.
+const READABLE = 1024 * 1024;
 
-// Read once per folder per run. A favicon added to a project shows up the next time the app
-// starts, which is the same bargain the extension mirror already makes.
+// What is on disk, and what a renderer made of it. Once per folder per run: a favicon added to a
+// project shows up the next start, the same bargain the extension mirror already makes.
+const files = new Map();
+const decoded = new Map();
+
+// The mark a window and a chip wear: the re-encoded one where the file was too big to ship, and
+// the file itself otherwise, which is always at least as sharp as a downscale of it.
 export function iconFor(folder) {
-  if (!answers.has(folder)) answers.set(folder, read(folder));
-  return answers.get(folder);
+  const mark = decoded.get(folder)?.mark;
+  if (mark) return mark;
+  const source = sourceFor(folder);
+  return source && source.size <= SHIPPABLE ? source.url : null;
+}
+
+// The colour that icon is mostly made of: null where nothing has sampled it, null again where it
+// has none to give.
+export function rgbFor(folder) {
+  return decoded.get(folder)?.rgb ?? null;
+}
+
+// What a renderer makes of those bytes, which is the only thing here that reads a true ICO or an
+// SVG. Awaited before the first render; a project added later draws on its path's hue and is
+// drawn again when this lands. Imported lazily: the rest of this file is tested outside Electron.
+export async function learn(folders) {
+  const wanted = [...new Set(folders)].filter((folder) => !decoded.has(folder) && sourceFor(folder));
+  if (!wanted.length) return false;
+  // A favicon is never a reason the app does not start, so this answers false rather than throws.
+  let sampled;
+  try {
+    const { sample } = await import('./sampler.js');
+    sampled = await sample(wanted.map((folder) => {
+      const source = sourceFor(folder);
+      return { url: source.url, shrink: source.size > SHIPPABLE };
+    }));
+  } catch (error) {
+    console.error('[icon] sampling failed:', error.message);
+    return false;
+  }
+  wanted.forEach((folder, i) => decoded.set(folder, sampled[i] || { mark: null, rgb: null }));
+  return sampled.some((answer) => answer?.rgb || answer?.mark);
+}
+
+function sourceFor(folder) {
+  if (!files.has(folder)) files.set(folder, read(folder));
+  return files.get(folder);
 }
 
 function read(folder) {
   for (const candidate of CANDIDATES) {
     const file = path.join(folder, candidate);
     try {
-      if (fs.statSync(file).size > LIMIT) continue;
+      const { size } = fs.statSync(file);
+      // Laravel ships an EMPTY public/favicon.ico: a data URL that draws nothing, and being a
+      // hit it stops the search before anything real is found.
+      if (!size || size > READABLE) continue;
       const bytes = fs.readFileSync(file);
-      return `data:${mimeOf(bytes, path.extname(file))};base64,${bytes.toString('base64')}`;
+      return { size, url: `data:${mimeOf(bytes, path.extname(file))};base64,${bytes.toString('base64')}` };
     } catch { /* not there; try the next */ }
   }
   return null;

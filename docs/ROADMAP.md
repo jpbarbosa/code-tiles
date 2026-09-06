@@ -50,6 +50,10 @@ What the tree does today, what comes next, and what to check when the server is 
 - The shell: strip, view control, the focused tile's glow, the empty state - and the chips, each
   wearing the same mark its window wears on its badge inside: the project's favicon, or its
   initial on its own hue, with the Claude ring around it either way.
+- That mark found where a framework actually puts one - sixteen directories, from `public/` to a
+  monorepo's `packages/web/public/` - and decoded in an offscreen renderer, which is what reads a
+  true ICO and an SVG at all. 30 of the 83 projects on this machine now wear their own colour
+  where 17 did; the rest of the gain was a zero-byte Laravel placeholder shadowing real icons.
 - The layout control: the editor's own three title bar buttons, in the strip, flipping the side
   bar, the panel or the secondary side bar in every open project at once. A part nobody has
   chosen for is left alone, and the buttons show the focused window's own answer, so a Cmd+B
