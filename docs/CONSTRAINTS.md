@@ -468,7 +468,17 @@ in a group's `layers` paints on top, and the LAST entry in `groups` paints on to
 backwards is silent - the tiles simply cover their own headers and pills, every rendition still
 exports, and nothing warns. **[checked]**
 
-**A `.icon` is composited by the system, so anything the render bakes is drawn twice.** The chassis
-belongs in `fill`, not in the geometry; the bevel, the ambient occlusion and the drop shadow belong
-to nothing at all. `scripts/build-icon.py` renders flat emission over an orthographic camera with
-the view transform on `Standard`, which is what makes the PNG's pixels match the hex it was given.
+**The system composites the CONTAINER, not the artwork.** The chiclet's mask, its outer edge and
+its drop shadow are macOS 26's to draw, and a baked copy underneath reads as a doubled edge - which
+is the whole reason the old render could not simply be dropped in. What sits INSIDE the chiclet is
+still modelled here: flatten that too, on the theory that Liquid Glass supplies the depth, and the
+sheen is the only form left, which is how a bespoke icon comes out looking like every other one.
+`scripts/build-icon.py` gives the tiles real thickness, a shader-rounded rim and contact shadows in
+the gaps, and leaves out only the chiclet.
+
+**The tray under the tiles takes the chiclet's own outline, traced rather than guessed.** Apple's
+corner is a continuous squircle: measured on a 1024 render it runs 317px along each edge while the
+radius a circle would imply swings between 67 and 102, so no rounded rectangle matches it.
+`scripts/silhouette.swift` reads the shape back out of a throwaway ictool render each build. The
+tray is full-bleed with a wide bevel rather than inset - inset, its rim becomes a second outline
+inside the chiclet's, and a top-down camera cannot see a narrow bevel at the canvas edge at all.

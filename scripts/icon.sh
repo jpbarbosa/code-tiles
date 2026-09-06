@@ -18,8 +18,19 @@ done
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
-echo "==> Blender: rendering layers"
-"$BLENDER" --background --factory-startup --python scripts/build-icon.py -- assets/icon.icon/Assets \
+# The tray under the tiles takes the system chiclet's own outline, so it is read back out of a
+# throwaway render rather than guessed at: the shape is a continuous squircle no radius reproduces.
+echo "==> ictool: tracing the chiclet"
+mkdir -p "$work/probe.icon/Assets"
+printf '{"fill":{"solid":"extended-srgb:1.0,1.0,1.0,1.0"},"groups":[],"supported-platforms":{"circles":["watchOS"],"squares":["macOS"]}}' \
+  > "$work/probe.icon/icon.json"
+"$ICTOOL" "$work/probe.icon" --export-image --output-file "$work/chiclet.png" \
+  --platform macOS --rendition Default --width 1024 --height 1024 --scale 1
+swift scripts/silhouette.swift "$work/chiclet.png" "$work/chiclet.txt"
+
+echo "==> Blender: rendering the tiles"
+"$BLENDER" --background --factory-startup --python scripts/build-icon.py \
+  -- assets/icon.icon/Assets "$work/chiclet.txt" \
   | grep -E '^wrote' || { echo "Blender rendered nothing" >&2; exit 1; }
 
 # 824 is the content box of a 1024 icon; iconset.swift derives every smaller size from it.

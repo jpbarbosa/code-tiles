@@ -1,17 +1,14 @@
 {
   "fill" : {
     "linear-gradient" : [
-      "extended-srgb:0.227,0.231,0.259,1.000",
-      "extended-srgb:0.086,0.090,0.110,1.000"
+      "extended-srgb:0.180,0.184,0.204,1.000",
+      "extended-srgb:0.075,0.078,0.094,1.000"
     ]
   },
   "groups" : [
     {
-      "layers" : [
-        { "image-name" : "detail.png", "name" : "detail" },
-        { "image-name" : "bodies.png", "name" : "bodies" }
-      ],
-      "shadow" : { "kind" : "neutral", "opacity" : 0.5 },
+      "layers" : [ { "image-name" : "tiles.png", "name" : "tiles" } ],
+      "shadow" : { "kind" : "neutral", "opacity" : 0.35 },
       "specular" : true
     }
   ],
