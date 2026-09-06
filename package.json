@@ -2,18 +2,22 @@
   "name": "code-tiles",
   "productName": "Code Tiles",
   "version": "0.1.0",
-  "description": "Several VS Code projects as live tiles in one macOS window, on one shared code-server.",
+  "description": "Several VS Code projects as live tiles in one window, on one shared code-server.",
   "private": true,
   "type": "module",
   "main": "src/main/index.js",
   "scripts": {
     "start": "electron .",
-    "package": "electron-packager . --overwrite --platform=darwin --arch=arm64 --icon=assets/icon.icns --app-bundle-id=io.jp7.codetiles --extra-resource=vendor/code-server --ignore='^/dist' --ignore='^/assets/icon\\.icon' --ignore='^/vendor' --ignore='^/docs' --ignore='^/test' --ignore='^/\\.claude' --out=dist",
-    "icon": "bash scripts/icon.sh",
+    "test": "node --test test/*.test.js",
+    "package": "node scripts/package.js",
+    "package:mac": "node scripts/package.js darwin",
+    "package:win": "node scripts/package.js win32",
+    "package:linux": "node scripts/package.js linux",
     "install-app": "bash scripts/install.sh",
     "fetch-code-server": "bash scripts/fetch-code-server.sh",
     "patch-vscode": "node scripts/patch-vscode-claude.js",
-    "test": "node --test test/*.test.js"
+    "icon": "bash scripts/icon.sh",
+    "icon:ico": "node scripts/icon-ico.js"
   },
   "devDependencies": {
     "@electron/packager": "^20.3.0",

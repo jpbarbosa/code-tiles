@@ -4,6 +4,8 @@ import http from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
 
+import { IS_WINDOWS } from './platform.js';
+
 const HEALTH_TIMEOUT_MS = 40000;
 
 // One code-server for the whole app. Every tile is a window of it, which is what makes the
@@ -46,7 +48,9 @@ export class CodeServer {
     this.#port = (await isFree(preferredPort)) ? preferredPort : await freePort();
 
     // Detached so the child leads its own process group: one kill takes the server and every
-    // pty and extension host under it, which a plain kill of the parent does not.
+    // pty and extension host under it, which a plain kill of the parent does not. Windows has no
+    // process groups to lead and refuses to spawn the .cmd shim without a shell, so it opts out
+    // of both and `killDescendants` takes the tree there instead.
     this.#child = spawn(this.#bin, [
       '--auth', 'none',
       '--bind-addr', `127.0.0.1:${this.#port}`,
@@ -60,7 +64,9 @@ export class CodeServer {
       '--disable-getting-started-override',
       '--user-data-dir', this.#paths.serverData,
       '--extensions-dir', this.#paths.extensions,
-    ], { detached: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    ], IS_WINDOWS
+      ? { shell: true, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }
+      : { detached: true, stdio: ['ignore', 'pipe', 'pipe'] });
 
     this.#child.on('exit', () => { this.#child = null; });
     fs.writeFileSync(this.#paths.pidfile, JSON.stringify({ pid: this.#child.pid, port: this.#port }));
@@ -129,6 +135,11 @@ export function descendants(table, root) {
 // terminal started: a dev server outlives the app, and macOS goes on listing the bundle as
 // running - the dim Dock dot whose first click is spent reaping that record, not opening the app.
 function killDescendants(root) {
+  // taskkill takes the tree itself, which is the only way to reach it without process groups.
+  if (IS_WINDOWS) {
+    try { execFileSync('taskkill', ['/pid', String(root), '/T', '/F'], { stdio: 'ignore' }); } catch { /* gone */ }
+    return;
+  }
   let table;
   try { table = execFileSync('ps', ['-Ao', 'pid=,ppid='], { encoding: 'utf8' }); } catch { return; }
   // SIGKILL: the app is gone half a second after this, which is not long enough to hold a shell

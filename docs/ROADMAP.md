@@ -199,6 +199,21 @@ What the tree does today, what comes next, and what to check when the server is 
   the patch alike; see *The frame inside a tile* below),
   `zoom` (Cmd+0 given back off the editor, which binds it to Focus into Primary Side Bar and
   would otherwise swallow the key before the View menu's Actual Size ever saw it).
+- macOS, Windows and Linux, from one place: `src/main/platform.js` answers which host this is and
+  nothing else in the tree carries a `process.platform` check. Every answer is a pure function OF a
+  platform name, with this host's derived from it, because the other two cannot be run here and a
+  test is the only evidence they are right. What moves: the chord family (the app sits one modifier
+  above the editor's, which is Ctrl+Cmd on macOS and Ctrl+Alt where the editor owns Ctrl), the
+  window's own controls (traffic lights laid over the left, or a caption overlay drawn at the
+  right, with the strip reserving the end the host uses), your desktop VS Code's profile directory,
+  the folders the picker's walk skips under $HOME, and the badge - a count on the Dock, a Unity
+  badge, or a flashing taskbar button, Windows having no badge to set. A seam spells the editor's
+  modifier `$mod` and `disk/keybindings.js` expands what main hands it, so `pick` and `zoom` give
+  back `cmd+o` or `ctrl+o` without either seam knowing which host it is on.
+- ⚠ **coder publishes no Windows build of code-server.** Only linux-amd64/arm64 and
+  macos-amd64/arm64 exist, so `fetch-code-server` refuses on Windows and a packaged Windows app
+  carries no server: it finds one you installed from npm, on PATH or at `CODE_TILES_CODE_SERVER`.
+  The vendored server is a NATIVE build, so it is left out of any cross-built app as well.
 - Packaging: `npm run install-app` signs a `Code Tiles.app` into `/Applications`, with the pinned
   server beside the app rather than in it. A real identity, so the designated requirement anchors
   to the team instead of to a cdhash that every rebuild changes - which is what keeps the TCC

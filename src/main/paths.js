@@ -4,6 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { CODE_SERVER_BIN, desktopUserDir } from './platform.js';
+
 export const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
 export const files = {
@@ -23,7 +25,7 @@ export const PARTITION = 'persist:projects';
 export function desktopPaths() {
   const home = os.homedir();
   return {
-    user: path.join(home, 'Library/Application Support/Code/User'),
+    user: desktopUserDir(home),
     extensions: path.join(home, '.vscode/extensions/extensions.json'),
   };
 }
@@ -60,13 +62,15 @@ export function claudePaths() {
 // The server binary is a dependency, not part of the tree: an explicit path wins, then a
 // vendored build, then whatever is on PATH. Nothing else in the app knows where it came from.
 export function resolveCodeServer() {
-  const onPath = (process.env.PATH || '').split(':').map((dir) => path.join(dir, 'code-server'));
-  // Packaged, the vendored server rides as an extra resource beside the app rather than under ROOT.
-  const packaged = app.isPackaged && path.join(process.resourcesPath, 'code-server/bin/code-server');
+  const dirs = (process.env.PATH || '').split(path.delimiter).filter(Boolean);
+  const onPath = dirs.flatMap((dir) => CODE_SERVER_BIN.map((name) => path.join(dir, name)));
+  // Packaged, the vendored server rides as an extra resource beside the app rather than under
+  // ROOT. There is no vendored server on Windows, where coder ships no build to vendor.
+  const vendored = CODE_SERVER_BIN.map((name) => path.join('code-server/bin', name));
   const candidates = [
     process.env.CODE_TILES_CODE_SERVER,
-    packaged,
-    path.join(ROOT, 'vendor/code-server/bin/code-server'),
+    ...(app.isPackaged ? vendored.map((rel) => path.join(process.resourcesPath, rel)) : []),
+    ...vendored.map((rel) => path.join(ROOT, 'vendor', rel)),
     ...onPath,
   ].filter(Boolean);
   for (const candidate of candidates) {

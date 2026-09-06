@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+import { HOME_SKIP } from './platform.js';
+
 // What the picker draws for what you typed: ONE list, never two. The projects opened here match
 // first, and under them come folders on disk that no project has claimed yet - so the same field
 // finds a tile you already have and a folder you have never opened. An empty query is the whole
@@ -20,10 +22,9 @@ const PER_DIRECTORY = 512;
 // backstop for a home directory shaped differently from this one; four levels never reaches it.
 const DEPTH = 4;
 const READS = 1500;
-// $HOME's own system folders. Skipping Library is most of what makes the walk affordable, and it
-// is not yours in any sense that matters here; the other two are a package manager's, not a
-// project you would open.
-const SKIP = new Set(['Library', 'node_modules', 'vendor']);
+// The host's own system folders under $HOME, plus the two that are a package manager's rather
+// than a project you would open.
+const SKIP = new Set([...HOME_SKIP, 'node_modules', 'vendor']);
 
 export function pickerRows(projects, { query = '', home = os.homedir() } = {}) {
   // Deleted or unmounted since it was last open: opening it would hand code-server a path it

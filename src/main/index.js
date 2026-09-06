@@ -24,6 +24,7 @@ import { patchExtensions } from '../guest/disk/extension.js';
 import { patchServer } from '../guest/disk/patch.js';
 import { writeKeybindings } from '../guest/disk/keybindings.js';
 import { writeSettings } from '../guest/disk/settings.js';
+import { MOD_KEY } from './platform.js';
 
 if (!app.requestSingleInstanceLock()) app.quit();
 
@@ -83,7 +84,7 @@ app.whenReady().then(async () => {
   // mirror writes the same seams into each profile, which does not inherit this file.
   writeSettings(paths.settings);
   // The same idea for the chords the app needs back: a tile on no mirrored profile reads this one.
-  writeKeybindings(paths.keybindings);
+  writeKeybindings(paths.keybindings, MOD_KEY);
   // The rarer half of the same idea: what a seam needs the server's own bundle to do. Before the
   // spawn, so no window ever loads the unpatched one.
   const patched = patchServer(bin);

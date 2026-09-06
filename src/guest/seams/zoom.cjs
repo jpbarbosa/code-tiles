@@ -6,5 +6,5 @@
 // fought for. Zoom In and Zoom Out need nothing: the web build binds neither.
 module.exports = {
   name: 'zoom',
-  keybindings: [{ key: 'cmd+0', command: '-workbench.action.focusSideBar' }],
+  keybindings: [{ key: '$mod+0', command: '-workbench.action.focusSideBar' }],
 };

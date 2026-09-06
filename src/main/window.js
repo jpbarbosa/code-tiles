@@ -2,6 +2,17 @@ import { BrowserWindow } from 'electron';
 
 import { files } from './paths.js';
 import { METRICS } from './layout.js';
+import { IS_MAC } from './platform.js';
+
+// The dark theme's own titleBar.activeBackground, so the window behind the tiles matches the
+// ground a window reports the moment it has one and nothing steps in between.
+const GROUND = '#191a1b';
+
+// The strip IS the title bar, so the window's own controls are drawn INTO it: macOS lays its
+// traffic lights over the left, and the other two draw a caption overlay on the right.
+const chrome = IS_MAC
+  ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 13, y: (METRICS.strip - 14) / 2 } }
+  : { titleBarStyle: 'hidden', titleBarOverlay: { color: GROUND, symbolColor: '#c9ccce', height: METRICS.strip } };
 
 export function createWindow() {
   const window = new BrowserWindow({
@@ -10,13 +21,8 @@ export function createWindow() {
     minWidth: 900,
     minHeight: 600,
     show: false,
-    // The strip IS the title bar: the traffic lights sit in it, on the same line as everything
-    // else, which is why it is 36px and why nothing else may claim that row.
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 13, y: (METRICS.strip - 14) / 2 },
-    // The dark theme's own titleBar.activeBackground, so the window behind the tiles matches
-    // the ground a window reports the moment it has one and nothing steps in between.
-    backgroundColor: '#191a1b',
+    ...chrome,
+    backgroundColor: GROUND,
     webPreferences: {
       preload: files.shellPreload,
       contextIsolation: true,

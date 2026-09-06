@@ -3,6 +3,7 @@ import { app, dialog, screen } from 'electron';
 import { METRICS, gridResize, gridSplitters, rectAt, shapeKey, tileRects } from './layout.js';
 import { badgeFor } from './dock.js';
 import { learn } from './icon.js';
+import { IS_WINDOWS } from './platform.js';
 
 // The parts the strip's layout control flips, and what a window shows before anyone has chosen:
 // the editor's own defaults, once the chrome seam has had its say on the secondary side bar.
@@ -91,13 +92,17 @@ export class Desk {
   }
 
   // The one part of the Claude signal that reaches you with the app behind something else. Set on
-  // CHANGE only: a gutter drag renders sixty times a second, and the dock is not something to
-  // write to sixty times a second. `app.dock` is macOS's alone, and this app is macOS's alone,
-  // but a headless run has none either.
+  // CHANGE only: a gutter drag renders sixty times a second, and a taskbar is not something to
+  // write to sixty times a second.
+  //
+  // macOS takes a string and Linux a count; Windows has neither, and its own idiom for "this
+  // window wants you" is the taskbar button flashing, which stops as soon as you look at it.
   #dock(badge) {
     if (badge === this.#badge) return;
     this.#badge = badge;
-    app.dock?.setBadge(badge);
+    if (IS_WINDOWS) this.#window.flashFrame(Boolean(badge));
+    else if (app.dock) app.dock.setBadge(badge);
+    else app.setBadgeCount(badge ? Number(badge) : 0);
   }
 
   // Where every tile is, and the few facts the answer is made of. One place, because the drag

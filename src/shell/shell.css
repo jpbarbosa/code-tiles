@@ -58,9 +58,17 @@ html, body {
 #strip nav,
 #strip #view-control { -webkit-app-region: no-drag; }
 
-/* The space the OS draws its traffic lights over. Their own inset is set from the strip's height
-   in src/main/window.js, which is the only place macOS lets that be said. */
+/* The space the OS draws its own window controls over: macOS lays traffic lights across the left,
+   and the caption overlay Windows and Linux draw lands at the right instead. Their inset is set
+   from the strip's height in src/main/window.js, the only place either lets that be said. */
 #lights { width: 72px; flex: 0 0 auto; }
+
+:root[data-controls="right"] {
+  & #lights { width: 4px; }
+  /* Wide enough for the three caption buttons the overlay draws, which are its own size and not
+     something the page may set. */
+  & #strip { padding-right: 146px; }
+}
 
 #view-control {
   display: flex;

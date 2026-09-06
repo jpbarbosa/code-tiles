@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { keybindingsFrom } from '../guest/disk/keybindings.js';
+import { MOD_KEY } from './platform.js';
 import { settingsFrom } from '../guest/disk/settings.js';
 
 // The desktop's profiles, reproduced on the server's filesystem. code-server is a Code-OSS
@@ -36,7 +37,7 @@ export class ProfileMirror {
 
       // Also always: the seams' chords have to be in every profile, and a profile with no
       // desktop file behind it still needs the one the app's own menu is waiting on.
-      writeIfChanged(path.join(dir, 'keybindings.json'), keybindingsFrom(profile.sources.keybindings));
+      writeIfChanged(path.join(dir, 'keybindings.json'), keybindingsFrom(profile.sources.keybindings, MOD_KEY));
 
       if (profile.sources.snippets) copyDir(profile.sources.snippets, path.join(dir, 'snippets'));
 
