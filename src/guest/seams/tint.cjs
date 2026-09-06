@@ -2,13 +2,12 @@
 
 const STYLE_ID = 'code-tiles-tint';
 
-// How much of its colour a window wears. A rung is a MULTIPLIER on every amount below, so
-// `medium` is exactly what the app painted before there was a dial. A window is handed the one
-// rung that applies to it; which of the app's two dials that came off is the app's business.
-const RUNGS = { subtle: 0.55, medium: 1, strong: 1.5 };
+// How much of its colour a window wears. Each rung is 0.55 of the one above rather than an even
+// step down: the same 0.45 is half the colour off 1 and nearly all of it off 0.55.
+const RUNGS = { subtle: 0.3, medium: 0.55, strong: 1 };
 
-// The project's share of each mix at `medium`. `color-mix` is written the other way round - how
-// much of the THEME survives - so each is spent as its complement.
+// The project's share of each mix at `strong`, the rung of 1. `color-mix` is written the other
+// way round - how much of the THEME survives - so each is spent as its complement.
 const SHARE = {
   veil: 7,     // over the whole of a part
   wash: 26,    // on a plate: the side bar's title row, the menubar, an active tab

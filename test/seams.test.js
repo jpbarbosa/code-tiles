@@ -130,11 +130,11 @@ test('the badge offers a grab only where there is something to rearrange', () =>
 });
 
 // The tint dial. Its whole contract is that a rung is a MULTIPLIER on what the seam already
-// spent: `medium` has to leave every number exactly where it was before there was a dial, or
-// adding the preference silently repaints every window that never asked for one. The other half
-// is that a window is handed ONE rung - which of the two dials it came off is the app's business -
-// so a rung nobody set, and a rung that is no longer a rung, both land on the middle one.
-test('a tint rung scales what the seam spends, and medium spends what it always did', () => {
+// spends, so one name moves the veil, the wash, the ground and the ink together and a rung means
+// the same thing on either dial. The other half is that a window is handed ONE rung - which of
+// the two dials it came off is the app's business - so a rung nobody set, and a rung that is no
+// longer a rung, both land on the middle one, which is what a window with nothing set wears.
+test('a tint rung scales every amount the seam spends, and the middle one is the default', () => {
   const tint = seams.find((seam) => seam.name === 'tint');
   const amounts = (context) => {
     const css = tint.css({ ...contexts[0], ...context });
@@ -147,7 +147,7 @@ test('a tint rung scales what the seam spends, and medium spends what it always 
     };
   };
 
-  const medium = { ground: 62, wash: 74, veil: 93, ink: 0.05 };
+  const medium = { ground: 79.1, wash: 85.7, veil: 96.15, ink: 0.0275 };
   assert.deepEqual(amounts({ tint: 'medium' }), medium);
   assert.deepEqual(amounts({ tint: 'nonsense' }), medium, 'an unknown rung is the middle one');
   assert.deepEqual(amounts({ tint: undefined }), medium, 'and so is a window told nothing');

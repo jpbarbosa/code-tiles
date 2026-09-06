@@ -57,10 +57,10 @@ What the tree does today, what comes next, and what to check when the server is 
 - Project colour, the app's one preference (`⌘,`): how much of its hue a window wears, on a dial
   for the tile you are in and a dial for the tiles you are not, three rungs each. A rung is a
   MULTIPLIER on every amount the tint spends - the veil over a part, the wash on a plate, the
-  ground, the ink on it, the chat bubble's chroma - so `medium` on both is exactly what the app
-  painted before the dial existed and a step means the same thing wherever it is set. A window is
-  handed the ONE rung that applies to it, never the preference, so which dial it came off stays
-  the app's business. Persisted, and every open window follows the moment it moves, with no reload.
+  ground, the ink on it, the chat bubble's chroma - and the three are a ratio rather than a spread,
+  so a step means the same thing wherever on the dial it is taken. A window is handed the ONE rung
+  that applies to it, never the preference, so which dial it came off stays the app's business.
+  Persisted, and every open window follows the moment it moves, with no reload.
 - The usage meter: a 5-hour and a 7-day bar, live from `/api/oauth/usage` behind the app's own
   PKCE login, one poll for the account with a five minute floor and a back-off on 429. The grant
   is encrypted with `safeStorage`. Clicking opens the panel - exact numbers, reset times,
