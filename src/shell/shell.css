@@ -1,6 +1,6 @@
-/* One flat ground: strip, gutters and the space behind every tile are the same colour, so a
-   tile's edge never shows a step. --bg is the dark theme's own ground, held until a seam
-   reports the running theme's back and main hands it over. */
+/* One flat ground for the strip and the gutters, so a tile's edge never shows a step against
+   them. --bg is the dark theme's own ground, held until a seam reports the running theme's back
+   and main hands it over; behind a tile it carries that project's colour until its window paints. */
 :root {
   /* The page is dark by hand, and Chromium reads its ring and native control colours from this
      rather than from what we paint: a light document rings a focused button in ORANGE. */
@@ -380,6 +380,15 @@ body[data-sorting] .chip .close { cursor: grabbing; }
 #stage {
   position: fixed;
   inset: var(--strip) 0 0 0;
+}
+
+/* Each tile's ground, held from the first frame until its own window paints over it, so the app
+   arrives as itself rather than as an empty dark window with one lit cell. */
+.ground {
+  position: absolute;
+  border-radius: 10px;
+  pointer-events: none;
+  background: color-mix(in oklab, var(--bg) var(--survives), oklch(0.62 0.15 var(--hue)));
 }
 
 /* The focus mark that lives OUTSIDE the tile. The view paints over the middle of this element,

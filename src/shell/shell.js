@@ -4,6 +4,7 @@
 import { projectMark, rampFor } from './format.js';
 
 const chips = document.getElementById('chips');
+const grounds = document.getElementById('grounds');
 const glow = document.getElementById('glow');
 const empty = document.getElementById('empty');
 const stage = document.getElementById('stage');
@@ -20,6 +21,7 @@ const call = (type, payload) => window.ct.call(type, payload).catch((error) => c
 function render() {
   const open = state.projects.filter((project) => project.open);
   renderChips(open);
+  renderGrounds(open);
   renderGlow(open);
   renderSplitters();
   empty.hidden = open.length > 0;
@@ -87,6 +89,29 @@ function renderChips(open) {
 
     chip.append(mark, name, close);
     return chip;
+  }));
+}
+
+// How much of the theme's ground survives the project's colour, focused and quiet: the two shares
+// the tint seam spends on a window's own ground, so a tile does not change colour as it arrives.
+const GROUND = { focused: '62%', quiet: '85%' };
+
+// A tile's colour is the app's to draw before its window exists to draw it: main places the views
+// over these rects, and until each one has painted, this is what fills it. Under the glow, which
+// goes on saying which tile is focused.
+function renderGrounds(open) {
+  grounds.replaceChildren(...open.flatMap((project, index) => {
+    const rect = state.rects[index];
+    if (!rect || !rect.visible) return [];
+    const ground = document.createElement('div');
+    ground.className = 'ground';
+    ground.style.setProperty('--hue', project.hue);
+    ground.style.setProperty('--survives', GROUND[project.folder === state.focused ? 'focused' : 'quiet']);
+    ground.style.left = `${rect.x}px`;
+    ground.style.top = `${rect.y - state.strip}px`;
+    ground.style.width = `${rect.width}px`;
+    ground.style.height = `${rect.height}px`;
+    return [ground];
   }));
 }
 
