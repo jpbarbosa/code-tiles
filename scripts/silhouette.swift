@@ -5,6 +5,11 @@
 // between 67 and 102. Reading the shape back out of ictool costs one render and stays right if
 // Apple reshapes it.
 //
+// Sampled by ANGLE, not by row. A row scan has no resolution where the boundary runs near
+// horizontal: at the top of the corner it put 77px between neighbouring points, so the curve
+// arrived as a handful of long facets and the tiles cut from it had visibly straight, sharp
+// corners. Angular sampling spaces points evenly all the way round.
+//
 //     swift scripts/silhouette.swift <render.png> <out.txt>
 
 import AppKit
@@ -21,26 +26,44 @@ let ctx = CGContext(data: &buf, width: w, height: h, bitsPerComponent: 8, bytesP
                     space: CGColorSpace(name: CGColorSpace.sRGB)!,
                     bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
 ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
-func alpha(_ x: Int, _ y: Int) -> Int { Int(buf[(y * w + x) * 4 + 3]) }
 
 // The shadow ictool bakes is softer than the body, so the edge is taken high enough to ignore it.
 let solid = 200
-var left: [(Double, Double)] = [], right: [(Double, Double)] = []
-let step = max(1, h / 256)
-for y in stride(from: 0, to: h, by: step) {
-    var lo = 0
-    while lo < w && alpha(lo, y) < solid { lo += 1 }
-    guard lo < w else { continue }
-    var hi = w - 1
-    while hi > lo && alpha(hi, y) < solid { hi -= 1 }
-    left.append((Double(lo), Double(y)))
-    right.append((Double(hi) + 1, Double(y)))
+// Bilinear, not nearest: sampled at integer pixels the boundary quantises to +/-0.5px, and at the
+// ~6px spacing these points sit at, that jitter swings the surface normal enough to put spikes in
+// anything derived from it.
+func alpha(_ xi: Int, _ yi: Int) -> Double {
+    guard xi >= 0, yi >= 0, xi < w, yi < h else { return 0 }
+    return Double(buf[(yi * w + xi) * 4 + 3])
 }
-guard left.count > 8 else {
+func inside(_ x: Double, _ y: Double) -> Bool {
+    let x0 = Int(x.rounded(.down)), y0 = Int(y.rounded(.down))
+    let fx = x - Double(x0), fy = y - Double(y0)
+    let top = alpha(x0, y0) * (1 - fx) + alpha(x0 + 1, y0) * fx
+    let bottom = alpha(x0, y0 + 1) * (1 - fx) + alpha(x0 + 1, y0 + 1) * fx
+    return top * (1 - fy) + bottom * fy >= Double(solid)
+}
+
+let cx = Double(w) / 2, cy = Double(h) / 2
+let samples = 720
+var points: [(Double, Double)] = []
+for i in 0..<samples {
+    let a = 2 * Double.pi * Double(i) / Double(samples)
+    let dx = cos(a), dy = sin(a)
+    var lo = 0.0, hi = Double(max(w, h))          // centre is inside, hi is beyond any corner
+    guard inside(cx, cy) else { break }
+    for _ in 0..<24 {                              // binary search to sub-pixel
+        let mid = (lo + hi) / 2
+        if inside(cx + dx * mid, cy + dy * mid) { lo = mid } else { hi = mid }
+    }
+    points.append((cx + dx * lo, cy + dy * lo))
+}
+guard points.count == samples else {
     FileHandle.standardError.write("no silhouette found\n".data(using: .utf8)!); exit(1)
 }
 
-let outline = left + right.reversed()
-let text = outline.map { String(format: "%.2f %.2f", $0.0, $0.1) }.joined(separator: "\n")
+let text = points.map { String(format: "%.3f %.3f", $0.0, $0.1) }.joined(separator: "\n")
 try! text.write(toFile: args[2], atomically: true, encoding: .utf8)
-print("traced \(outline.count) points from \(w)x\(h)")
+let jumps = zip(points, points.dropFirst() + points.prefix(1)).map { hypot($1.0 - $0.0, $1.1 - $0.1) }
+print(String(format: "traced %d points from %dx%d, largest step %.1f px", points.count, w, h,
+             jumps.max() ?? 0))
