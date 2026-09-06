@@ -50,6 +50,11 @@ const SURFACES = {
   editor: '--vscode-editor-background',
 };
 
+// The plates that float ABOVE the parts rather than inside one, each its own name in the theme:
+// the palette and every quick pick, find, hover, suggest, the code-action list, menus, toasts.
+const WIDGETS = ['quickInput', 'quickInputTitle', 'editorWidget', 'editorHoverWidget',
+  'editorSuggestWidget', 'editorActionList', 'menu', 'notifications'];
+
 // The ground stays exactly as the theme shipped it: the app paints its own strip and gutters that
 // colour, so a hue on it is a step at every tile edge - the focused window's ground is derived
 // from it in the block below instead.
@@ -180,6 +185,9 @@ ${tokens(context)}
   --ct-source-sidebar: var(--vscode-sideBar-background);
   --ct-source-editor: var(--vscode-editor-background);
   --ct-source-panel: var(--vscode-panel-background);
+  /* A widget floats over a tinted window, so it wears the same veil. Its SURFACE only: half of
+     the theme's backgrounds are translucent highlights, and a veil under one paints a line. */
+  ${WIDGETS.map((widget) => `--ct-source-${widget}: var(--vscode-${widget}-background);`).join('\n  ')}
   --ct-source-icon: var(--vscode-activityBar-foreground, var(--vscode-foreground));
 
   /* What a mark ON the ground is worth, worn by the activity bar's icons and by the name on the
@@ -197,6 +205,7 @@ ${tokens(context)}
     --vscode-sideBar-background: ${veiled('--ct-source-sidebar')};
     --vscode-editor-background: ${veiled('--ct-source-editor')};
     --vscode-panel-background: ${veiled('--ct-source-panel')};
+    ${WIDGETS.map((widget) => `--vscode-${widget}-background: ${veiled(`--ct-source-${widget}`)};`).join('\n    ')}
 
     /* The activity bar's icons follow the ground the bar wears, focused or not, and the ink is
        dimmer than the colour a checked view wears - so the view you are in stays the brightest

@@ -124,8 +124,12 @@ What the tree does today, what comes next, and what to check when the server is 
   Claude Code - is simply absent),
   `ground` (the theme's shell colour reported back so the app's ground matches it),
   `tint` (the project's hue mixed into the parts' own surfaces and their chrome, into every
-  active tab, and into the window's ground - which the activity bar wears too, being
-  shell rather than a part - at a share of it on a tile nobody is in, so the ground is what
+  active tab, into every plate that floats above a part rather than sitting inside one - the
+  palette and every quick pick, find, hover, suggest, the code-action list, menus and toasts,
+  named one by one because the theme names them one by one, and surfaces only, since half of
+  the theme's backgrounds are translucent highlights and a veil under one paints a line where
+  the theme asked for nothing - and into the window's ground - which the activity bar wears too,
+  being shell rather than a part - at a share of it on a tile nobody is in, so the ground is what
   answers "where am I"; the terminal takes the same colour from a `lighten` overlay, its
   canvas having taken its own at construction and letting no stylesheet in; and the activity
   bar's resting icons are re-derived over that ground, which a theme's own grey is 1.3:1 against -
