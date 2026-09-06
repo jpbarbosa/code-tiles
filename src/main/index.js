@@ -152,14 +152,14 @@ app.whenReady().then(async () => {
   });
   usage.start();
 
-  installIpc({
+  const commands = installIpc({
     desk,
     usage,
     preferences,
     popover: new UsagePopover({ parent: window }),
     picker: new Picker({ parent: window }),
   });
-  installMenu({ desk, preferences });
+  installMenu({ desk, preferences, pick: commands['project:pick'] });
 
   window.webContents.on('did-finish-load', () => desk.render());
   for (const event of ['resize', 'enter-full-screen', 'leave-full-screen']) {

@@ -59,13 +59,24 @@ What the tree does today, what comes next, and what to check when the server is 
   in the shell page would sit behind the tiles. It sizes itself to what it drew and dismisses on
   blur, except while a sign-in is in flight, since that blur is you fetching the code.
 - The picker: every folder ever opened here, in the one project order, each with its favicon or
-  its initial on its own hue, the path that tells two of the same name apart, and a mark on the
-  ones already open - which a click focuses rather than opening twice. A folder that is no longer
+  its initial on its own hue, and the path that tells two of the same name apart. One already open
+  is focused rather than opened twice; nothing marks it, because nearly every row is open and a
+  badge on each was a word repeated down the column. A folder that is no longer
   there is dropped from the list rather than forgotten, so an unmounted volume brings its projects
   back with it. It is a WINDOW, for the reason the usage panel is one, and it covers the stage
   rather than a box under the +: the scrim is what makes a list of paths readable over four live
   editors, and it is the target that dismisses the thing. Nothing to pick from is not a screen
-  worth showing, so an empty list is the folder dialog, which is also the list's last row.
+  worth showing, so an empty list is the folder dialog, which is also the list's last row. Cmd+O
+  opens it from the File menu and the strip's + opens it by hand, both through the one command, so
+  the empty-list rule has one place to live.
+- Typing in the picker searches one list, not two: the projects that match, then folders on disk
+  that no project has claimed - four levels under $HOME and beside a project you keep somewhere
+  else, skipping `Library`, `node_modules` and `vendor`. A query with a `/` in it is matched
+  against the PATH, so `sites/orbit` finds a folder that no single name matches; without one it is
+  a name. A query that STARTS like a path is read as one instead, so `~/Sites/` lists what is in
+  it and every `/` walks a level down; a child that is already a project keeps its icon and its ×. The field holds the focus the whole time, so the arrows move a selection rather
+  than the focus, → at the end of the text steps INTO the selected folder without opening it, and
+  the home row above the folder dialog seeds `~` - a place to browse from.
 - Links out of a tile, in one policy (`src/main/links.js`, with tests): an external link goes to
   your browser, but a popup that KEEPS its opener stays here, because the grant it is about to
   write belongs on the server's origin in this partition and a sign-in finished in Safari writes

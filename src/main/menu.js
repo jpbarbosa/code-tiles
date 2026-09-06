@@ -1,14 +1,15 @@
 import { Menu, app } from 'electron';
 
-// Ctrl+Cmd throughout, so nothing here shadows the editor's own Cmd+1, Cmd+W or Cmd+O inside a
-// tile. Two deliberate exceptions, both of them chords macOS owns: Cmd+` is "next window in this
-// app", and a tile is a window; Cmd+, is Preferences, and the check below is what makes it free.
+// Ctrl+Cmd throughout, so nothing here shadows the editor's own Cmd+1 or Cmd+W inside a tile.
+// Three deliberate exceptions: Cmd+` is "next window in this app", and a tile is a window; Cmd+,
+// is Preferences, which the check below found free; and Cmd+O is the picker, which is worth more
+// than the editor's own Open File - so src/guest/seams/pick.cjs gives that chord back.
 //
 // The editor wins any chord it binds itself, since its dispatcher sees the key before the menu
 // does, and Ctrl+Cmd is not the free family it looks like: Ctrl+Cmd+I is Chat and Ctrl+Cmd+1 and
 // Ctrl+Cmd+9 move an editor between groups. Devtools sits on Alt+Cmd+I for that reason, which is
 // also the chord a browser puts them on. docs/CONSTRAINTS.md says how to check a chord.
-export function installMenu({ desk, preferences }) {
+export function installMenu({ desk, preferences, pick }) {
   const projectNumbers = Array.from({ length: 9 }, (_, i) => ({
     label: `Project ${i + 1}`,
     accelerator: `Control+Command+${i + 1}`,
@@ -39,7 +40,10 @@ export function installMenu({ desk, preferences }) {
     {
       label: 'File',
       submenu: [
-        { label: 'Open Project...', accelerator: 'Control+Command+O', click: () => desk.browse() },
+        // The strip's + and this item are one behaviour, which is why it is the command and not
+        // the picker: nothing to pick from is not a screen worth showing.
+        { label: 'Open Project...', accelerator: 'Command+O', click: () => pick() },
+        { label: 'Open Folder...', accelerator: 'Control+Command+O', click: () => desk.browse() },
         { label: 'Close Project', accelerator: 'Control+Command+W', click: () => desk.closeFocused() },
       ],
     },

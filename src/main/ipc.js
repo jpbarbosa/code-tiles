@@ -1,12 +1,14 @@
 import { ipcMain } from 'electron';
 
-import { pickerRows } from './picker-rows.js';
+import { homeRow, pickerRows } from './picker-rows.js';
 
 // The whole surface between the app's three layers: one channel, one table. A new feature adds
-// a row here, never a channel, and the shell never talks to a guest directly.
+// a row here, never a channel, and the shell never talks to a guest directly. The table is
+// returned as well as installed: a menu item and the button that does the same thing are one
+// behaviour, and the menu is just another caller.
 export function installIpc({ desk, usage, popover, picker, preferences }) {
   const projects = desk.projects;
-  const rows = () => pickerRows(projects.all());
+  const rows = (query) => pickerRows(projects.all(), { query });
   // The folder dialog, from the picker's last row or in place of a picker with nothing in it.
   // The screen goes first either way: a folder dialog behind a scrim reads as two dialogs.
   const browse = () => { picker.close(); return desk.browse(); };
@@ -61,7 +63,10 @@ export function installIpc({ desk, usage, popover, picker, preferences }) {
     // The picker, which is a window of its own for the reason the usage panel is. Nothing to
     // pick from is not a screen worth showing, so an empty list goes straight to the dialog.
     'project:pick': () => (rows().length ? picker.toggle() : browse()),
-    'picker:list': () => rows(),
+    // One list for what was typed: the projects that match, then folders on disk that no project
+    // has claimed. The page asks again on every keystroke, since only main has a filesystem.
+    'picker:list': ({ query }) => rows(query),
+    'picker:home': () => homeRow(),
     'project:browse': browse,
   };
 
@@ -76,4 +81,6 @@ export function installIpc({ desk, usage, popover, picker, preferences }) {
   ipcMain.on('ct:call', (_event, message) => {
     dispatch(message).catch((error) => console.error('[code-tiles]', error));
   });
+
+  return commands;
 }

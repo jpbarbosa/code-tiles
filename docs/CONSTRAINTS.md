@@ -250,7 +250,9 @@ is stored as a sum, `mac:{primary:N}` with CtrlCmd 2048, Shift 1024, Alt 512, Wi
 KeyA 31 (so KeyI 39) and Digit0 21. A chord worth more than the workaround is taken back rather
 than worked around: a seam's `keybindings` write `-command` into every profile's file, which the
 web build honours for DEFAULT bindings, and the menu then sees the key. That is how Actual Size
-holds Cmd+0, which the editor binds to Focus into Primary Side Bar. The check also comes back
+holds Cmd+0, which the editor binds to Focus into Primary Side Bar, and how Open Project holds
+Cmd+O - three commands share `primary:2093` there, each behind its own `when`, so the seam returns
+all three rather than guessing which build is live. The check also comes back
 NEGATIVE sometimes, which is the cheap outcome: Cmd+, is 2048|82 = 2130, and neither that number
 nor that expression is anywhere in the bundle - the web build binds Preferences to nothing, so the
 app's own item fires from inside a tile with no chord to take back. **[checked]**
@@ -482,3 +484,35 @@ radius a circle would imply swings between 67 and 102, so no rounded rectangle m
 `scripts/silhouette.swift` reads the shape back out of a throwaway ictool render each build. The
 tray is full-bleed with a wide bevel rather than inset - inset, its rim becomes a second outline
 inside the chiclet's, and a top-down camera cannot see a narrow bevel at the canvas edge at all.
+
+**A `statSync` on a symlink can block for TWENTY milliseconds, and one on a missing path costs 3.6
+to build the error it throws.** Both are why the picker's search walks $HOME without ever
+resolving a link: two deploy symlinks under `~/Sites` (a `current` in each of `atlas-prod` and
+`_config/atlas-prod`) were 40 ms of a 68 ms keystroke, and eleven broken links were most of the rest.
+A link is followed only where the user navigated to it - the one directory a path query lists.
+`{ throwIfNoEntry: false }` is the other half; a home directory always has broken links in it.
+Measured, so the numbers hold for this machine and the shape holds everywhere: **[checked]**
+
+| walk of `$HOME`, pruned | folders | reads | warm |
+|---|---|---|---|
+| 3 levels | 813 | 180 | 5 ms |
+| **4 levels (this is what it does)** | **2552** | **813** | **21 ms** |
+| 5 levels | 5638 | 2552 | 92 ms |
+| no cap | 98669 | 98669 | **4.9 SECONDS** |
+
+Skipping `Library`, `node_modules` and `vendor` is most of what makes it affordable. Spotlight is
+not the way out: `mdfind` for a folder name takes 0.4-1.2 s and answers with thousands of
+`node_modules` hits.
+
+**A `×` glyph's ink sits 1.53px below the centre of its own line box at 14px**, measured with
+canvas `actualBoundingBox*` against `fontBoundingBox*`. So a plate around a typed × hands all its
+slack to one edge, and no centring primitive can see it: `place-items: center` is doing its job on
+a box whose contents are off-centre. Every cross in the picker is a drawn `<symbol>` instanced at
+three sizes, and each is an EVEN size in an even plate - 10 into 20 halves, 9 into 20 leaves a half
+pixel that is a real one at 2x. **[checked]**
+
+**A `<button>` keeps the UA's `padding: 1px 6px` unless a reset says otherwise**, and with
+`box-sizing: border-box` that makes its CONTENT box 12px narrower than the width you gave it. A
+mark centred in that content box is not centred in the plate you can see - the picker's row × was
+1px left of its own hover plate this way, while every rect in the file read as correct. Put
+`padding: 0` in the `button` reset, not on the one button you noticed. **[checked]**
