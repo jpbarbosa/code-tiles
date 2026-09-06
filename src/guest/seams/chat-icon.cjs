@@ -72,10 +72,15 @@ const ICON_RE = /this\.panelTab\.iconPath=([\w$]+)\.Uri\.file\(([\w$]+)\.join\(t
 // expression into a block that decodes the request into a local, which moved the state to read;
 // 2.1.258 then grew a body between that decode and the call, which the first shape spans lazily.
 // Both end at this.onSessionStateChanged, which is where the call goes.
+//
+// The lookahead is what makes the lazy span safe: it requires the occurrence it lands on to be a
+// CALL, so a guard or a hoist on the same property earlier in the body cannot take the call's
+// place. Landing on one would be valid syntax and a silent inversion - `if(!CALL,handler)return`
+// is `if(handler)return` - which neither the exactly-once check nor node --check can see.
 const STATE_SHAPES = [
-  { re: /([\w$]+)\.request\.type==="update_session_state"\)\{let ([\w$]+)=[\w$]+\(\1\.request\);if\(\2\)\{?[\s\S]{0,600}?this\.onSessionStateChanged/,
+  { re: /([\w$]+)\.request\.type==="update_session_state"\)\{let ([\w$]+)=[\w$]+\(\1\.request\);if\(\2\)\{?[\s\S]{0,600}?this\.onSessionStateChanged(?=\??\.?\()/,
     state: (match) => `${match[2]}.state` },
-  { re: /([\w$]+)\.request\.type==="update_session_state"\)return this\.onSessionStateChanged/,
+  { re: /([\w$]+)\.request\.type==="update_session_state"\)return this\.onSessionStateChanged(?=\??\.?\()/,
     state: (match) => `${match[1]}.request.state` },
 ];
 
@@ -93,6 +98,26 @@ function inject(vscode, join) {
 }
 
 const hits = (source, re) => (source.match(new RegExp(re.source, 'g')) || []).length;
+
+// The states `inject` knows, against the union the extension declares them in. Two things this
+// seam reads are STRINGS rather than shapes - the session states, and the resting icons REST
+// translates by name - so either can move without moving an anchor: the patch lands, and the tab
+// simply rests where it should animate. A note is the only way that is ever noticed.
+const MAPPED = ['idle', 'running', 'waiting_input', 'working', 'input_required'];
+const STATES_RE = /\[(?:"[a-z_]+",)*"waiting_input"(?:,"[a-z_]+")*\]/;
+
+function drift(source) {
+  const notes = [];
+  const states = STATES_RE.exec(source);
+  if (!states) notes.push('the session state union has moved, so the states it animates are unchecked');
+  else {
+    const strangers = JSON.parse(states[0]).filter((state) => !MAPPED.includes(state));
+    if (strangers.length) notes.push(`the session state ${strangers.join(', ')} is new and rests rather than animates`);
+  }
+  const renamed = Object.keys(REST).filter((icon) => !source.includes(icon));
+  if (renamed.length) notes.push(`${renamed.join(', ')} is gone, so that resting state keeps the extension's own logo`);
+  return notes;
+}
 
 // The resting assignment, rewritten as ONE expression so it is safe wherever the original sat.
 // It records what the extension settled on - translated through REST, so a resting state wears
@@ -123,7 +148,9 @@ function apply(source) {
     .replace(icon[0], () => resting(vscode, join, name))
     .replace(branch[0], () => branch[0].replace(/this\.onSessionStateChanged$/, () => `${call}this.onSessionStateChanged`));
 
-  return { source: patched };
+  // Against the source as it arrived: the rewrite writes both the states and the icon names it
+  // knows into the bundle, so checking its own output would only ever agree with itself.
+  return { source: patched, notes: drift(source) };
 }
 
 module.exports = {

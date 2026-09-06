@@ -6,11 +6,16 @@ import seams from '../manifest-settings.js';
 
 // The seams' third on-disk part, and the last door of all: a `patch` rewrites the SERVER's own
 // bundle, this rewrites an EXTENSION's. Same contract - declared by the seam that needs it,
-// matched by shape, refused rather than half-applied - and one thing more, because an extension
-// is replaced by its own updater rather than by a version bump we perform: the pristine bundle is
+// matched by shape, refused rather than half-applied - and one thing more, because an extension is
+// replaced by its own updater rather than by a version bump we perform: the pristine bundle is
 // kept beside it, and every patch is applied to THAT, never to whatever is on disk. So a patcher
 // that changes cannot patch its own output, and a shape that stops matching restores the stock
 // file instead of leaving an old edit no one can reason about.
+//
+// A patch that LANDED can still speak, through `notes`. A shape is not the only thing a patch
+// depends on: it also reads the bundle's own strings, and those move without moving any anchor -
+// matched, applied, and quietly meaning something else. That has no refusal to make, only a line
+// to print.
 //
 // Applied before the server is spawned, like the rest: the extension host reads these files as
 // the window loads, and nothing re-reads them until one does.
@@ -33,6 +38,7 @@ export function patchExtensions(dir) {
         continue;
       }
       for (const refusal of status.refusals) console.error(`[extension] ${version}: ${refusal}`);
+      for (const note of status.notes) console.error(`[extension] ${version}: ${note}`);
       // A pass where every patch refused still WRITES, to put the stock bundle back - but it
       // patched nothing, and saying so would name an edit that is not there.
       if (status.wrote && status.applied.length) done.push(`${status.applied.join(' + ')} in ${version}`);
@@ -80,6 +86,7 @@ function patchBundle(folder, patches) {
   let patched = pristine;
   const applied = [];
   const refusals = [];
+  const notes = [];
   const resources = {};
   for (const { name: seam, extension } of patches) {
     const result = extension.apply(patched);
@@ -89,6 +96,7 @@ function patchBundle(folder, patches) {
     }
     patched = result.source;
     applied.push(seam);
+    for (const note of result.notes || []) notes.push(`${seam}: ${note}`);
     Object.assign(resources, extension.resources || {});
   }
 
@@ -111,7 +119,7 @@ function patchBundle(folder, patches) {
     fs.mkdirSync(path.dirname(target), { recursive: true });
     write(target, body);
   }
-  return { wrote, applied, refusals };
+  return { wrote, applied, refusals, notes };
 }
 
 function folders(dir, id) {

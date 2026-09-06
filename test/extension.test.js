@@ -32,13 +32,23 @@ const STATE = 'onMessage($){if($.request.type==="update_session_state"){let Q=de
   + 'if(Q){let{anchor:X}=badge$(this.tabBadgeAnchor,Q);'
   + 'if(this.tabBadgeAnchor=X,this.onSessionStateChanged?.(Q.sessionId,Q.state))return}}}';
 
+// The same branch with a guard on the property the shape scans lazily for. Landing the injected
+// call there instead is valid syntax and inverts the guard, so nothing downstream can catch it.
+const STATE_DECOY = STATE.replace('if(Q){let{anchor:X}',
+  'if(Q){if(!this.onSessionStateChanged)return;let{anchor:X}');
+
+// The two things this seam reads as strings rather than as shapes. A bundle that still declares
+// both is a bundle that is not drifting, which is what the fixtures should model.
+const STRINGS = 'var states$=["idle","running","waiting_input"],'
+  + 'names$={pending:"claude-logo-pending.svg",done:"claude-logo-done.svg",plain:"claude-logo.svg"};';
+
 // `W` is startedInNewColumn and is declared !1 here, which is what makes dropping its assignment
 // enough: the caller reads it and locks the group only when it is true.
 const COLUMN = 'createPanel($,J,Q){let W=!1,K;if(Q!==void 0)K=Q;'
   + 'else{K=O4.ViewColumn.Beside;let V=ih$();if(V)K=V.viewColumn;else K=this.findUnusedColumn(),W=!0}'
   + 'let U=O4.window.createWebviewPanel("claudeVSCodePanel","Claude Code",K,{});return{startedInNewColumn:W}}';
 
-const BUNDLE = `class T{${ICON_TABLE}${STATE}${COLUMN}}\n`;
+const BUNDLE = `${STRINGS}class T{${ICON_TABLE}${STATE}${COLUMN}}\n`;
 
 function tree(bundle = BUNDLE) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ct-extension-'));
@@ -89,7 +99,7 @@ test('the column fallback becomes the main group and stops asking for the lock',
 // itself. Holding both spellings is what stops the next one costing an evening.
 test('the icon anchor holds a family of spellings, not the one that shipped last', () => {
   for (const [label, icon] of [['lookup table', ICON_TABLE], ['if/else chain', ICON_CHAIN]]) {
-    const { dir, file } = tree(`class T{${icon}${STATE}${COLUMN}}\n`);
+    const { dir, file } = tree(`${STRINGS}class T{${icon}${STATE}${COLUMN}}\n`);
     assert.equal(patchExtensions(dir).length, 1, label);
     const patched = read(file);
     assert.match(patched, /__CT_CHAT_ICON_2__/, label);
@@ -98,6 +108,37 @@ test('the icon anchor holds a family of spellings, not the one that shipped last
     assert.match(patched, /this\.__ctRest=/, label);
     assert.match(patched, /this\.__ctIcon\|\|\(this\.panelTab\.iconPath=/, label);
   }
+});
+
+// The span from the decode to the call is lazy and bounded, so it lands on the FIRST occurrence
+// of the property name inside it. Injecting the call before a guard rather than before the call
+// reads as `if(!spin(),handler)return` - the guard inverted, valid syntax, and invisible to both
+// the exactly-once check and node --check.
+test('the injected call lands on the handler CALL, never on a guard that names it', () => {
+  const { dir, file } = tree(BUNDLE.replace(STATE, STATE_DECOY));
+  assert.equal(patchExtensions(dir).length, 1, 'the decoy refused the patch outright');
+  const patched = read(file);
+  assert.match(patched, /\.call\(this,Q\.state\),this\.onSessionStateChanged\?\.\(/);
+  assert.doesNotMatch(patched, /\.call\(this,Q\.state\),this\.onSessionStateChanged\)return/,
+    'the call landed on the guard, which inverts it');
+});
+
+// Neither of these moves a shape: the patch matches, applies and is correct JavaScript. The only
+// way either is ever noticed is the note, so the note is the test.
+test('a string the seam reads that has moved is reported, not silently obeyed', () => {
+  const icon = declaredExtensions(seams).find((entry) => entry.name === 'chat-icon').extension;
+  assert.deepEqual(icon.apply(BUNDLE).notes, [], 'a bundle that has not drifted still complained');
+
+  const grown = icon.apply(BUNDLE.replace('"waiting_input"]', '"waiting_input","compacting"]'));
+  assert.ok(!grown.refused, 'a new session state refused the patch rather than noting it');
+  assert.match(grown.notes.join(' '), /compacting/);
+
+  const renamed = icon.apply(BUNDLE.replace('claude-logo-pending.svg', 'logo-attention.svg'));
+  assert.ok(!renamed.refused, 'a renamed resting icon refused the patch rather than noting it');
+  assert.match(renamed.notes.join(' '), /claude-logo-pending\.svg/);
+
+  const gone = icon.apply(BUNDLE.replace(STRINGS, ''));
+  assert.match(gone.notes.join(' '), /state union has moved/);
 });
 
 test('one seam whose shape has moved does not take the other down', () => {
@@ -151,6 +192,47 @@ test('an anchor that matches twice is refused, because the wrong one is unrecove
   assert.deepEqual(patchExtensions(dir), []);
   assert.doesNotMatch(read(file), /__CT_CHAT_ICON_2__/);
   assert.ok(!fs.existsSync(`${file}.ct-orig`), 'a refused patch left a copy behind');
+});
+
+// Every fixture above is a MODEL of the bundle, and a model cannot notice the real one moving -
+// which is exactly how 2.1.261 got through. Where this machine has a bundle, hold the anchors to
+// that one too, so the next bump costs a red test rather than a window reload and a still logo.
+const INSTALLED = [
+  path.join(os.homedir(), '.vscode/extensions'),
+  path.join(os.homedir(), 'Library/Application Support/Code Tiles/extensions'),
+];
+
+// The pristine copy where a patch has already landed, the file itself where none has. A stamped
+// bundle with no pristine beside it is skipped: its anchors were spent by a patcher we cannot see.
+function installedBundles() {
+  const found = [];
+  for (const dir of INSTALLED) {
+    let names;
+    try { names = fs.readdirSync(dir); } catch { continue; }
+    for (const folder of names.filter((name) => /^anthropic\.claude-code-/.test(name))) {
+      for (const file of [`${folder}/extension.js.ct-orig`, `${folder}/extension.js`]) {
+        let source;
+        try { source = fs.readFileSync(path.join(dir, file), 'utf8'); } catch { continue; }
+        if (/__CT_CHAT_\w+__/.test(source)) continue;
+        found.push([folder, source]);
+        break;
+      }
+    }
+  }
+  return found;
+}
+
+test('every anchor still matches the bundle this machine has, where it has one', (t) => {
+  const bundles = installedBundles();
+  if (!bundles.length) return t.skip('no Claude Code extension installed here');
+  for (const [version, source] of bundles) {
+    for (const { name, extension } of declaredExtensions(seams)) {
+      const result = extension.apply(source);
+      assert.ok(!result.refused, `${name}: ${version} ${result.refused} - ${extension.degrades}`);
+      // A note is drift the shapes cannot see, and the whole point of it is to be noticed.
+      assert.deepEqual(result.notes || [], [], `${name}: ${version}`);
+    }
+  }
 });
 
 test('a directory with no such extension in it is not an error', () => {

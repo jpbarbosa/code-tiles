@@ -251,6 +251,19 @@ Property paths on `this`, VS Code API names and string literals survive minifica
 does not. Both spellings are kept in `test/extension.test.js` so the anchor is held to a family
 rather than to whichever one shipped last.
 
+**An anchor that scans to a name must require the syntax it expects there.** The state shape spans
+lazily to `this.onSessionStateChanged` and injects the call in front of it, so a guard or a hoist
+naming the same property earlier in the body would take the call's place - `if(!spin(),handler)
+return` is the guard inverted, valid JavaScript, and invisible to both the exactly-once check and
+`node --check`. A one-token lookahead for the call parens is the whole fix.
+
+**A string a patch reads drifts without moving any shape.** `chat-icon` matches session states by
+value and translates the extension's resting icons by filename; rename either and the patch still
+lands, still parses, and quietly stops animating. There is no refusal to make - the tab rests
+where it should spin, which is worse than stock but not broken - so a patch that landed returns
+`notes`, printed as the same `[extension]` line a refusal is. What notices the drift in the first
+place is a test that runs the anchors against the bundle THIS MACHINE has, rather than only
+against the fixtures, and skips where there is none.
 
 **Your own VS Code needs the same two patches, and has no boot hook to apply them.** `npm run
 patch-vscode` spends the seams on `~/.vscode/extensions` instead of the app's copy - the same
