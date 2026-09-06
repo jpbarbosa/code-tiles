@@ -11,8 +11,8 @@ written down.
 
 **Where it stands: the product is there, the last mile is not.** Every mechanism the old app
 proved is rebuilt and several are better founded, and every patch of someone else's bundle the
-old tree carried is now carried here. What is left is not a mechanism: half a dozen stylesheets
-over the editor's own DOM and one mark inside a window.
+old tree carried is now carried here. What is left is not a mechanism: four stylesheets over the
+editor's own DOM and one mark inside a window.
 
 Legend: **yes** the same feature, however differently built. **partial** the feature exists
 with something named missing from it. **no** not in this tree. **by design** deliberately not
@@ -87,9 +87,9 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 | Your own turns in the chat painted apart from Claude's | yes | yes | the same reason in both: a theme is free to ship `input.background` as the very colour of the page, so no veil can break the tie. Painted here by redefining the extension's OWN variable on the bubble, so its own rule spends it and the truncation fade and the attachment pills follow - the page stepped a tenth of the way toward its own text, which is a lighter bubble on a dark theme and a darker one on a light theme from one number |
 | Status bar painted the project's colour | yes | **n/a** | there is no status bar |
 | Terminals as tabs across the panel header | yes | yes | same `<select>` mirror, same select-then-wait close |
-| Maximize Panel taken off that header | yes | **no** | it hides the editor part rather than growing the panel, and undoes itself under a Claude chat |
+| Maximize Panel taken off that header | yes | yes | same reason: it hides the EDITOR part rather than growing the panel, and under a Claude chat it undoes itself in one frame, so the click only ever lands you in Claude. In `chrome` here rather than in the terminal strip, because it is a control the app does not show and not a thing the strip rebuilds |
 | Run and Debug, Testing and Claude's sessions list off the rail | yes | **no** | |
-| The editor toolbar's Run button off | yes | **no** | |
+| The editor toolbar's Run button off | yes | yes | one selector rather than the old tree's two: the editor appends Run as a submenu carrying `isSplitButton`, so the bare play item the old rule also matched is a shape this version never builds. Read back out of a live window, which is what showed the second rule matching nothing |
 | Welcome page renamed and Coder's ad removed | injected | **flags** | `--app-name`, `--disable-getting-started-override` |
 | Welcome page's walkthrough column emptied | CSS | patch | |
 | An "Open Claude Code" entry under Start | yes | **no** | |

@@ -63,4 +63,22 @@ module.exports = {
     'workbench.statusBar.visible': false,
     'workbench.secondarySideBar.defaultVisibility': 'hidden',
   },
+
+  // The two with no switch to take: both are menu contributions, `PanelTitle` and `EditorTitleRun`,
+  // and neither offers a setting. Only the button goes; the command and its keybinding still run.
+  css: () => `
+/* Maximize Panel hides the EDITOR part rather than growing the panel, and under a Claude chat it
+   undoes itself in one frame: the chat takes focus as its editor goes, and the workbench
+   un-maximizes whenever one re-activates. On the icon, kept in both states. [code-server 4.135.0] */
+.monaco-workbench .part.panel .composite.title .action-item:has(> .action-label.codicon-panel-maximize) {
+  display: none;
+}
+
+/* Run, in the editor's title row. One shape only: the editor appends it as a submenu carrying
+   \`isSplitButton\`, so it is a dropdown-with-default however many entries the language ships. The
+   !important is the editor's own, which pins that class at \`display: flex !important\`. */
+.monaco-workbench .part.editor .editor-actions .action-item.monaco-dropdown-with-default {
+  display: none !important;
+}
+`,
 };
