@@ -250,3 +250,12 @@ grammar accepts accessor chains only, never a call, which is what makes reading 
 Property paths on `this`, VS Code API names and string literals survive minification. Control flow
 does not. Both spellings are kept in `test/extension.test.js` so the anchor is held to a family
 rather than to whichever one shipped last.
+
+
+**Your own VS Code needs the same two patches, and has no boot hook to apply them.** `npm run
+patch-vscode` spends the seams on `~/.vscode/extensions` instead of the app's copy - the same
+patchers, so there is one bundle shape to keep alive rather than two - and the
+`io.jp7.claude-vscode-patch` LaunchAgent runs it on every write to an `extensions.json`, which VS
+Code rewrites on each install and update and the patchers never touch. It is pointed at the app's
+extensions directory as well: the app patches on start, but restarting it costs every live session,
+so a running build wants the same trigger.

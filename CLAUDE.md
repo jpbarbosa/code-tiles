@@ -16,6 +16,7 @@ npm start                     # run from source
 npm test                      # the pure parts (geometry, so far)
 npm run fetch-code-server     # vendor the pinned server
 npm run install-app           # package, sign and replace /Applications/Code Tiles.app
+npm run patch-vscode          # apply the extension seams to your own VS Code, not the app's
 CODE_TILES_CODE_SERVER=/path/to/code-server npm start   # run against a server you already have
 ```
 

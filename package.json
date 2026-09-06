@@ -12,6 +12,7 @@
     "icon": "bash scripts/icon.sh",
     "install-app": "bash scripts/install.sh",
     "fetch-code-server": "bash scripts/fetch-code-server.sh",
+    "patch-vscode": "node scripts/patch-vscode-claude.js",
     "test": "node --test test/*.test.js"
   },
   "devDependencies": {
