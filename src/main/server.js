@@ -63,6 +63,7 @@ export class CodeServer {
 
   stop() {
     if (!this.#child) return;
+    killDescendants(this.#child.pid);
     try { process.kill(-this.#child.pid, 'SIGTERM'); } catch { /* already gone */ }
     this.#child = null;
     try { fs.unlinkSync(this.#paths.pidfile); } catch { /* never written */ }
@@ -75,7 +76,10 @@ export class CodeServer {
     try { record = JSON.parse(fs.readFileSync(this.#paths.pidfile, 'utf8')); } catch { return; }
     try {
       const command = execFileSync('ps', ['-o', 'command=', '-p', String(record.pid)], { encoding: 'utf8' });
-      if (command.includes('code-server')) process.kill(-record.pid, 'SIGTERM');
+      if (command.includes('code-server')) {
+        killDescendants(record.pid);
+        process.kill(-record.pid, 'SIGTERM');
+      }
     } catch { /* not running */ }
     try { fs.unlinkSync(this.#paths.pidfile); } catch { /* ignore */ }
   }
@@ -93,6 +97,36 @@ export class CodeServer {
       }
     }
     throw new Error(`code-server did not answer on ${this.#port}: ${lastError?.message}`);
+  }
+}
+
+// Every process under `root` in a `ps -Ao pid=,ppid=` table, deepest first so nothing is killed
+// while it can still spawn. Pure, so the walk is testable without a process tree to kill.
+export function descendants(table, root) {
+  const children = new Map();
+  for (const line of table.trim().split('\n')) {
+    const [pid, parent] = line.trim().split(/\s+/).map(Number);
+    if (parent >= 0 && pid !== parent) children.set(parent, [...(children.get(parent) ?? []), pid]);
+  }
+
+  const tree = [];
+  const queue = [root];
+  while (queue.length) {
+    for (const child of children.get(queue.shift()) ?? []) { tree.push(child); queue.push(child); }
+  }
+  return tree.reverse();
+}
+
+// The pty host gives each terminal its own session, so the group signal never reaches what a
+// terminal started: a dev server outlives the app, and macOS goes on listing the bundle as
+// running - the dim Dock dot whose first click is spent reaping that record, not opening the app.
+function killDescendants(root) {
+  let table;
+  try { table = execFileSync('ps', ['-Ao', 'pid=,ppid='], { encoding: 'utf8' }); } catch { return; }
+  // SIGKILL: the app is gone half a second after this, which is not long enough to hold a shell
+  // to a SIGTERM, and one survivor is the dot again.
+  for (const pid of descendants(table, root)) {
+    try { process.kill(pid, 'SIGKILL'); } catch { /* already gone */ }
   }
 }
 
