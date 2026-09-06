@@ -30,6 +30,18 @@ let server = null;
 let mirror = null;
 let usage = null;
 let activity = null;
+let window = null;
+
+// The other half of the lock: the second process has already quit above, and this is the running
+// app being told it tried. Only a genuinely new process lands here (`open -n`, the binary, `npm
+// start` beside the installed app) - the Dock and Spotlight surface a running app themselves.
+app.on('second-instance', () => {
+  if (!window || window.isDestroyed()) return;
+  if (window.isMinimized()) window.restore();
+  // Cmd+H hides the APP, which no call on one of its windows undoes.
+  window.show();
+  app.focus({ steal: true });
+});
 
 app.whenReady().then(async () => {
   // The app's half of dark: the traffic lights, the file dialog and every guest's
@@ -113,7 +125,7 @@ app.whenReady().then(async () => {
   });
 
   const projects = new Projects(store, { profileFor, claudeStates: (folders) => activity.states(folders) });
-  const window = createWindow();
+  window = createWindow();
   const tiles = new Tiles({ window, server });
   const preferences = new Preferences({ store, parent: window });
   const desk = new Desk({ window, projects, tiles, activity, preferences });
