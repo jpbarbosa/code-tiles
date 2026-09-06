@@ -32,14 +32,24 @@ let usage = null;
 let activity = null;
 let window = null;
 
-// The other half of the lock: the second process has already quit above, and this is the running
-// app being told it tried. Only a genuinely new process lands here (`open -n`, the binary, `npm
-// start` beside the installed app) - the Dock and Spotlight surface a running app themselves.
-app.on('second-instance', () => {
+// Everything that means "open the app" once it is up, and the window is what all of it wants.
+function raise() {
   if (!window || window.isDestroyed()) return;
   if (window.isMinimized()) window.restore();
   // Cmd+H hides the APP, which no call on one of its windows undoes.
   window.show();
+}
+
+// A Dock or Spotlight launch of a running app starts no process, so this is the ONLY event it
+// fires - and with nothing listening, a click on an app whose window has not been made yet does
+// nothing at all.
+app.on('activate', raise);
+
+// The other half of the lock: the second process has already quit above, and this is the running
+// app being told it tried. Only a genuinely new process lands here (`open -n`, the binary, `npm
+// start` beside the installed app), which the OS does not bring forward on its own.
+app.on('second-instance', () => {
+  raise();
   app.focus({ steal: true });
 });
 
@@ -160,6 +170,11 @@ app.whenReady().then(async () => {
 
   // Development only. scripts/dev-probe.js is not part of the app and is never loaded without it.
   if (process.env.CT_PROBE) (await import('../../scripts/dev-probe.js')).run({ window });
+}).catch((error) => {
+  // The window is the last thing startup makes, so a throw before it leaves a live process with
+  // nothing to raise: a Dock icon reading "Running in Background" that answers no click, ever.
+  dialog.showErrorBox('Code Tiles failed to start', error?.stack ?? String(error));
+  app.quit();
 });
 
 // Subscribed on purpose, and on purpose does nothing. Electron quits when the last window
