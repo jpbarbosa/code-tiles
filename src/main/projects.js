@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { hueFor } from './hue.js';
 import { iconFor } from './icon.js';
-import { arranged, inserted, swapped } from './order.js';
+import { arranged, inserted, rebound, swapped } from './order.js';
 
 // A project IS its folder. No generated id, no stored name, no stored colour: everything a
 // project has is either the path or derived from it, so nothing can fall out of step with the
@@ -106,6 +106,23 @@ export class Projects {
     this.#write(entries);
     this.focused = resolved;
     return resolved;
+  }
+
+  // A tile re-pointed from the inside; the move itself is `rebound` in src/main/order.js. The
+  // path is resolved the way `add` resolves one, which is also the check that it is a directory
+  // at all: a `?folder=` naming nothing would be persisted and replayed as a broken tile.
+  rebind(from, to) {
+    let folder;
+    try { folder = fs.realpathSync(to); } catch { return { folder: null, moved: false }; }
+    const entries = rebound(this.#entries(), from, folder);
+    if (!entries) return { folder, moved: false };
+    this.#write(entries);
+    // Both name a tile, and the tile did not move: same window, same cell, same hand. Left alone
+    // the focus would fall to whichever project is first and the wide column would be held by
+    // nobody, since neither getter answers with a folder that is not open.
+    if (this.#store.state.focusedFolder === from) this.focused = folder;
+    if (this.#store.state.maximized === from) this.maximized = folder;
+    return { folder, moved: true };
   }
 
   close(folder) {

@@ -44,12 +44,14 @@ rebuilt, with the reason in the last section.
 | **Open folder...** as the last row of that list | yes | yes | `⌃⌘O` from anywhere, and the same dialog when the list is empty |
 | `×` on a row to forget a folder | yes | yes | shown on hover and on keyboard focus, which the old one was not |
 | Closing keeps the entry so reopening is a click | yes | yes | the entry outlives the tile in both |
+| A window re-pointed from the INSIDE follows to the folder it landed on | yes | yes | File > Open Folder, or a row of the welcome page's Recent list, is a navigation to another `?folder=`. The old tree kept the tab's id and swapped what it pointed at; a project IS its folder here, so what outlives the folder is the SLOT - the tile does not move, and the folder it left goes back to being one the picker offers. One folder is one project, so a target another tile already holds is refused and that tile takes the focus instead |
 | One project order behind strip, grid, numbers and storage | yes | yes | |
 | Chip drag along the strip, inserting | yes | yes | same shape: a clone under the hand and the hole it left as the placeholder. The clone rides IN the strip rather than hanging below it, because below the strip is the stage and every pixel of that is a view painted above this page |
 | Badge drag onto another tile, swapping | yes | yes | the badge stays a pseudo-element: the listener is on the menu button it is drawn on, delegated off the workbench. The gesture is reported; the CURSOR is followed by main, off the OS, so no position crosses the boundary and the guests are never muted to let a press through |
 | A click on the badge still opens the menu | replayed by the host with `sendInputEvent` | yes | replayed inside the document instead: `preventDefault` on the pointerdown suppresses the mousedown the menubar opens on, and a release that never moved dispatches that pair back |
 | `Esc` abandons a drag | yes | yes | the open order the press began with, put back - in either view |
-| A project's window boots lazily | yes | **no** | a view is created for every open project at startup, visible or not, and all at once rather than staggered |
+| A project's window boots lazily | yes | **no** | a view is created for every open project at startup, visible or not. Its PACING is the row below, and is the half that was load-bearing |
+| Bring-ups paced, so the one shared login is not refreshed by every tile at once | yes | yes | `src/main/bringup.js`. Not a speed measure in either tree: every tile is a separate `claude` on ONE credential, and simultaneous OAuth refreshes rotate the single-use refresh token out from under each other. The focused tile still never waits, and `CODE_TILES_STAGGER_MS=0` is every window at once again |
 
 ## Focus and identity
 
@@ -167,19 +169,21 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 
 | | old | new | |
 |---|---|---|---|
-| A test suite | none | **100 tests** | geometry, seams, settings, keybindings, both patch kinds, activity, icon, usage |
+| A test suite | none | **131 tests** | geometry, project order, seams, settings, keybindings, both patch kinds, activity, icon, usage, the bring-up staircase and the tile URL's round trip |
 | Read a change back out of a live window | by hand | `CT_PROBE=1 npm start` | `scripts/dev-probe.js` reads every seam's effect out of each guest |
 | The pinned code-server fetched into `vendor/` | yes | yes | |
 | A packaged, signed `Code Tiles.app` | yes | yes | `npm run install-app`. Every signing rule the old tree paid for carried over - a real identity so TCC grants survive, no `--deep`, packager rewriting the vendor symlinks - plus one it never hit: `ditto` MERGES, so a file the last build shipped and this one does not stays behind and breaks the seal |
 | An app icon | rendered in Blender, `.icns` and dock icon | yes | rebuilt as a macOS 26 `.icon`: `npm run icon` renders the layers in headless Blender, composites them through `ictool` and packs `assets/icon.icns`. `assets/icon.icon` is the source, so the art is reproducible rather than a binary nobody can regenerate |
-| The same Claude patches applied to desktop VS Code by a LaunchAgent | yes | **no** | `scripts/patch-vscode-claude.js` and its plist live in the old tree |
+| The same Claude patches applied to desktop VS Code by a LaunchAgent | yes | yes | `npm run patch-vscode` spends the same two patchers on `~/.vscode/extensions`, so there is one bundle shape kept alive rather than two, and `io.jp7.claude-vscode-patch` runs it on every write to an `extensions.json` |
 | A data-directory migration script | yes | **n/a** | this tree has its own data directory and no history to move |
 
 ## What is missing, in the order it will be missed
 
 1. **The chat title**, which is the one thing the old chips carried that no tile does.
 2. **A project's window booting lazily.** A view is created for every open project at startup,
-   visible or not, so every one of them loads a workbench against the one server at once.
+   visible or not, so every one of them loads a workbench against the one server. They no longer
+   arrive together - see the bring-up row above - but a tile you have not looked at still costs a
+   whole workbench at launch.
 
 ## What this tree has that the old one never did
 
@@ -205,7 +209,7 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
   half-applied, each naming what it degrades to.
 - **The maximize item is the editor's own**, built from the classes the activity bar builds
   its items with, so it takes the bar's size, hover and accent for free.
-- **84 tests and a probe** that reads every seam's effect out of a live window.
+- **131 tests and a probe** that reads every seam's effect out of a live window.
 
 ## Dropped on purpose
 

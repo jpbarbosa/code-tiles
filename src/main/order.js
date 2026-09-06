@@ -39,3 +39,22 @@ export function arranged(entries, folders) {
   if (queue.length !== open.length || new Set(folders).size !== folders.length) return entries;
   return entries.map((entry) => (entry.open ? queue.shift() : entry));
 }
+
+// A tile re-pointed from the inside: the window is the same window and the slot is the same slot,
+// so the entry standing in it changes folder rather than the list changing shape. The folder it
+// left goes back to being one this app has seen, which is what closing a project already means -
+// and an entry that already named the target is that same project reached twice.
+//
+// Null is a refusal, and it has one cause worth the word: another entry is already OPEN on the
+// target. One folder is one project here, and one project is one tile.
+export function rebound(entries, from, to) {
+  const slot = entries.find((entry) => entry.folder === from);
+  if (!slot?.open || from === to) return null;
+  if (entries.some((entry) => entry.open && entry.folder === to)) return null;
+  return [
+    ...entries
+      .filter((entry) => entry.folder !== to)
+      .map((entry) => (entry.folder === from ? { ...entry, folder: to } : entry)),
+    { folder: from, open: false },
+  ];
+}

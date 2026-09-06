@@ -1,5 +1,6 @@
 import { WebContentsView, shell } from 'electron';
 
+import { BringUp } from './bringup.js';
 import { PARTITION, files } from './paths.js';
 import { routeNavigation, routePopup } from './links.js';
 
@@ -14,12 +15,17 @@ const ZOOM_LIMIT = 8;
 export class Tiles {
   #window;
   #server;
+  #onFollow;
+  #bringUp = new BringUp();
   #views = new Map();
+  // The last context each window was told, so a document that arrives after it was sent can be
+  // told again. Compared before sending, which is what keeps a render from saying it twice.
   #contexts = new Map();
 
-  constructor({ window, server }) {
+  constructor({ window, server, onFollow = () => {} }) {
     this.#window = window;
     this.#server = server;
+    this.#onFollow = onFollow;
   }
 
   sync(projects, rects) {
@@ -81,10 +87,36 @@ export class Tiles {
     const view = this.#views.get(folder);
     if (!view || view.webContents.isDestroyed()) return;
     const context = contextOf(patch);
-    const signature = JSON.stringify(context);
-    if (this.#contexts.get(folder) === signature) return;
-    this.#contexts.set(folder, signature);
+    if (JSON.stringify(this.#contexts.get(folder)) === JSON.stringify(context)) return;
+    this.#contexts.set(folder, context);
     view.webContents.send('ct:event', { type: 'context', payload: context });
+  }
+
+  // The window stays and only the slot it answers to moves, so the next sync finds this view
+  // already standing in the new folder's place rather than tearing down the tile that just
+  // navigated and building another. Called by the desk once the list has agreed to the move.
+  rekey(from, to) {
+    const view = this.#views.get(from);
+    if (!view) return;
+    this.#views.delete(from);
+    this.#contexts.delete(from);
+    this.#views.set(to, view);
+  }
+
+  // Back onto the folder its tile holds, after a move the list refused. The window's own workbench
+  // is already gone - the navigation completed before anything here heard of it - so there is
+  // nothing left to spare by being gentler than a load.
+  reload(project) {
+    const view = project && this.#views.get(project.folder);
+    if (!view || view.webContents.isDestroyed()) return;
+    load(view, this.#server.urlFor(project.folder, project.profile));
+  }
+
+  // Which folder a view is the tile for. Read off the map rather than kept on the view, so a
+  // window that re-points itself has one place to change.
+  #folderOf(view) {
+    for (const [folder, held] of this.#views) if (held === view) return folder;
+    return null;
   }
 
   #ensure(project) {
@@ -111,8 +143,23 @@ export class Tiles {
     view.setBackgroundColor('#00000000');
 
     // A reloaded document is back on the context it was CREATED with, since that one is an
-    // argument rather than a message. Forgetting what was sent makes the next render say it again.
-    view.webContents.on('did-finish-load', () => this.#contexts.delete(project.folder));
+    // argument rather than a message - and a message sent while it was loading reached the
+    // document it was leaving. So the last one is said again once there is something to hear it.
+    view.webContents.on('did-finish-load', () => {
+      const context = this.#contexts.get(this.#folderOf(view));
+      if (context) view.webContents.send('ct:event', { type: 'context', payload: context });
+    });
+
+    // A tile is a WINDOW, and a window can re-point itself: File > Open Folder, or a row of the
+    // welcome page's Recent list, is a navigation to another `?folder=` on this same origin, which
+    // links.js allows because it is the workbench going where the workbench may go. What arrives
+    // is this project standing on another folder. Unheard, the name, the hue and every Claude
+    // session in this tile would go on describing the folder it left.
+    view.webContents.on('did-navigate', (_event, url) => {
+      const from = this.#folderOf(view);
+      const to = this.#server.folderOf(url);
+      if (from && to && to !== from) this.#onFollow(from, to);
+    });
 
     // Where a link out of this project goes - src/main/links.js is the whole policy. An auth
     // popup keeps its opener and so stays HERE, on the server's origin in this partition, which
@@ -136,9 +183,24 @@ export class Tiles {
 
     this.#views.set(project.folder, view);
     this.#window.contentView.addChildView(view);
-    view.webContents.loadURL(this.#server.urlFor(project.folder, project.profile));
+    // Up a staircase rather than all at once - src/main/bringup.js is why. Placed first, so a
+    // window waiting its turn is a tile in the grid rather than a hole in it.
+    this.#bringUp.take(() => {
+      if (view.webContents.isDestroyed()) return;
+      load(view, this.#server.urlFor(project.folder, project.profile));
+    }, { first: project.focused });
     return view;
   }
+}
+
+// A load superseded by another is ERR_ABORTED - a navigation someone made, not a failure - and
+// `reload` races one deliberately. Matched on `errno`, because the rejection's `code` carries
+// Chromium's description of the error and that arrives empty for exactly this one. [Electron 44]
+const ABORTED = -3;
+function load(view, url) {
+  view.webContents.loadURL(url).catch((error) => {
+    if (error?.errno !== ABORTED) console.error('[tile]', error?.message ?? error);
+  });
 }
 
 function openExternal(url) {

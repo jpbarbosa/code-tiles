@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { arranged, inserted, swapped } from '../src/main/order.js';
+import { arranged, inserted, rebound, swapped } from '../src/main/order.js';
 
 // One project order stands behind the strip, the grid, ⌃⌘1…⌃⌘9 and the saved list, and the two
 // drag gestures are the only things that rewrite it. Both speak for the projects that are OPEN,
@@ -58,4 +58,39 @@ test('an order that no longer names every open project is dropped whole', () => 
   assert.deepEqual(folders(arranged(entries, ['d', 'a', 'b'])), order);
   assert.deepEqual(folders(arranged(entries, ['d', 'a', 'b', 'b'])), order, 'nor the same one twice');
   assert.deepEqual(folders(arranged(entries, ['d', 'c', 'b', 'a'])), ['d', 'c', 'b', 'a']);
+});
+
+// A tile is a WINDOW, and a window can be re-pointed from the inside - File > Open Folder, a row
+// of the welcome page's Recent list. The project standing in that slot changes folder, and the
+// thing worth pinning down is that the slot itself does not move.
+const shown = (entries) => entries.filter((entry) => entry.open).map((entry) => entry.folder);
+
+test('a window that re-points itself keeps the slot it was already in', () => {
+  const entries = order.map((folder) => ({ folder, open: true }));
+  const next = rebound(entries, 'b', 'x');
+
+  assert.deepEqual(shown(next), ['a', 'x', 'c', 'd'], 'the tile did not move, so neither did it');
+  assert.deepEqual(entries.map((entry) => entry.folder), order, 'and the list handed in is untouched');
+});
+
+test('the folder it left is one this app has seen, which is what the picker lists', () => {
+  const next = rebound([{ folder: 'a', open: true }], 'a', 'x');
+
+  assert.deepEqual(next, [{ folder: 'x', open: true }, { folder: 'a', open: false }]);
+});
+
+test('a folder another tile already holds is refused: one folder is one project', () => {
+  const entries = [{ folder: 'a', open: true }, { folder: 'b', open: true }];
+
+  assert.equal(rebound(entries, 'a', 'b'), null);
+  assert.equal(rebound(entries, 'a', 'a'), null, 'and a window that went nowhere is no move');
+  assert.equal(rebound(entries, 'z', 'x'), null, 'nor is a folder that holds no slot');
+});
+
+test('a closed entry is not a second project, so the tile takes its folder', () => {
+  const entries = [{ folder: 'a', open: true }, { folder: 'b', open: false }];
+  const next = rebound(entries, 'a', 'b');
+
+  assert.deepEqual(shown(next), ['b']);
+  assert.deepEqual(next.map((entry) => entry.folder), ['b', 'a'], 'one entry per folder, still');
 });

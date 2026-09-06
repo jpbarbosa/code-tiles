@@ -136,7 +136,7 @@ app.whenReady().then(async () => {
 
   const projects = new Projects(store, { profileFor, claudeStates: (folders) => activity.states(folders) });
   window = createWindow();
-  const tiles = new Tiles({ window, server });
+  const tiles = new Tiles({ window, server, onFollow: (from, to) => desk.follow(from, to) });
   const preferences = new Preferences({ store, parent: window });
   const desk = new Desk({ window, projects, tiles, activity, preferences });
   activity.start();

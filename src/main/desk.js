@@ -198,6 +198,28 @@ export class Desk {
     this.render();
   }
 
+  // A window that re-pointed itself, reported by the view that did it. Taking the move is the
+  // list's call; what is here is that the view has to be re-keyed BEFORE anything renders, or the
+  // sync that follows destroys the very window that navigated and opens a fresh one beside it.
+  follow(from, to) {
+    const { folder, moved } = this.#projects.rebind(from, to);
+    if (moved) {
+      this.#tiles.rekey(from, folder);
+      // What the window last said its parts were doing belonged to the workbench it just left. It
+      // says so again as it boots, and holding the old answer would put it on the buttons the day
+      // that folder is opened again.
+      this.#parts.delete(from);
+      this.render();
+      return;
+    }
+    // Refused, so the tile goes back to the folder it holds. Where the refusal was another window
+    // already standing on that folder, the focus goes there: it is still what was asked for, and
+    // that is where it is open.
+    const open = this.#projects.open();
+    this.#tiles.reload(open.find((project) => project.folder === from));
+    if (open.some((project) => project.folder === folder)) this.focus(folder);
+  }
+
   close(folder) {
     this.#projects.close(folder);
     this.#parts.delete(folder);

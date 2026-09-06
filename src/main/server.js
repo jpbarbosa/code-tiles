@@ -33,6 +33,14 @@ export class CodeServer {
     return `${url}&payload=${encodeURIComponent(JSON.stringify([['profile', profile]]))}`;
   }
 
+  // The same shape read the other way: which folder a window is standing on. A tile can re-point
+  // itself from the inside, so the URL has to be read back as well as written, and one place
+  // knows how it is spelled. Null where there is no folder in it, which is a window that closed
+  // its own - an empty workbench is not a project.
+  folderOf(url) {
+    try { return new URL(url).searchParams.get('folder') || null; } catch { return null; }
+  }
+
   async start(preferredPort) {
     this.#reapOrphan();
     this.#port = (await isFree(preferredPort)) ? preferredPort : await freePort();

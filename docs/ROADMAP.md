@@ -9,6 +9,15 @@ What the tree does today, what comes next, and what to check when the server is 
   start from a pidfile whose command line is checked before anything is signalled.
 - One `WebContentsView` per project on one partition, placed by main from pure geometry.
 - Grid and single view, focus, open, close, project order, all persisted.
+- A tile is a WINDOW, so it can re-point itself: File > Open Folder inside one, or a row of its
+  welcome page's Recent list, navigates to another `?folder=`. The app follows - the view is
+  re-keyed in place rather than torn down, the slot keeps its position in the grid, and the folder
+  it left stays in the picker. One folder is one project, so a folder another tile already holds
+  is refused: that window goes back to its own and the tile holding it takes the focus.
+- Windows are brought up on a staircase rather than all at once, because every tile is a separate
+  `claude` reading and writing ONE login, and simultaneous OAuth refreshes rotate the single-use
+  refresh token out from under each other. The focused tile never waits; `CODE_TILES_STAGGER_MS=0`
+  turns it off. `src/main/bringup.js`.
 - Gutter resizing: the gutter between two tiles is the handle, a double-click evens its axis and
   `⌃⌘0` evens both. Shares rather than pixels, kept per grid SHAPE, persisted.
 - Maximize: one project takes a column of about seven tenths and the rest stack live beside it,
