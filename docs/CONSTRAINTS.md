@@ -448,3 +448,27 @@ started on a throwaway `--user-data-dir` - which is how a packaged build is trie
 one is up - repoints the machine's hooks at that directory, and deleting it afterwards leaves
 every hook failing on every tool call. Put the path back by hand, or start the real app once.
 **[checked]**
+
+**`ictool` builds a `.icon` headlessly, and everything it exports is FULL-BLEED.** The tool is
+`Icon Composer.app/Contents/Executables/ictool`, and the document beside it is a plain directory -
+`icon.json` plus an `Assets/` folder - so `npm run icon` drives the whole chain without opening
+Xcode, Icon Composer or Blender. What no error mentions: every export fills its canvas edge to
+edge, while macOS 26's own apps ship their legacy `.icns` at 206/256 of theirs with a soft shadow
+in the margin. Pack an ictool render straight into an `.icns` and the Dock draws the app ~11%
+larger than every neighbour, which reads as a heavy icon rather than a wrong one.
+`scripts/iconset.swift` re-insets to that ratio. **[checked]**
+- measured against Notes, Maps, Calculator and Reminders, all 206/256 with the shadow out to 224.
+- and the re-inset is what the ART has to be sized against, not ictool's canvas: content laid out
+  to look right at 1024 comes out a fifth smaller once it is packed, which reads as a timid icon
+  next to its neighbours. `ICON_BLOCK` in `scripts/build-icon.py` is that dial, at 928 of 1024 to
+  put the tiles within 3% of the plate share the hand-rendered icon had.
+
+**Layer order inside a group runs front-to-back; group order runs back-to-front.** The FIRST entry
+in a group's `layers` paints on top, and the LAST entry in `groups` paints on top. Getting it
+backwards is silent - the tiles simply cover their own headers and pills, every rendition still
+exports, and nothing warns. **[checked]**
+
+**A `.icon` is composited by the system, so anything the render bakes is drawn twice.** The chassis
+belongs in `fill`, not in the geometry; the bevel, the ambient occlusion and the drop shadow belong
+to nothing at all. `scripts/build-icon.py` renders flat emission over an orthographic camera with
+the view transform on `Standard`, which is what makes the PNG's pixels match the hex it was given.

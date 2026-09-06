@@ -171,7 +171,7 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 | Read a change back out of a live window | by hand | `CT_PROBE=1 npm start` | `scripts/dev-probe.js` reads every seam's effect out of each guest |
 | The pinned code-server fetched into `vendor/` | yes | yes | |
 | A packaged, signed `Code Tiles.app` | yes | yes | `npm run install-app`. Every signing rule the old tree paid for carried over - a real identity so TCC grants survive, no `--deep`, packager rewriting the vendor symlinks - plus one it never hit: `ditto` MERGES, so a file the last build shipped and this one does not stays behind and breaks the seal |
-| An app icon | rendered in Blender, `.icns` and dock icon | yes | `assets/icon.icns` on the bundle, the same art the app's own tile wears |
+| An app icon | rendered in Blender, `.icns` and dock icon | yes | rebuilt as a macOS 26 `.icon`: `npm run icon` renders the layers in headless Blender, composites them through `ictool` and packs `assets/icon.icns`. `assets/icon.icon` is the source, so the art is reproducible rather than a binary nobody can regenerate |
 | The same Claude patches applied to desktop VS Code by a LaunchAgent | yes | **no** | `scripts/patch-vscode-claude.js` and its plist live in the old tree |
 | A data-directory migration script | yes | **n/a** | this tree has its own data directory and no history to move |
 

@@ -8,7 +8,8 @@
   "main": "src/main/index.js",
   "scripts": {
     "start": "electron .",
-    "package": "electron-packager . --overwrite --platform=darwin --arch=arm64 --icon=assets/icon.icns --app-bundle-id=io.jp7.codetiles --extra-resource=vendor/code-server --ignore='^/dist' --ignore='^/vendor' --ignore='^/docs' --ignore='^/test' --ignore='^/\\.claude' --out=dist",
+    "package": "electron-packager . --overwrite --platform=darwin --arch=arm64 --icon=assets/icon.icns --app-bundle-id=io.jp7.codetiles --extra-resource=vendor/code-server --ignore='^/dist' --ignore='^/assets/icon\\.icon' --ignore='^/vendor' --ignore='^/docs' --ignore='^/test' --ignore='^/\\.claude' --out=dist",
+    "icon": "bash scripts/icon.sh",
     "install-app": "bash scripts/install.sh",
     "fetch-code-server": "bash scripts/fetch-code-server.sh",
     "test": "node --test test/*.test.js"
