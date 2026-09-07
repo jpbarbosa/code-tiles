@@ -18,6 +18,23 @@ const patches = declaredPatches(seams);
 // The served file as it is written today, minus the 18MB either side: the shape each patch
 // matches, keyed by the marker it writes, since a seam may own more than one. A patch with no
 // shape here is a patch nobody can re-derive, so the loop below fails rather than skipping it.
+// The bar's own arithmetic, down to the two places an id can reach the column: the list it is
+// about to show, and the active item it pushes back into that list afterwards.
+const BAR = 'class CompositeBar extends Widget{'
+  + 'updateCompositeSwitcher(){'
+  + 'const bar=this.compositeSwitcherBar;if(!bar||!this.dimension)return;'
+  + 'let toShow=this.model.visibleItems.filter(c=>c.pinned||this.model.activeItem'
+  + '&&this.model.activeItem.id===c.id).map(c=>c.id),'
+  + 'maxVisible=toShow.length,total=toShow.length,size=0,'
+  + 'limit=this.options.orientation===1?this.dimension.height:this.dimension.width;'
+  + 'for(let i=0;i<toShow.length;i++){const s=this.compositeSizeInBar.get(toShow[i]);'
+  + 'if(size+s>limit){maxVisible=i;break}size+=s}'
+  + 'for(total>maxVisible&&(toShow=toShow.slice(0,maxVisible)),'
+  + 'this.model.activeItem&&toShow.every(c=>!!this.model.activeItem&&c!==this.model.activeItem.id)'
+  + '&&(size+=this.compositeSizeInBar.get(this.model.activeItem.id),'
+  + 'toShow.push(this.model.activeItem.id));size>limit&&toShow.length;)toShow.pop();'
+  + 'return{toShow,total,maxVisible}}}';
+
 const SHAPES = {
   ':scope > .ct-footer': 'class Part extends Component{'
     + 'create(e,t){this.parent=e,this.titleArea=this.createTitleArea(e,t),'
@@ -48,18 +65,61 @@ const SHAPES = {
   'ct:secret-fresh': 'class LocalStorageSecretStorageProvider{'
     + 'constructor(crypto){this.crypto=crypto;this.storageKey="secrets.provider";'
     + 'this.type="persisted";this.secretsPromise=this.load()}}',
-  'ct:bar-views': 'class CompositeBar extends Widget{'
-    + 'updateCompositeSwitcher(){'
-    + 'const bar=this.compositeSwitcherBar;if(!bar||!this.dimension)return;'
-    + 'let toShow=this.model.visibleItems.filter(c=>c.pinned||this.model.activeItem'
-    + '&&this.model.activeItem.id===c.id).map(c=>c.id),'
-    + 'maxVisible=toShow.length,total=toShow.length,size=0,'
-    + 'limit=this.options.orientation===1?this.dimension.height:this.dimension.width}}',
+  // One shape for the chrome seam's two patches, because they are two clauses of one method and a
+  // fixture that held only the first could not show that the second undoes it.
+  'ct:bar-views': BAR,
+  'ct:bar-active': BAR,
   'ct:no-walkthroughs': 'class GettingStartedPage extends EditorPane{'
     + 'buildGettingStartedWalkthroughsList(){'
     + 'const list=this.gettingStartedList.value=new Index({klass:"getting-started",limit:5});'
     + 'return list.setEntries(this.gettingStartedCategories),list}}',
 };
+
+// The shape above is arithmetic, so it can be RUN - which is the only way to see that the two
+// chrome patches answer the same question at both doors. What a bar with five pinned views draws
+// after each of them, at a height where all five would fit.
+function drawn(markers, activeId) {
+  let source = BAR;
+  for (const { patch } of declaredPatches(seams)) {
+    if (markers.includes(patch.marker)) source = source.replace(patch.find, patch.replace);
+  }
+  const ids = [
+    'workbench.view.explorer', 'workbench.view.search', 'workbench.view.scm',
+    'workbench.view.extensions', 'workbench.view.debug',
+  ];
+  const activeItem = activeId ? { id: activeId, pinned: true } : undefined;
+  const bar = new (new Function('Widget', `return ${source}`)(class {}))();
+  return Object.getPrototypeOf(bar).updateCompositeSwitcher.call({
+    compositeSwitcherBar: {},
+    dimension: { height: 400, width: 48 },
+    options: { orientation: 1 },
+    compositeSizeInBar: new Map(ids.map((id) => [id, 22])),
+    model: { visibleItems: ids.map((id) => ({ id, pinned: true })), activeItem },
+  });
+}
+
+const LIVED_IN = ['workbench.view.explorer', 'workbench.view.search', 'workbench.view.scm'];
+
+test('the bar draws the views a project is worked in, and no others', () => {
+  const { toShow, total } = drawn(['ct:bar-views', 'ct:bar-active'], 'workbench.view.explorer');
+  assert.deepEqual(toShow, LIVED_IN);
+  // The count the overflow is decided by is left whole, or there is no Additional Views button
+  // for the two it dropped to appear under.
+  assert.equal(total, 5);
+});
+
+test('a view in the overflow stays there while it is the one you are in', () => {
+  for (const id of ['workbench.view.extensions', 'workbench.view.debug']) {
+    assert.deepEqual(drawn(['ct:bar-views', 'ct:bar-active'], id).toShow, LIVED_IN);
+  }
+});
+
+// Without the second patch the first one is undone for exactly one item, which is the state this
+// pair replaced: Extensions took a place in the column for as long as it was open.
+test('bar-views alone lets the open view back into the column', () => {
+  const { toShow } = drawn(['ct:bar-views'], 'workbench.view.extensions');
+  assert.deepEqual(toShow, [...LIVED_IN, 'workbench.view.extensions']);
+});
 
 test('every patch rewrites its shape once, into code that parses', () => {
   for (const { name, patch } of patches) {

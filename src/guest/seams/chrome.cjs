@@ -19,11 +19,11 @@
 // per-workspace layout fact in docs/CONSTRAINTS.md.
 //
 // The activity bar's own list is the exception, and the one place here with no switch behind it.
-// A tile is narrow, so the bar keeps the four views a project is actually worked in - and the
-// rest are not HIDDEN, they move into the "Additional Views" overflow the editor already draws
-// when a bar runs out of room, which names them, badges them, opens them, and puts one back in
-// the column for as long as it is the view you are in. The accounts and profile items at the
-// foot of the bar are neither: they are a second action bar and are left alone.
+// A tile is narrow, so the bar keeps the views a project is actually WORKED in - and the rest are
+// not HIDDEN, they move into the "Additional Views" overflow the editor already draws when a bar
+// runs out of room, which names them, badges them, opens them, and puts one back in the column
+// for as long as it is the view you are in. The accounts and profile items at the foot of the bar
+// are neither: they are a second action bar and are left alone.
 //
 // The switch that would say this does not exist: pinning is a per-profile choice made from the
 // bar's context menu and kept in the browser's own storage, and the overflow is driven by how
@@ -33,12 +33,21 @@
 // `workbench.view.*` ids, because the panel and the secondary side bar run the same class.
 //
 // Unpatched, the bar shows every view it has, which is a stock window. [code-server 4.135.0]
+
+// Extensions is off this list on purpose: installing one is a thing you do to your VS Code, which
+// this app mirrors rather than being where it happens - a tile that installed one would have it
+// pruned on the next start. It reads as the same kind of view as Run and Debug or Testing, so it
+// is filed with them.
 const KEPT = [
   'workbench.view.explorer',
   'workbench.view.search',
   'workbench.view.scm',
-  'workbench.view.extensions',
 ];
+
+// The one question both patches ask, written into the bundle at each of the two places the bar
+// can put an item in the column.
+const keeps = (id) => `(this.options.orientation!==1||!${id}.startsWith("workbench.view.")`
+  + `||${JSON.stringify(KEPT)}.includes(${id}))`;
 
 module.exports = {
   name: 'chrome',
@@ -46,15 +55,26 @@ module.exports = {
   // The rewrite restates the two counts instead of re-emitting them: the total the overflow is
   // decided by is taken BEFORE the filter, and the "how many fit" default after it, which is what
   // leaves the shape gone rather than matched forever.
-  patch: {
+  //
+  // The second is the same rule at the bar's other door. Having filtered the list, the editor then
+  // pushes the ACTIVE item back into it unconditionally, so an overflowed view took a place in the
+  // column for as long as it was open - the one state where the four kept ids were five. The
+  // Additional Views menu marks the open one instead, which is where it is listed anyway.
+  patch: [{
     file: 'lib/vscode/out/vs/code/browser/workbench/workbench.js',
     marker: 'ct:bar-views',
     find: /let ([\w$]+)=this\.model\.visibleItems\.filter\(([\w$]+)=>\2\.pinned\|\|this\.model\.activeItem&&this\.model\.activeItem\.id===\2\.id\)\.map\(([\w$]+)=>\3\.id\),([\w$]+)=\1\.length,([\w$]+)=\1\.length,/,
     replace: 'let $1=this.model.visibleItems.filter($2=>$2.pinned||this.model.activeItem'
       + '&&this.model.activeItem.id===$2.id).map($3=>$3.id),$5=$1.length,'
-      + `$4=($1=$1.filter(id=>this.options.orientation!==1||!id.startsWith("workbench.view.")`
-      + `||${JSON.stringify(KEPT)}.includes(id))).length/* ct:bar-views */,`,
-  },
+      + `$4=($1=$1.filter(id=>${keeps('id')})).length/* ct:bar-views */,`,
+  }, {
+    file: 'lib/vscode/out/vs/code/browser/workbench/workbench.js',
+    marker: 'ct:bar-active',
+    find: /this\.model\.activeItem&&([\w$]+)\.every\(([\w$]+)=>!!this\.model\.activeItem&&\2!==this\.model\.activeItem\.id\)&&\(([\w$]+)\+=this\.compositeSizeInBar\.get\(this\.model\.activeItem\.id\),\1\.push\(this\.model\.activeItem\.id\)\)/,
+    replace: `this.model.activeItem&&${keeps('this.model.activeItem.id')}/* ct:bar-active */`
+      + '&&$1.every($2=>!!this.model.activeItem&&$2!==this.model.activeItem.id)'
+      + '&&($3+=this.compositeSizeInBar.get(this.model.activeItem.id),$1.push(this.model.activeItem.id))',
+  }],
 
   settings: {
     'window.commandCenter': false,

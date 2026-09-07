@@ -186,6 +186,15 @@ compares unequal to everything; and the workbench deletes every directory under 
 that no registered profile claims, in every window, so a registry that goes missing takes the
 mirror with it. **[checked]**
 
+**A patch's marker says THAT it was applied, never which version of it was.** `patchServer`
+skips any file already carrying the marker, so editing a patch - and one built from a constant is
+edited by editing that constant - is a silent no-op on a tree that has been patched once. The
+vendored server is patched in place and packaged as a resource, so a repackage carries the stale
+bundle in rather than a fresh one, and `fetch-code-server` short-circuits on the pinned version
+rather than replacing it. Changing a patch means `rm -rf vendor/code-server` before the fetch.
+**[checked]** - moving Extensions out of the activity bar changed nothing until the tree was
+replaced.
+
 **Open VSX's copy of an extension is a repackage, not a mirror, and what it drops can be the
 whole point.** `ms-python.python` there is one universal build with no `python-env-tools`, so
 `pet` - the native locator the extension shells out to for every interpreter - is simply absent.

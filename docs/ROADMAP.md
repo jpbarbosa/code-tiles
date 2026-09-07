@@ -128,10 +128,12 @@ What the tree does today, what comes next, and what to check when the server is 
   `card` (the window clipped to the radius the shell's glow is already struck for, its corners
   left unpainted over a transparent view, so what is in them is the shell's ground and its glow),
   `chrome` (title bar, status bar and the chat panel gone through the editor's own settings,
-  no dead band; and the activity bar down to the four views a project is worked in, the rest moved
+  no dead band; and the activity bar down to the three views a project is worked in, the rest moved
   into the editor's own Additional Views overflow by a patch that filters the list the bar is about
   to show while leaving the count it compares that list against whole - which is the state a bar
-  with too little room is already in, so the overflow is the editor's from there on),
+  with too little room is already in, so the overflow is the editor's from there on; and a second
+  patch at the same method's other door, where the editor pushes the ACTIVE item back into that
+  list, so an overflowed view no longer takes a place in the column for as long as it is open),
   `welcome` (the welcome page saying Code Tiles rather than code-server, without Coder's ad for
   their hosted product and without the walkthrough list - the first two are the server's own
   switches, taken at the spawn, and the third is a patch that hands the page no walkthroughs so
