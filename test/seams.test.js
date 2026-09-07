@@ -212,3 +212,66 @@ function webviewSheet(seam, context, raws) {
   assert.equal(element.parentElement, root, 'the sheet has to land on the root, not in <head>');
   return element.textContent;
 }
+
+// The chat tab's icon as the workbench actually spells it: the tab carries the panel's view type
+// on `data-resource-name`, and the icon is an inline background-image pointing at a remote
+// resource whose `path` is percent-encoded. All three are things that can move under the seam,
+// and the only symptom would be a log that stays empty - so the markup is a fixture, captured
+// from a live window running code-server against Claude Code 2.1.263.
+const TAB_MARKUP = {
+  resource: 'webview-claudeVSCodePanel-f4a625b3-7037-4f01-9542-e0d1c8ad25f4',
+  background: 'url("http://127.0.0.1:57846/stable-de89acbcdce9d9b870008a270c9f6466993d91f4'
+    + '/vscode-remote-resource?path=%2FUsers%2Fjp%2FLibrary%2FApplication%20Support%2FCode%20Tiles'
+    + '%2Fextensions%2Fanthropic.claude-code-2.1.263-darwin-arm64%2Fresources%2Fct-claude-working.svg'
+    + '&tkn=abc")',
+};
+
+// The seam's init, driven the way a window drives it, with the observer and the timer stubbed so
+// the report is synchronous. Returns every payload it sent.
+function chatIconReports(icons) {
+  const seam = seams.find((candidate) => candidate.name === 'chat-icon');
+  const nodes = icons.map((background) => ({ style: { backgroundImage: background } }));
+  const workbench = { querySelectorAll: () => nodes };
+  const sent = [];
+  const previous = globalThis.MutationObserver;
+  globalThis.MutationObserver = class { observe() {} };
+  try {
+    seam.init({
+      whenWorkbench: (callback) => callback(workbench),
+      send: (type, payload) => sent.push({ type, payload }),
+    });
+  } finally {
+    globalThis.MutationObserver = previous;
+  }
+  return sent;
+}
+
+test('the chat-icon seam reports the icon file name a live tab carries', () => {
+  const sent = chatIconReports([TAB_MARKUP.background]);
+  assert.deepEqual(sent, [{ type: 'claude:icon', payload: { icons: ['ct-claude-working.svg'] } }]);
+});
+
+test('the chat-icon seam reports an empty list when no Claude tab is open', () => {
+  const sent = chatIconReports([]);
+  assert.deepEqual(sent, [{ type: 'claude:icon', payload: { icons: [] } }]);
+});
+
+// The selector has to name the tab by its view type, or it reports every tab in the window.
+test('the chat-icon seam looks the Claude panel up by its view type', () => {
+  const seam = seams.find((candidate) => candidate.name === 'chat-icon');
+  const asked = [];
+  const previous = globalThis.MutationObserver;
+  globalThis.MutationObserver = class { observe() {} };
+  try {
+    seam.init({
+      whenWorkbench: (callback) => callback({ querySelectorAll: (selector) => (asked.push(selector), []) }),
+      send: () => {},
+    });
+  } finally {
+    globalThis.MutationObserver = previous;
+  }
+  assert.equal(asked.length, 1);
+  assert.match(asked[0], /^\.tab\[data-resource-name\^=/);
+  assert.ok(TAB_MARKUP.resource.startsWith(asked[0].match(/\^="([^"]+)"/)[1]),
+    `${asked[0]} would not match ${TAB_MARKUP.resource}`);
+});

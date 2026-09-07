@@ -168,7 +168,9 @@ What the tree does today, what comes next, and what to check when the server is 
   drawn on, delegated off the workbench because the menubar is rebuilt whenever the menu changes),
   `chat-icon` (the same three states on the Claude chat tab's own icon, which is the extension's
   `panelTab.iconPath` pointed at SVGs that animate themselves - a patch to the extension's bundle,
-  since a still image is all VS Code has and stepping one through frames blinks over http),
+  since a still image is all VS Code has and stepping one through frames blinks over http; its
+  `init` half reports the icon the tab ended up with, which is the only way to watch that patch
+  work rather than land),
   `close` (the × that closes this project, in the corner the window keeps for itself, on a plate
   of the project's own hue - the one the branch pills and the side bar's title row already wear,
   so the app's marks in a window read as one hand. One button belonging to the WINDOW rather than
@@ -270,6 +272,30 @@ The activity bar is the one part the scaling lands unevenly on: the column the l
 reserves for it shrinks with the unit and the bar's own width does not, so the part beside it gets
 a doubled margin to take the difference back. That part is the side bar, or the editor once the
 side bar is hidden - which is why the doubled margin is written against both.
+
+## Claude Events, and why the two signals need one window
+
+View > Claude Events opens a log of what the app knows about Claude, from BOTH of the places it
+knows it: `hook` is the conclusion main draws from Claude Code's own hooks, which is what a badge
+ring paints, and `icon` is the file name a window reports its chat tab is wearing. They come from
+different processes and neither can see the other - the hooks land on disk for main, the tab icon
+is decided inside the extension host - so the only thing that can hold them to each other is a
+reader looking at both.
+
+**A standing disagreement is the whole point, and it runs both ways.** A spinner that never
+started leaves no other trace - the patch lands, the states have not drifted, and the tab is
+simply still - and a screenshot cannot say so either, three of the four icons being still images
+and the fourth differing only by turning. The mirror case is just as real: the tab turned through
+ninety seconds an empty transcript, because the extension calls a booting session `running`. So
+the flag is `working` against a tab that is not turning OR a turning tab against anything else.
+
+**A session in a terminal has no chat tab, and no opinion.** It is the one row that never flags,
+which is why the rule asks whether the icon HAS a view before comparing it: `no chat tab` beside
+`working` is a perfectly ordinary `claude` at a prompt.
+
+A repeat is dropped rather than logged, so the window is quiet while Claude is. The seam reporting
+the icon coalesces on a timer rather than a frame, because a tile in single-project mode is hidden
+and only `requestAnimationFrame` stops outright there.
 
 ## When the Claude Code extension updates
 

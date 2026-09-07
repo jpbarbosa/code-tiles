@@ -153,8 +153,42 @@ function apply(source) {
   return { source: patched, notes: drift(source) };
 }
 
+// The icon the workbench actually ended up with, reported for the Claude Events log. It is the
+// only way to watch the patch above WORK rather than land: that code runs in the extension host,
+// which has no way back to the app. The file NAME is the state, so nothing here reads an image.
+const TAB_ICON = '.tab[data-resource-name^="webview-claude"] .monaco-icon-label-iconpath';
+const RESOURCE = /path=([^&"')]+)/;
+
+const iconName = (background) => {
+  const found = RESOURCE.exec(background || '');
+  return found ? decodeURIComponent(found[1]).split('/').pop() : '';
+};
+
 module.exports = {
   name: 'chat-icon',
+  init(api) {
+    api.whenWorkbench((workbench) => {
+      let reported = null;
+      let waiting = null;
+      const report = () => {
+        waiting = null;
+        const icons = [...workbench.querySelectorAll(TAB_ICON)].map((node) => iconName(node.style.backgroundImage));
+        const signature = icons.join(', ');
+        if (signature === reported) return;
+        reported = signature;
+        api.send('claude:icon', { icons });
+      };
+
+      // Coalesced, because the filter is `style` and the workbench writes that on every scroll.
+      // A timer rather than a frame: a tile you are not looking at throttles both, but only
+      // requestAnimationFrame stops outright, and single-project mode hides every other tile.
+      const schedule = () => { waiting = waiting || setTimeout(report, 50); };
+      new MutationObserver(schedule).observe(workbench, {
+        childList: true, subtree: true, attributes: true, attributeFilter: ['style'],
+      });
+      report();
+    });
+  },
   extension: {
     id: /^anthropic\.claude-code-/,
     file: 'extension.js',

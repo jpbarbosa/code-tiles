@@ -9,7 +9,7 @@ import { APP_CHORD, CYCLE_CHORD, DEVTOOLS_CHORD, EDITOR_CHORD, IS_MAC } from './
 // The editor wins any chord it binds itself, since its dispatcher sees the key before the menu
 // does, and the app's family is not as free as it looks: on macOS Ctrl+Cmd+I is Chat and
 // Ctrl+Cmd+1/9 move an editor between groups. docs/CONSTRAINTS.md says how to check a chord.
-export function installMenu({ desk, preferences, pick }) {
+export function installMenu({ desk, preferences, pick, events }) {
   const projectNumbers = Array.from({ length: 9 }, (_, i) => ({
     label: `Project ${i + 1}`,
     accelerator: `${APP_CHORD}+${i + 1}`,
@@ -77,6 +77,9 @@ export function installMenu({ desk, preferences, pick }) {
         // grid. These open detached, and the first one opens the window you are working in.
         { label: 'Developer Tools', accelerator: DEVTOOLS_CHORD, click: () => desk.inspect('project') },
         { label: 'Shell Developer Tools', accelerator: `Shift+${APP_CHORD}+I`, click: () => desk.inspect('shell') },
+        // No accelerator: every chord left in this family is one the editor may bind itself, and
+        // a log is opened by hand once, not reached for mid-keystroke.
+        { label: 'Claude Events', click: () => events.open() },
       ],
     },
     {

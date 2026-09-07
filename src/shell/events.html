@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Claude Events</title>
+  <!-- One small window, so it carries its own style rather than pulling the strip's in. It is
+       drawn by the OS, above the tiles, which is the whole reason it is a window at all. -->
+  <style>
+    :root { color-scheme: dark; }
+
+    body {
+      margin: 0;
+      background: #232325;
+      color: #d6d6d8;
+      font: 12px/1.3 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      cursor: default;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: #8b8b90;
+    }
+
+    header {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px 14px 11px;
+      border-bottom: 1px solid rgb(255 255 255 / 0.09);
+    }
+
+    .head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+
+    #now { display: flex; flex-direction: column; gap: 3px; }
+    #now .line { display: grid; grid-template-columns: 140px 80px 1fr; gap: 10px; align-items: baseline; }
+    #now .project { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #now .hook { color: #8b8b90; }
+    #now .icon { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; color: #8b8b90; }
+
+    /* The whole reason the two sources share a window: one of them is wrong, and either can be. */
+    #now .line.disagrees .hook,
+    #now .line.disagrees .icon { color: #f0883e; }
+
+    #log {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 8px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      user-select: text;
+    }
+
+    .row { display: grid; grid-template-columns: 62px 140px 34px 1fr; gap: 10px; align-items: baseline; }
+    .row .at { color: #6e6e74; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+    .row .project { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row .source { color: #6e6e74; font-size: 10.5px; }
+    .row .value { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+    .row.hook .value { color: #b9b9be; font-family: inherit; font-size: 12px; }
+
+    .quiet { color: #6e6e74; }
+
+    button {
+      flex: 0 0 auto;
+      height: 20px;
+      padding: 0 9px;
+      border: 0;
+      border-radius: 5px;
+      background: rgb(255 255 255 / 0.1);
+      color: inherit;
+      font: inherit;
+      font-size: 11px;
+      cursor: default;
+    }
+
+    button:hover { background: rgb(255 255 255 / 0.16); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="head">
+      <h1>Now</h1>
+      <button id="clear" type="button">Clear log</button>
+    </div>
+    <div id="now"></div>
+  </header>
+
+  <div id="log"></div>
+
+  <script type="module">
+    const now = document.getElementById('now');
+    const log = document.getElementById('log');
+    const clear = document.getElementById('clear');
+
+    // Both spellings come from the seam, so they are named once here rather than quoted twice.
+    const WORKING = 'ct-claude-working.svg';
+    const NO_TAB = 'no chat tab';
+
+    const time = (at) => new Date(at).toTimeString().slice(0, 8);
+    const short = (folder) => folder.split('/').pop() || folder;
+
+    // Both ways round, because either can be the liar: a badge that will not turn during a turn,
+    // and a tab that turns through ninety seconds the transcript has nothing in. A session in a
+    // TERMINAL has no chat tab and so no opinion, which is the one case that never disagrees.
+    const disagrees = (pair) => {
+      if (!pair.icon || pair.icon === NO_TAB) return false;
+      return pair.icon.includes(WORKING) !== (pair.hook === 'working');
+    };
+
+    function renderNow(pairs) {
+      const lines = Object.entries(pairs).sort(([a], [b]) => a.localeCompare(b));
+      now.replaceChildren(...lines.map(([folder, pair]) => {
+        const line = document.createElement('div');
+        line.className = disagrees(pair) ? 'line disagrees' : 'line';
+        line.innerHTML = '<span class="project"></span><span class="hook"></span><span class="icon"></span>';
+        line.querySelector('.project').textContent = short(folder);
+        line.querySelector('.hook').textContent = pair.hook || 'idle';
+        line.querySelector('.icon').textContent = pair.icon || '-';
+        return line;
+      }));
+      if (!lines.length) now.append(quiet('Nothing open with a Claude session.'));
+    }
+
+    function append(entry) {
+      // Only follow the tail when you are already at it, so reading history is not yanked away.
+      const pinned = log.scrollTop + log.clientHeight >= log.scrollHeight - 4;
+      const row = document.createElement('div');
+      row.className = `row ${entry.source}`;
+      row.innerHTML = '<span class="at"></span><span class="project"></span>'
+        + '<span class="source"></span><span class="value"></span>';
+      row.querySelector('.at').textContent = time(entry.at);
+      row.querySelector('.project').textContent = short(entry.folder);
+      row.querySelector('.source').textContent = entry.source;
+      row.querySelector('.value').textContent = entry.value;
+      log.append(row);
+      if (pinned) log.scrollTop = log.scrollHeight;
+    }
+
+    function quiet(text) {
+      const node = document.createElement('div');
+      node.className = 'quiet';
+      node.textContent = text;
+      return node;
+    }
+
+    function renderLog(entries) {
+      log.replaceChildren();
+      if (!entries.length) return void log.append(quiet('Nothing yet.'));
+      for (const entry of entries) append(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    clear.addEventListener('click', () => window.ct.call('events:clear'));
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') window.close();
+    });
+
+    window.ct.onEvent((message) => {
+      if (message?.type === 'claude:event') {
+        append(message.payload.entry);
+        renderNow(message.payload.now);
+      }
+      if (message?.type === 'claude:cleared') renderLog([]);
+    });
+
+    const state = await window.ct.call('events:state');
+    renderNow(state.now);
+    renderLog(state.entries);
+  </script>
+</body>
+</html>

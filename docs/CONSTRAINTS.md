@@ -456,6 +456,15 @@ Anything that resumes the session writes a newer marker, so reading it un-latche
 other half of the same file: a hook's stdout is fed BACK to Claude on some events, so a hook that
 prints anything is a hook that talks. **[checked]**
 
+**The extension's `running` is not "a turn is running".** It reports `update_session_state:
+running` while a RESTORED session boots, with nothing in flight: on 2026-09-06 a window opened at
+23:20:41, the panel deserialized, and the session went `running` at 23:20:54 and stayed there until
+23:22:28 - a stretch in which that transcript holds no record at all, the previous turn having been
+interrupted at 23:12:47. So the chat tab spins through a boot, and the hook stream, which only
+`UserPromptSubmit` moves, does not. Neither is wrong; they answer different questions, and the
+Claude Events log exists because only a reader looking at both can tell which one to believe.
+**[checked]** - transcript records against the extension host's own message log, both timestamped.
+
 **A page paints itself dark; `color-scheme` is what tells Chromium so.** The shell's ground is
 hand-painted `--bg`, and that says nothing to the browser: without `color-scheme: dark` the
 document is a LIGHT one, and `-webkit-focus-ring-color` resolves to `rgb(229, 151, 0)` rather

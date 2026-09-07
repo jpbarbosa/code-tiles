@@ -13,6 +13,7 @@ import { Tiles } from './tiles.js';
 import { Usage } from './usage.js';
 import { Picker } from './picker.js';
 import { Preferences } from './preferences.js';
+import { ClaudeEvents } from './events.js';
 import { UsagePopover } from './popover.js';
 import { createWindow } from './window.js';
 import { installIpc } from './ipc.js';
@@ -133,7 +134,12 @@ app.whenReady().then(async () => {
     dir: paths.activity,
     script: paths.activityHook,
     settings: claudePaths().settings,
-    onChange: () => desk.render(),
+    // The log gets the conclusion, not the markers: what a project's badge is about to draw is
+    // the same thing the tab icon is supposed to agree with, and disagreement is what it is for.
+    onChange: () => {
+      for (const project of projects.open()) events.note('hook', project.folder, project.claudeState);
+      desk.render();
+    },
   });
 
   // The favicons, decoded before the first render rather than after it: a project whose hue
@@ -145,6 +151,7 @@ app.whenReady().then(async () => {
   const tiles = new Tiles({ window, server, onFollow: (from, to) => desk.follow(from, to) });
   const preferences = new Preferences({ store, parent: window });
   const desk = new Desk({ window, projects, tiles, activity, preferences });
+  const events = new ClaudeEvents({ parent: window });
   activity.start();
 
   // Account-global, so it is the app's poll rather than one per tile, and it publishes on its
@@ -164,8 +171,9 @@ app.whenReady().then(async () => {
     preferences,
     popover: new UsagePopover({ parent: window }),
     picker: new Picker({ parent: window }),
+    events,
   });
-  installMenu({ desk, preferences, pick: commands['project:pick'] });
+  installMenu({ desk, preferences, pick: commands['project:pick'], events });
 
   window.webContents.on('did-finish-load', () => desk.render());
   for (const event of ['resize', 'enter-full-screen', 'leave-full-screen']) {

@@ -6,7 +6,7 @@ import { homeRow, pickerRows } from './picker-rows.js';
 // a row here, never a channel, and the shell never talks to a guest directly. The table is
 // returned as well as installed: a menu item and the button that does the same thing are one
 // behaviour, and the menu is just another caller.
-export function installIpc({ desk, usage, popover, picker, preferences }) {
+export function installIpc({ desk, usage, popover, picker, preferences, events }) {
   const projects = desk.projects;
   const rows = (query) => pickerRows(projects.all(), { query });
   // The folder dialog, from the picker's last row or in place of a picker with nothing in it.
@@ -37,6 +37,11 @@ export function installIpc({ desk, usage, popover, picker, preferences }) {
       return levels;
     },
     'preferences:height': ({ height }) => preferences.fit(height),
+    // The Claude Events log, which is a window of its own for the reason the other three are.
+    // A window reporting what its own chat tab wears - the one half of that seam the app can see.
+    'claude:icon': ({ icons }, folder) => events.icons(folder, icons),
+    'events:state': () => events.state,
+    'events:clear': () => events.clear(),
     'mode:set': ({ mode }) => desk.setMode(mode),
     // A window's maximize item, saying what it will do rather than what it is, so the state has
     // one copy and it is the window's own.
