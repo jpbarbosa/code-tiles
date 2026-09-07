@@ -99,7 +99,10 @@ What the tree does today, what comes next, and what to check when the server is 
   view is loaded once when it is created, so a tile that navigates away has no way back.
 - Your VS Code, mirrored: every desktop profile reproduced on the server, its extensions
   installed from Open VSX into one shared directory, and each tile opened on the profile your
-  desktop already associates with that folder.
+  desktop already associates with that folder. Where that gallery ships an extension without the
+  native helper it shells out to - `ms-python.python` without `pet`, which is every venv in every
+  tile invisible - the payload is copied from your own install at the matching version, since the
+  file is on this machine already and the gallery has none to serve.
 - What Claude is doing, per project: its own hooks write one marker per session into the app's
   data directory, main watches that directory and answers with a state per project - working, a
   question, a turn that ended you have not seen, or an open session with nothing to say. A

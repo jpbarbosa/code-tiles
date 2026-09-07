@@ -22,7 +22,9 @@ const RESOURCES = [
 export function readDesktop({ user, extensions }) {
   // No VS Code of your own to mirror: every tile runs on the default profile, which is exactly
   // what this app did before profiles existed.
-  if (!fs.existsSync(user)) return { profiles: [], wantedIds: new Set(), profileFor: () => null };
+  if (!fs.existsSync(user)) {
+    return { profiles: [], wantedIds: new Set(), builds: new Map(), profileFor: () => null };
+  }
 
   const state = readJson(path.join(user, 'globalStorage', 'storage.json'), {});
   const profilesHome = path.join(user, 'profiles');
@@ -49,10 +51,47 @@ export function readDesktop({ user, extensions }) {
     // Every extension id any mirrored profile asks for: what the shared dir has to hold, and
     // the only honest answer to "is this one still wanted".
     wantedIds: new Set(profiles.flatMap((profile) => [...profile.extensionIds])),
+    // What is on disk to copy a missing native payload out of. See `Extensions.graft`.
+    builds: builds(extensions, profilesHome),
     // The profile a tile should open a folder under. Anything the desktop has not placed goes
     // to the mirror rather than to the default profile, whose set cannot be curated.
     profileFor: (folder) => byFolder.get(folder) || DEFAULT_MIRROR.name,
   };
+}
+
+// Every build of every extension your VS Code has on disk, id -> [{ version, dir }]. The root
+// manifest is not that list: an extension installed inside a profile appears only in that
+// profile's own manifest, which is how ms-python.python is absent from the root while its
+// directory sits on disk beside it. A list per id because two profiles can hold two versions,
+// and the caller wants the one matching what it installed, not whichever was read last.
+function builds(extensions, profilesHome) {
+  const home = path.dirname(extensions);
+  const manifests = [extensions, ...listDirs(profilesHome).map((dir) => path.join(dir, 'extensions.json'))];
+  const out = new Map();
+  for (const file of manifests) {
+    for (const entry of readJson(file, []) || []) {
+      const id = entry?.identifier?.id;
+      const at = entry?.relativeLocation;
+      // Relative, never `location.path`: the manifest is data, and a stray absolute path in it
+      // must not become a read outside your own extensions directory.
+      if (!id || !entry.version || typeof at !== 'string' || path.isAbsolute(at) || at.includes('..')) continue;
+      const found = out.get(id) || [];
+      if (!found.some((build) => build.version === entry.version)) {
+        out.set(id, [...found, { version: entry.version, dir: path.join(home, at) }]);
+      }
+    }
+  }
+  return out;
+}
+
+function listDirs(home) {
+  try {
+    return fs.readdirSync(home, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => path.join(home, entry.name));
+  } catch {
+    return [];
+  }
 }
 
 function describe(profile, { user, profilesHome, installedIds, applicationScoped }) {

@@ -7,7 +7,7 @@ import { serverCommand } from './platform.js';
 // One extensions directory for the whole app, holding the union of every mirrored profile's
 // set. A profile shows a subset of it; nothing here decides what a window sees.
 //
-// Both halves run BEFORE the server is spawned: it scans this directory as it boots and will
+// All three run BEFORE the server is spawned: it scans this directory as it boots and will
 // not notice an arrival or a removal until a window reloads.
 
 // Asking for these is a network round trip to a 404 on every single start. They are proprietary
@@ -18,6 +18,15 @@ const NEVER_INSTALLABLE = [
   /^github\.copilot/,
   /^ms-vscode-remote\./,
   /^ms-vscode\.remote-/,
+];
+
+// Open VSX repackages these WITHOUT the native helper they shell out to, so the extension
+// installs, activates, and then fails at the first thing it does: ms-python.python with no `pet`
+// reports every `python.defaultInterpreterPath` unresolvable, which is every venv in every tile
+// invisible. Your own VS Code holds Microsoft's build, so the payload is already on this machine.
+const NATIVE_PAYLOADS = [
+  { id: 'ms-python.python', dir: 'python-env-tools' },
+  { id: 'ms-python.vscode-python-envs', dir: 'python-env-tools' },
 ];
 
 export class Extensions {
@@ -86,6 +95,39 @@ export class Extensions {
     const ids = drop.map((entry) => entry?.identifier?.id).sort();
     console.log(`[extensions] pruned ${ids.length} nothing wants: ${ids.join(', ')}`);
     return ids;
+  }
+
+  // Third of the three, after install and prune and still before the spawn. Copies, never
+  // fetches: the gallery does not have this to serve, and the file it needs is one your own
+  // VS Code was licensed to download.
+  graft(builds) {
+    const grafted = [];
+    for (const { id, dir } of NATIVE_PAYLOADS) {
+      const here = this.#location(id);
+      // A new version lands in a new directory, so an existing payload is also what stops this
+      // re-running every start, and its absence is what re-grafts across an update.
+      if (!here?.version || fs.existsSync(path.join(here.dir, dir))) continue;
+
+      // Matched on version or not at all. `pet` speaks a private protocol to the extension's own
+      // JS, and a mismatched pair fails the way an absent one does - by answering nothing.
+      const from = (builds?.get(id) || []).find((build) => build.version === here.version);
+      const source = from && path.join(from.dir, dir);
+      if (!source || !fs.existsSync(source)) {
+        console.log(`[extensions] ${id} ${here.version} wants ${dir}, and your VS Code has none`);
+        continue;
+      }
+      fs.cpSync(source, path.join(here.dir, dir), { recursive: true });
+      grafted.push(`${id} ${dir}`);
+    }
+    if (grafted.length) console.log(`[extensions] grafted ${grafted.join(', ')}`);
+    return grafted;
+  }
+
+  #location(id) {
+    const entry = this.entries().find((one) => one?.identifier?.id === id);
+    const at = entry?.relativeLocation;
+    if (typeof at !== 'string' || path.isAbsolute(at) || at.includes('..')) return null;
+    return { version: entry.version, dir: path.join(this.#dir, at) };
   }
 
   #run(args) {

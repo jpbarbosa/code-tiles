@@ -79,6 +79,7 @@ app.whenReady().then(async () => {
   const extensions = new Extensions({ bin, dir: paths.extensions, missCache: paths.missCache });
   await extensions.install(desktop.wantedIds);
   extensions.prune(desktop.wantedIds);
+  extensions.graft(desktop.builds);
 
   // Seam settings go in before the server reads them, so the first window a tile ever shows is
   // already the shape the product wants. Written every start: the manifest is the source. The

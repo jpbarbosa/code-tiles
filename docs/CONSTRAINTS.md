@@ -186,6 +186,15 @@ compares unequal to everything; and the workbench deletes every directory under 
 that no registered profile claims, in every window, so a registry that goes missing takes the
 mirror with it. **[checked]**
 
+**Open VSX's copy of an extension is a repackage, not a mirror, and what it drops can be the
+whole point.** `ms-python.python` there is one universal build with no `python-env-tools`, so
+`pet` - the native locator the extension shells out to for every interpreter - is simply absent.
+Nothing reports that: the extension installs, activates, spends 97 seconds on three restarts and
+a CLI fallback, and then says `Default interpreter path '${workspaceFolder}/…' could not be
+resolved`, which reads as a bad path in the user's own settings. Its localizations are missing
+too, so this is not a target-platform question the gallery could answer. `Extensions.graft` takes
+the payload off your own VS Code, version-matched. **[checked]**
+
 **Workspace trust disables extensions without saying so.** An extension declaring
 `untrustedWorkspaces.supported: false` - Claude Code is one - is simply absent from a window
 whose folder was never trusted, and the prompt that would fix it is a modal in a window with no
