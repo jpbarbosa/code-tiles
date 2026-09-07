@@ -1,6 +1,7 @@
 import { BrowserWindow } from 'electron';
 
 import { PARTITION } from './paths.js';
+import { uriPath } from './platform.js';
 
 // The other half of a profile. Its files are on the server's disk; the list of which profiles
 // exist is in the BROWSER, in localStorage, in the tiles' partition - so this app has to be a
@@ -20,7 +21,11 @@ export async function seedProfileRegistry({ port, home, profiles }) {
     // No `authority`. profilesHome carries none, and the cleanup above compares locations for
     // equality - an authority-bearing URI compares unequal to every registered profile, so the
     // workbench would delete the entire mirror. It also means nothing here knows the port.
-    location: { $mid: 1, scheme: 'vscode-remote', path: `${home}/${profile.location}` },
+    //
+    // `uriPath` for the same reason: this is the path OF a URI and `home` is a path on disk, which
+    // are the same string only off Windows. Spelled `C:\...` it compares unequal to everything the
+    // workbench built, which is the whole mirror deleted under every window that opens.
+    location: { $mid: 1, scheme: 'vscode-remote', path: `${uriPath(home)}/${profile.location}` },
     name: profile.name,
     ...(profile.icon ? { icon: profile.icon } : {}),
     // Deliberately no useDefaultFlags: the web build ignores them, and every fallback they

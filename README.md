@@ -135,7 +135,9 @@ npm start
 On **macOS and Linux** `fetch-code-server` downloads the pinned build into `vendor/`, and the
 packaged app carries it. On **Windows** there is nothing to download - coder publishes no Windows
 build - so install one yourself with `npm install -g code-server` and Code Tiles will find it on
-your `PATH`, or point `CODE_TILES_CODE_SERVER` at it.
+your `PATH`, or point `CODE_TILES_CODE_SERVER` at it. That install compiles native modules, so it
+needs **Python 3 and the MSVC C++ build tools** on the machine first - and on **arm64** it needs
+them for `argon2` as well, which publishes no arm64 build.
 
 | Command | Does |
 |---|---|

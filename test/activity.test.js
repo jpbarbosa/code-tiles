@@ -6,6 +6,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 import { Activity } from '../src/main/activity.js';
+import { pythonCandidates } from '../src/main/platform.js';
 
 // A live session is one marker file, so a state is a fixture: this writes the markers a hook
 // would have written and reads back what the app would have drawn.
@@ -154,8 +155,10 @@ test('a settings file that is not plain JSON is left alone', (t) => {
 });
 
 test('the hook script pins a session to the folder it started in', (t) => {
-  const python = '/usr/bin/python3';
-  if (!fs.existsSync(python)) return t.skip('no system python3');
+  // The same interpreter the hooks are written against, so this runs on whichever host it is on
+  // rather than only on the two that keep one at a fixed place.
+  const python = pythonCandidates().find((candidate) => fs.existsSync(candidate));
+  if (!python) return t.skip('no python3 where this host keeps one');
   const { base, dir, activity, project } = bench();
   t.after(() => activity.stop());
   const script = path.join(base, 'activity-hook.py');

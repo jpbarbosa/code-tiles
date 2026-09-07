@@ -31,7 +31,7 @@ export function pickerRows(projects, { query = '', home = os.homedir() } = {}) {
   // cannot load. Dropped from the list rather than forgotten, so a volume coming back brings its
   // projects with it.
   const live = projects.filter((project) => isDirectory(project.folder));
-  const text = query.trim();
+  const text = typed(query.trim());
   if (!text) return live.map((project) => projectRow(project, home));
   return isPath(text) ? underPath(text, live, home) : byName(text, live, home);
 }
@@ -42,14 +42,21 @@ export function homeRow(home = os.homedir()) {
   return { folder: home, name: path.basename(home) || home };
 }
 
+// A query is TYPED, and a separator is typed the way the typist reaches for it: Windows takes
+// either and people use both, while every path it is about to be compared against is spelled with
+// one. Settled once, here, so nothing below has to ask which slash it is looking at - and the
+// identity on the hosts where there is only one to ask about.
+const typed = (text) => (path.sep === '/' ? text : text.replaceAll('/', path.sep));
+
 // A query is a path the moment it starts like one. That is what makes the home row a place to
-// browse FROM - it seeds `~`, and every `/` after it walks one level down.
-const isPath = (text) => text.startsWith(path.sep) || text.startsWith('~');
+// browse FROM - it seeds `~`, and every separator after it walks one level down. `isAbsolute`
+// rather than a leading separator, because off POSIX an absolute path starts with a drive.
+const isPath = (text) => path.isAbsolute(text) || text.startsWith('~');
 
 function underPath(text, projects, home) {
   const full = expand(text, home);
   // A trailing separator asks for what is INSIDE; anything else completes the last segment.
-  const inside = text.endsWith('/') || full === path.sep;
+  const inside = text.endsWith(path.sep) || full === path.sep;
   const directory = inside ? full : path.dirname(full);
   const prefix = inside ? '' : path.basename(full).toLowerCase();
   const claimed = new Map(projects.map((project) => [project.folder, project]));
@@ -94,7 +101,7 @@ function rank(project, needle) {
 // a query that names a folder also matches everything inside it, and the folder itself is the row
 // you meant.
 function closest(needle) {
-  const last = needle.split('/').pop();
+  const last = needle.split(path.sep).pop();
   const leads = (folder) => (path.basename(folder).toLowerCase().startsWith(last) ? 1 : 0);
   return (a, b) => (leads(b) - leads(a))
     || (a.split(path.sep).length - b.split(path.sep).length)
@@ -114,7 +121,7 @@ function neighbours(projects, needle, home) {
   }
 
   // Nothing hidden until the query asks for it, by a leading dot or a dot after a separator.
-  const hidden = needle.startsWith('.') || needle.includes('/.');
+  const hidden = needle.startsWith('.') || needle.includes(`${path.sep}.`);
   const keep = (name) => !SKIP.has(name) && (hidden || !name.startsWith('.'));
 
   // A set, because two roots can nest and one folder is one row however many ways there are to
@@ -135,7 +142,7 @@ function neighbours(projects, needle, home) {
 // A query with a separator in it is about the PATH, which is the whole reason `sites/orbit` finds
 // a folder that no single name matches. Without one it is a name, and a path would match half
 // your files by the directory they happen to sit in.
-const fits = (folder, name, needle) => (needle.includes('/')
+const fits = (folder, name, needle) => (needle.includes(path.sep)
   ? folder.toLowerCase().includes(needle)
   : name.toLowerCase().includes(needle));
 

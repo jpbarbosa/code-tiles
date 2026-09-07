@@ -108,7 +108,11 @@ What the tree does today, what comes next, and what to check when the server is 
   cleared by answering it. Drawn three times: the ring on each window's own badge, the dot on the
   chip in the strip, which is where you see a project you are not looking at, and a count on the
   DOCK - the two states that are about you rather than about Claude - which is the only one of
-  the three that reaches you with the app behind something else.
+  the three that reaches you with the app behind something else. The hook names its interpreter
+  absolutely, because it runs in your login shell where a version manager owns PATH; WHERE that
+  is, is `pythonCandidatesFor`. macOS and Linux keep one at a fixed place and Windows ships none,
+  so there it is the `py` launcher the python.org installer leaves - and with no interpreter the
+  hooks are not installed at all, which is every ring dark rather than anything broken.
 - Twenty seams, verified in a live window rather than from a screenshot:
   `dark` (your desktop's theme, a dark one only as the fallback under it, auto-detect off, and
   the colour scheme of every document the window holds - web's default theme is the light one,
@@ -201,6 +205,14 @@ What the tree does today, what comes next, and what to check when the server is 
   the patch alike; see *The frame inside a tile* below),
   `zoom` (Cmd+0 given back off the editor, which binds it to Focus into Primary Side Bar and
   would otherwise swallow the key before the View menu's Actual Size ever saw it).
+- ⚠ **A URI's path is not a path on disk, and only Windows tells you so.** The profile registry
+  names each mirrored directory as the path of a `vscode-remote` URI, and the workbench compares
+  that against one it built itself - deleting every directory no registered profile claims, in
+  every window it opens. Built by joining `home` with a `/`, that location reads `C:\...\profiles`
+  off a Windows disk, compares equal to nothing, and the mirror is deleted under every tile as it
+  loads: no extensions and an empty settings model, which wears the web build's LIGHT default and
+  none of the seams. `uriPathFor` is the whole fix and the identity off Windows. The watcher in
+  `profiles.js` is what made it survivable rather than blank, and what named it in the log.
 - macOS, Windows and Linux, from one place: `src/main/platform.js` answers which host this is and
   nothing else in the tree carries a `process.platform` check. Every answer is a pure function OF a
   platform name, with this host's derived from it, because the other two cannot be run here and a
@@ -208,14 +220,47 @@ What the tree does today, what comes next, and what to check when the server is 
   above the editor's, which is Ctrl+Cmd on macOS and Ctrl+Alt where the editor owns Ctrl), the
   window's own controls (traffic lights laid over the left, or a caption overlay drawn at the
   right, with the strip reserving the end the host uses), your desktop VS Code's profile directory,
-  the folders the picker's walk skips under $HOME, and the badge - a count on the Dock, a Unity
+  the folders the picker's walk skips under $HOME (and, in the picker's query, the separator you
+  TYPE, which is either of them where the host takes either), and the badge - a count on the Dock, a Unity
   badge, or a flashing taskbar button, Windows having no badge to set. A seam spells the editor's
   modifier `$mod` and `disk/keybindings.js` expands what main hands it, so `pick` and `zoom` give
   back `cmd+o` or `ctrl+o` without either seam knowing which host it is on.
 - ⚠ **coder publishes no Windows build of code-server.** Only linux-amd64/arm64 and
   macos-amd64/arm64 exist, so `fetch-code-server` refuses on Windows and a packaged Windows app
   carries no server: it finds one you installed from npm, on PATH or at `CODE_TILES_CODE_SERVER`.
-  The vendored server is a NATIVE build, so it is left out of any cross-built app as well.
+  The vendored server is a NATIVE build, so it is left out of any cross-built app as well. What
+  npm writes there is a `.cmd` shim rather than a binary, which CreateProcess refuses outright -
+  `spawn EINVAL`, and nothing about a shell - so both places that run the server go through
+  `serverCommandFor`: cmd.exe on Windows and the file itself elsewhere. It is one function because
+  the shell is not the whole of it - cmd.exe takes ONE string, which node builds by joining argv
+  with spaces and quotes nothing, and every path the app passes has a space in it.
+- ⚠ **`npm install -g code-server` compiles on Windows, so it wants a C++ toolchain.** Python 3 and
+  MSVC, neither of which a Windows machine has by default. Two stops on the way: `argon2`, which
+  ships a win32-x64 prebuild and no win32-arm64 one, so an arm64 host has nothing to take at all;
+  and then code-server's own `postinstall.sh`, which installs VS Code's dependencies and reaches
+  node-gyp for `@vscode/deviceid` on any architecture. An emulated x64 node clears the first and
+  not the second. A failed install is worse than none: npm rolls the package back and leaves the
+  shims on PATH, which is what `resolveCodeServer` then finds and hands to the spawn. Three more
+  wait past the compiler itself: the VC workload's `--includeRecommended` does NOT carry the
+  Spectre-mitigated libs that VS Code's modules are built against (`MSB8040`); MSBuild writes
+  intermediates well past 260 characters under a version-manager node, so the tree has to be
+  built through a `subst` drive; and `--ignore-scripts`, which is how you get past the
+  `postinstall.sh` below, leaves every native module unbuilt while a later `npm install` reports
+  success without building them - only `npm rebuild` does, and the `.node` files are the evidence,
+  not the exit code.
+- ⚠ **code-server's own `postinstall.sh` cannot finish on Windows.** It links its bin scripts with
+  `mklink`, which is a cmd builtin no `sh` can call, and its second call passes the same name as
+  source and destination through an `rm -rf "$dest"` - so on Windows it would delete
+  `bin/helpers/browser.cmd` rather than link it. Install with `--ignore-scripts` and do its work
+  by hand: `npm install --omit=dev` in `lib/vscode` and again in `lib/vscode/extensions`, then
+  copy `bin/remote-cli/code.cmd` to `code-server.cmd`. The second link is the buggy one and the
+  file it would have made is already there.
+- Once built, the npm install is worth VENDORING rather than pointing at: copy the package to
+  `vendor/code-server`, put the x64 `node.exe` and a two-line `code-server.cmd` in a `bin/` beside
+  it, and the tree has the same shape `fetch-code-server` leaves on the other two - found ahead of
+  PATH, under whatever node the shell has active, with no `CODE_TILES_CODE_SERVER` to go stale.
+  The env var is the fragile half on Windows: the server can only live under the node it was built
+  for, which is not the one a version manager has active, so it is never on PATH.
 - Packaging: `npm run install-app` signs a `Code Tiles.app` into `/Applications`, with the pinned
   server beside the app rather than in it. A real identity, so the designated requirement anchors
   to the team instead of to a cdhash that every rebuild changes - which is what keeps the TCC

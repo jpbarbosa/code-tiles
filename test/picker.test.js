@@ -5,6 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { homeRow, pickerRows } from '../src/main/picker-rows.js';
+import { HOME_SKIP } from '../src/main/platform.js';
 
 const temp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'ct-picker-'));
 const project = (folder, extra = {}) => ({
@@ -140,6 +141,30 @@ test('a query that starts like a path lists what is inside it, and ~ names the h
   assert.deepEqual(pickerRows([], { home, query: '~/.h' }).map((row) => row.name), ['.hidden']);
 });
 
+// The tests above type `/`, which is the separator on two hosts of three and a thing people type
+// on all of them. This is the one the third host puts on the key, and it has to browse the same.
+test('the separator this host spells paths with is one you can type', () => {
+  const home = temp();
+  fs.mkdirSync(path.join(home, 'Sites', 'orbit'), { recursive: true });
+
+  const inside = `~${path.sep}Sites${path.sep}`;
+  assert.deepEqual(pickerRows([], { home, query: inside }).map((row) => row.name), ['orbit']);
+  assert.deepEqual(pickerRows([], { home, query: `${inside}or` }).map((row) => row.name), ['orbit']);
+});
+
+// An absolute path is one the OS calls absolute, which off POSIX does not begin with a separator
+// at all - a drive-lettered one read as a NAME searches your home directory for a folder called
+// `c:\users\...`, and finds nothing.
+test('an absolute path is browsed from wherever it starts', () => {
+  const home = temp();
+  const sites = path.join(home, 'Sites');
+  fs.mkdirSync(path.join(sites, 'orbit'), { recursive: true });
+
+  assert.ok(path.isAbsolute(sites), 'the fixture is not an absolute path');
+  assert.deepEqual(pickerRows([], { home, query: `${sites}${path.sep}` }).map((row) => row.name),
+    ['orbit']);
+});
+
 test('a path with nothing behind it is an empty list, not a throw', () => {
   const home = temp();
   assert.deepEqual(pickerRows([], { home, query: '~/nowhere/at/all/' }), []);
@@ -173,7 +198,9 @@ test('the walk goes four levels under $HOME and stops', () => {
 
 test('what is not yours is not walked', () => {
   const home = temp();
-  for (const name of ['Library', 'node_modules', 'vendor', '.hidden']) {
+  // This host's own system folders, not one host's: `Library` is nothing under a Windows $HOME,
+  // and the folders that ARE would go unwalked with nobody checking.
+  for (const name of [...HOME_SKIP, 'node_modules', 'vendor', '.hidden']) {
     fs.mkdirSync(path.join(home, name, 'orbit'), { recursive: true });
   }
   fs.mkdirSync(path.join(home, 'Sites', 'orbit'), { recursive: true });
@@ -188,7 +215,10 @@ test('the walk follows no symlink, and a path query does', () => {
   const home = temp();
   const real = path.join(home, 'Sites', 'orbit');
   fs.mkdirSync(real, { recursive: true });
-  fs.symlinkSync(real, path.join(home, 'Sites', 'orbit-link'));
+  // `junction` so this runs off macOS too: a Windows symlink needs a privilege a test does not
+  // have, and a junction is the directory link it hands out freely. The type is ignored where
+  // there is only one kind, and readdir reports both as a link rather than as a directory.
+  fs.symlinkSync(real, path.join(home, 'Sites', 'orbit-link'), 'junction');
 
   assert.deepEqual(pickerRows([], { home, query: 'orbit-link' }), []);
   assert.deepEqual(pickerRows([], { home, query: '~/Sites/orbit-link' }).map((row) => row.name),

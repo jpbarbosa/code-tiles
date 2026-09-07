@@ -4,7 +4,7 @@ import http from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
 
-import { IS_WINDOWS } from './platform.js';
+import { IS_WINDOWS, serverCommand } from './platform.js';
 
 const HEALTH_TIMEOUT_MS = 40000;
 
@@ -49,9 +49,8 @@ export class CodeServer {
 
     // Detached so the child leads its own process group: one kill takes the server and every
     // pty and extension host under it, which a plain kill of the parent does not. Windows has no
-    // process groups to lead and refuses to spawn the .cmd shim without a shell, so it opts out
-    // of both and `killDescendants` takes the tree there instead.
-    this.#child = spawn(this.#bin, [
+    // process groups to lead, so it opts out and `killDescendants` takes the tree there instead.
+    const command = serverCommand(this.#bin, [
       '--auth', 'none',
       '--bind-addr', `127.0.0.1:${this.#port}`,
       '--disable-telemetry',
@@ -64,14 +63,31 @@ export class CodeServer {
       '--disable-getting-started-override',
       '--user-data-dir', this.#paths.serverData,
       '--extensions-dir', this.#paths.extensions,
-    ], IS_WINDOWS
-      ? { shell: true, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }
-      : { detached: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    ]);
+    this.#child = spawn(command.file, command.args, {
+      ...(IS_WINDOWS ? { windowsHide: true } : { detached: true }),
+      shell: command.shell,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
 
-    this.#child.on('exit', () => { this.#child = null; });
+    // A server that refuses to start says why on its stderr and then exits, and the health poll
+    // that follows only ever learns that nothing answered - which is the port's name and none of
+    // the reason. The startup dialog is the one place a failure is ever read, so what the server
+    // said has to reach it.
+    let complaint = '';
+    this.#child.stderr.on('data', (chunk) => {
+      complaint = `${complaint}${chunk}`.slice(-2000);
+      process.stderr.write(`[code-server] ${chunk}`);
+    });
+    // Its own exit is the answer arriving early: nothing is going to bind that port now, and
+    // waiting out the timeout only delays the same failure by forty seconds.
+    const exited = new Promise((resolve) => this.#child.on('exit', (code) => {
+      this.#child = null;
+      resolve(code);
+    }));
     fs.writeFileSync(this.#paths.pidfile, JSON.stringify({ pid: this.#child.pid, port: this.#port }));
 
-    await this.#waitHealthy();
+    await this.#waitHealthy(exited, () => complaint.trim());
     return this.#port;
   }
 
@@ -98,7 +114,7 @@ export class CodeServer {
     try { fs.unlinkSync(this.#paths.pidfile); } catch { /* ignore */ }
   }
 
-  async #waitHealthy() {
+  async #waitHealthy(exited, complaint) {
     const deadline = Date.now() + HEALTH_TIMEOUT_MS;
     let lastError = null;
     while (Date.now() < deadline) {
@@ -107,10 +123,15 @@ export class CodeServer {
         return;
       } catch (error) {
         lastError = error;
+        if (!this.#child) break;
         await new Promise((resolve) => setTimeout(resolve, 250));
       }
     }
-    throw new Error(`code-server did not answer on ${this.#port}: ${lastError?.message}`);
+    const said = complaint();
+    // Only here is the exit code worth waiting on: the child is already gone, and it is all
+    // there is to say about a server that failed without a word.
+    if (!this.#child) throw new Error(`code-server quit instead of starting:\n${said || `exit ${await exited}`}`);
+    throw new Error(`code-server did not answer on ${this.#port}: ${lastError?.message}\n${said}`.trim());
   }
 }
 

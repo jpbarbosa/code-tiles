@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { pythonCandidates } from './platform.js';
+
 // What Claude is doing in each project, taken from the hooks Claude Code fires. A hook writes one
 // marker file per session; this reads them, maps each session to the project it started in, and
 // answers with a state per project. Nothing here knows what a ring looks like.
@@ -27,8 +29,11 @@ const EVENTS = [
 ];
 
 // The interpreter is named absolutely: a hook runs in your login shell's environment, where a
-// version manager can put anything on PATH, and macOS keeps this one.
-const PYTHON = '/usr/bin/python3';
+// version manager can put anything on PATH. WHERE it is, is the host's answer - `platform.js`
+// keeps that - and the first of those that exists is the one the hooks are written against.
+function findPython() {
+  return pythonCandidates().find((candidate) => fs.existsSync(candidate)) || null;
+}
 
 // Rewriting settings.json is only ever adding and removing OUR entries, and this is what marks
 // one. The basename, never the path: the app's data directory is not a constant, and a marker
@@ -193,8 +198,9 @@ export class Activity {
   // The script, then the entries that call it: a hook naming a script that is not there yet fails
   // on every event of every session until it is.
   #installHooks() {
-    if (!fs.existsSync(PYTHON)) {
-      console.error(`[activity] no ${PYTHON}, so no hooks and no Claude state`);
+    const python = findPython();
+    if (!python) {
+      console.error(`[activity] no python3 at ${pythonCandidates().join(' or ')}, so no hooks and no Claude state`);
       return;
     }
     try {
@@ -219,7 +225,10 @@ export class Activity {
 
     const hooks = strip(settings.hooks || {});
     for (const [event, mode, matcher] of EVENTS) {
-      const group = { hooks: [{ type: 'command', command: `${PYTHON} ${JSON.stringify(this.#script)} ${mode}` }] };
+      // The interpreter is quoted like the script: off macOS it is found under a user directory,
+      // and a home named for two words would otherwise be two arguments.
+      const command = `${JSON.stringify(python)} ${JSON.stringify(this.#script)} ${mode}`;
+      const group = { hooks: [{ type: 'command', command }] };
       if (matcher) group.matcher = matcher;
       (hooks[event] = hooks[event] || []).push(group);
     }

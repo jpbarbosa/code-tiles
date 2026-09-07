@@ -1,13 +1,17 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import seams from '../src/guest/manifest-settings.js';
-import { declaredPatches } from '../src/guest/disk/patch.js';
+import { declaredPatches, serverRoot } from '../src/guest/disk/patch.js';
 
 // Not src/main/paths.js: that one imports electron, which a plain node test cannot resolve.
-const ROOT = new URL('../', import.meta.url).pathname;
+// `fileURLToPath`, not `.pathname`: a URL's path is not a path on disk anywhere a drive letter
+// exists, and the difference here is a check that skips itself for the life of the platform.
+const ROOT = fileURLToPath(new URL('../', import.meta.url));
 
 const patches = declaredPatches(seams);
 
@@ -78,6 +82,52 @@ test('every patch rewrites its shape once, into code that parses', () => {
     assert.equal((patched.match(new RegExp(patch.find.source, 'g')) || []).length, 0,
       `${name}: the replacement still carries the shape it matched`);
   }
+});
+
+// The server is a dependency, so it arrives in whatever shape its installer chose, and only one
+// of the three is the one this tree has ever run from. Each is built here rather than described:
+// finding the root is a walk over real directories, and a described one would prove nothing.
+function layout(...dirs) {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'ct-root-'));
+  for (const dir of dirs) fs.mkdirSync(path.join(base, ...dir), { recursive: true });
+  return base;
+}
+
+function touch(base, ...file) {
+  const full = path.join(base, ...file);
+  fs.mkdirSync(path.dirname(full), { recursive: true });
+  fs.writeFileSync(full, '');
+  return full;
+}
+
+test("coder's own release: the binary two levels under the tree", () => {
+  const base = layout(['lib', 'vscode', 'out']);
+  assert.equal(serverRoot(touch(base, 'bin', 'code-server')), base);
+});
+
+// npm points its link at the package's entry point, so what the app spawns RESOLVES to a path
+// inside the tree - deeper than the release's, and the reason counting two levels ever worked on
+// macOS and Linux at all.
+test('npm off Windows: the bin resolves to a path inside the tree', () => {
+  const base = layout(['lib', 'vscode', 'out']);
+  assert.equal(serverRoot(touch(base, 'out', 'node', 'entry.js')), base);
+});
+
+// The shape counting got wrong. There are no symlinks, so npm writes a real `.cmd` beside the
+// `node_modules` that holds the tree: two levels up from it is the npm prefix's own parent.
+test('npm on Windows: the shim sits beside the tree rather than inside it', () => {
+  const prefix = layout(['node_modules', 'code-server', 'lib', 'vscode', 'out']);
+  assert.equal(
+    serverRoot(touch(prefix, 'code-server.cmd')),
+    path.join(prefix, 'node_modules', 'code-server'),
+  );
+});
+
+// A binary with no bundle under it is not one any patch can be written into, and saying so beats
+// walking off the top of the filesystem to find out.
+test('a binary with no tree under it answers with nothing', () => {
+  const base = layout(['bin']);
+  assert.equal(serverRoot(touch(base, 'bin', 'code-server')), null);
 });
 
 // The one check a version bump actually needs: the shape is still in the bundle that ships.

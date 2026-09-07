@@ -2,6 +2,8 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { serverCommand } from './platform.js';
+
 // One extensions directory for the whole app, holding the union of every mirrored profile's
 // set. A profile shows a subset of it; nothing here decides what a window sees.
 //
@@ -88,7 +90,12 @@ export class Extensions {
 
   #run(args) {
     return new Promise((resolve) => {
-      const child = spawn(this.#bin, ['--extensions-dir', this.#dir, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+      // The same binary the server is spawned from, so the same command line: on Windows it is a
+      // .cmd shim that only cmd.exe will take.
+      const command = serverCommand(this.#bin, ['--extensions-dir', this.#dir, ...args]);
+      const child = spawn(command.file, command.args, {
+        shell: command.shell, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
+      });
       child.stderr.on('data', (chunk) => process.stderr.write(`[extensions] ${chunk}`));
       child.on('exit', resolve);
       child.on('error', (error) => {
