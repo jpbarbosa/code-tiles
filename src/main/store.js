@@ -1,5 +1,6 @@
 import fs from 'node:fs';
-import path from 'node:path';
+
+import { writeAtomic } from './json.js';
 
 const VERSION = 1;
 
@@ -51,9 +52,6 @@ export class Store {
   }
 
   #flush() {
-    const tmp = `${this.#file}.${process.pid}.tmp`;
-    fs.mkdirSync(path.dirname(this.#file), { recursive: true });
-    fs.writeFileSync(tmp, JSON.stringify(this.#state, null, 2));
-    fs.renameSync(tmp, this.#file);
+    writeAtomic(this.#file, JSON.stringify(this.#state, null, 2));
   }
 }

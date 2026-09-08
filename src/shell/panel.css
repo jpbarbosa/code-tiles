@@ -1,0 +1,34 @@
+/* What the app's four panel windows agree on. Each of them - the usage panel, preferences, the
+   Claude Events log and the picker - is a window rather than a region of the shell page, because
+   a WebContentsView paints above that page; and each was carrying its own copy of these colours,
+   so the ink in one drifted from the ink in the next with nothing to catch it.
+   What is NOT here is the ground: the picker is transparent on purpose, and a background reaching
+   it from a shared sheet would paint a slab over the tiles it exists to dim. */
+:root {
+  color-scheme: dark;
+  --panel: #232325;
+  --ink: #d6d6d8;
+  --ink-quiet: #8b8b90;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font: 12px/1.3 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  cursor: default;
+}
+
+/* The label a panel wears above its content: small, spaced and quiet, so it names the thing
+   without competing with it. */
+h1 {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+/* An author rule beats the UA's, so `display: flex` on a page's own selector would otherwise keep
+   a [hidden] element on screen. Cheap here, and one less thing for a panel to remember. */
+[hidden] { display: none; }

@@ -40,7 +40,7 @@ module.exports = {
 
   init(api) {
     api.whenWorkbench((workbench) => {
-      whenPresent(workbench, '.part.activitybar .composite-bar .actions-container', (list) => {
+      api.whenPresent(workbench, '.part.activitybar .composite-bar .actions-container', (list) => {
         let item = null;
 
         const render = () => {
@@ -98,16 +98,4 @@ function build(document, press) {
   item.append(label, indicator);
   item.addEventListener('click', press);
   return item;
-}
-
-function whenPresent(root, selector, callback) {
-  const found = () => root.querySelector(selector);
-  if (found()) return void callback(found());
-  const observer = new MutationObserver(() => {
-    const element = found();
-    if (!element) return;
-    observer.disconnect();
-    callback(element);
-  });
-  observer.observe(root, { childList: true, subtree: true });
 }

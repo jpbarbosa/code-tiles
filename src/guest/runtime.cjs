@@ -104,22 +104,28 @@ function wire(frame) {
   });
 }
 
-function whenWorkbench(callback) {
-  const found = () => document.querySelector('.monaco-workbench');
+// The workbench builds itself in pieces, so most of what a seam wants to attach to is not there
+// when it runs. Called back once, with the first element to match, and then done watching.
+function whenPresent(root, selector, callback) {
+  const found = () => root.querySelector(selector);
   if (found()) return void callback(found());
   const observer = new MutationObserver(() => {
-    const workbench = found();
-    if (!workbench) return;
+    const element = found();
+    if (!element) return;
     observer.disconnect();
-    callback(workbench);
+    callback(element);
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(root, { childList: true, subtree: true });
 }
+
+// The one every seam starts from, named because it is the root the others are found under.
+const whenWorkbench = (callback) => whenPresent(document.documentElement, '.monaco-workbench', callback);
 
 const api = {
   get context() { return context; },
   onContext(callback) { contextListeners.add(callback); return () => contextListeners.delete(callback); },
   whenWorkbench,
+  whenPresent,
   eachDocument(callback) { documentListeners.add(callback); sweep(document); },
   send(type, payload) { ipcRenderer.send('ct:call', { type, payload, folder: context.folder }); },
 };

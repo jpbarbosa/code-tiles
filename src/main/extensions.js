@@ -1,5 +1,7 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+
+import { readJson } from './json.js';
 import path from 'node:path';
 
 import { serverCommand } from './platform.js';
@@ -148,9 +150,6 @@ export class Extensions {
   }
 }
 
-function readJson(file, fallback) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
-}
 
 function write(file, content) {
   fs.mkdirSync(path.dirname(file), { recursive: true });

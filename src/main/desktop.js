@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+
+import { readJson } from './json.js';
 import path from 'node:path';
 
 // Your own VS Code install, read and never written. Everything a profile is - its name, its
@@ -160,6 +162,3 @@ function exists(target, kind) {
   }
 }
 
-function readJson(file, fallback) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
-}

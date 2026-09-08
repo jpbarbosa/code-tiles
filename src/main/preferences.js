@@ -1,5 +1,4 @@
-import { BrowserWindow } from 'electron';
-
+import { fitPanel, panelWindow } from './panel.js';
 import { files } from './paths.js';
 import { rungNames } from '../guest/manifest-settings.js';
 
@@ -46,30 +45,21 @@ export class Preferences {
   open() {
     if (this.#window) return this.#window.focus();
 
-    this.#window = new BrowserWindow({
+    this.#window = panelWindow({
       parent: this.#parent,
+      page: files.preferencesPage,
       // The size the page turns out to be, so nothing resizes under the eye on open; `fit` below
       // is the correction, not the measurement.
       useContentSize: true,
       width: WIDTH,
       height: 331,
-      show: false,
       title: 'Preferences',
       resizable: false,
-      minimizable: false,
-      maximizable: false,
-      fullscreenable: false,
-      backgroundColor: '#232325',
-      webPreferences: { preload: files.shellPreload, contextIsolation: true, sandbox: true },
     });
-
-    this.#window.loadFile(files.preferencesPage);
-    this.#window.once('ready-to-show', () => this.#window?.show());
     this.#window.on('closed', () => { this.#window = null; });
   }
 
-  // The page says how tall it turned out, the way the usage panel does. Nothing here counts rows.
   fit(height) {
-    this.#window?.setContentSize(WIDTH, Math.max(1, Math.round(height)));
+    fitPanel(this.#window, WIDTH, height);
   }
 }

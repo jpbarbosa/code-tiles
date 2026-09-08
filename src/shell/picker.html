@@ -3,28 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <title>Open a project</title>
+  <link rel="stylesheet" href="panel.css" />
   <!-- Its own window, over the stage, so it carries its own style rather than pulling the strip's
        in. The colours are the usage panel's, which is the other window this app draws. -->
   <style>
-    :root {
-      color-scheme: dark;
-      --panel: #232325;
-      --ink: #d6d6d8;
-      --ink-quiet: #8b8b90;
-      --plate: rgb(255 255 255 / 0.07);
-    }
+    /* The tokens are panel.css's; this is the one only the picker spends. */
+    :root { --plate: rgb(255 255 255 / 0.07); }
 
     /* Content-box would make the panel's own padding and border 18px MORE than the 560 below, so
        a window narrower than the panel would overflow rather than fit. */
     * { box-sizing: border-box; }
 
     body {
-      margin: 0;
       height: 100vh;
-      color: var(--ink);
-      font: 12px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      line-height: 1.2;
       user-select: none;
-      cursor: default;
       display: flex;
       align-items: flex-start;
       justify-content: center;

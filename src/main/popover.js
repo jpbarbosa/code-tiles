@@ -1,5 +1,4 @@
-import { BrowserWindow } from 'electron';
-
+import { fitPanel, panelWindow } from './panel.js';
 import { files } from './paths.js';
 
 // The usage panel is an OS window rather than a panel in the shell page: a WebContentsView paints
@@ -21,34 +20,25 @@ export class UsagePopover {
     if (this.#window) return this.close();
 
     const bounds = this.#parent.getContentBounds();
-    this.#window = new BrowserWindow({
+    this.#window = panelWindow({
       parent: this.#parent,
+      page: files.usagePage,
       x: Math.round(bounds.x + anchor.right - WIDTH),
       y: Math.round(bounds.y + anchor.bottom + 6),
       width: WIDTH,
       height: 140,
-      show: false,
       frame: false,
       resizable: false,
       movable: false,
-      minimizable: false,
-      maximizable: false,
-      fullscreenable: false,
-      backgroundColor: '#232325',
-      webPreferences: { preload: files.shellPreload, contextIsolation: true, sandbox: true },
     });
-
-    this.#window.loadFile(files.usagePage);
-    this.#window.once('ready-to-show', () => this.#window?.show());
     // Leaving for the browser and coming back with a code is part of signing in, so a pinned
     // panel outlives that blur. Every other blur dismisses it.
     this.#window.on('blur', () => { if (!this.#pinned) this.close(); });
     this.#window.on('closed', () => { this.#window = null; this.#pinned = false; });
   }
 
-  // The page says how tall it turned out. Nothing here counts readings and guesses.
   fit(height) {
-    this.#window?.setContentSize(WIDTH, Math.max(1, Math.round(height)));
+    fitPanel(this.#window, WIDTH, height);
   }
 
   pin() {

@@ -1,6 +1,5 @@
-import { BrowserWindow } from 'electron';
-
 import { METRICS } from './layout.js';
+import { panelWindow } from './panel.js';
 import { files } from './paths.js';
 
 // The picker is an OS window for the same reason the usage panel is one: a WebContentsView paints
@@ -21,10 +20,10 @@ export class Picker {
   toggle() {
     if (this.#window) return this.close();
 
-    this.#window = new BrowserWindow({
+    this.#window = panelWindow({
       ...this.#stage(),
       parent: this.#parent,
-      show: false,
+      page: files.pickerPage,
       frame: false,
       // The page paints its own scrim, so the window itself carries no colour and no shadow: an
       // opaque one would be a grey slab over the grid, and a shadow would ring the whole stage.
@@ -36,15 +35,9 @@ export class Picker {
       roundedCorners: false,
       resizable: false,
       movable: false,
-      minimizable: false,
-      maximizable: false,
-      fullscreenable: false,
+      // The one panel that carries no ground of its own, because it covers live tiles.
       backgroundColor: '#00000000',
-      webPreferences: { preload: files.shellPreload, contextIsolation: true, sandbox: true },
     });
-
-    this.#window.loadFile(files.pickerPage);
-    this.#window.once('ready-to-show', () => this.#window?.show());
     this.publish();
 
     // It covers the stage, so it goes where the stage goes. Deliberately NOT dismissed on blur,

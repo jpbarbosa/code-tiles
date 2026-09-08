@@ -1,5 +1,4 @@
-import { BrowserWindow } from 'electron';
-
+import { panelWindow } from './panel.js';
 import { files } from './paths.js';
 
 // The two Claude signals this app runs on, side by side. `hook` is what main concluded from
@@ -57,22 +56,14 @@ export class ClaudeEvents {
   open() {
     if (this.#window) return this.#window.focus();
 
-    this.#window = new BrowserWindow({
+    this.#window = panelWindow({
       parent: this.#parent,
+      page: files.eventsPage,
       useContentSize: true,
       width: WIDTH,
       height: HEIGHT,
-      show: false,
       title: 'Claude Events',
-      minimizable: false,
-      maximizable: false,
-      fullscreenable: false,
-      backgroundColor: '#232325',
-      webPreferences: { preload: files.shellPreload, contextIsolation: true, sandbox: true },
     });
-
-    this.#window.loadFile(files.eventsPage);
-    this.#window.once('ready-to-show', () => this.#window?.show());
     this.#window.on('closed', () => { this.#window = null; });
   }
 

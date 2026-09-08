@@ -1,5 +1,7 @@
 'use strict';
 
+const { matchCount } = require('../shape.cjs');
+
 // A Claude session opens in the editor group you are already in, rather than in a locked column
 // of its own.
 //
@@ -29,7 +31,7 @@ const MARKER = '__CT_CHAT_COLUMN_1__';
 const COLUMN_RE = /(=([\w$]+)\.ViewColumn\.Beside;let ([\w$]+)=[\w$]+\(\);if\(\3\)([\w$]+)=\3\.viewColumn;else )\4=this\.findUnusedColumn\(\),[\w$]+=!0/;
 
 function apply(source) {
-  const hits = (source.match(new RegExp(COLUMN_RE.source, 'g')) || []).length;
+  const hits = matchCount(source, COLUMN_RE);
   if (!hits) return { refused: 'the column fallback has moved' };
   // Refused rather than guessed at: the two would be indistinguishable and the wrong one is not
   // recoverable from the outside.

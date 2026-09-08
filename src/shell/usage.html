@@ -3,38 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <title>Claude usage</title>
-  <!-- One small window, so it carries its own style rather than pulling the strip's in. It is
-       drawn by the OS, above the tiles, which is the whole reason it is a window at all. -->
+  <link rel="stylesheet" href="panel.css" />
+  <!-- Its shared half is panel.css; what is here is this panel's own shape. -->
   <style>
-    :root { color-scheme: dark; }
-
     body {
-      margin: 0;
       padding: 12px 14px;
-      background: #232325;
-      color: #d6d6d8;
-      font: 12px/1.3 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      background: var(--panel);
       user-select: none;
-      cursor: default;
       display: flex;
       flex-direction: column;
       gap: 11px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-      color: #8b8b90;
     }
 
     #rows { display: flex; flex-direction: column; gap: 9px; }
 
     .row { display: flex; flex-direction: column; gap: 4px; }
     .row .head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-    .row .reset { color: #8b8b90; font-size: 10.5px; }
+    .row .reset { color: var(--ink-quiet); font-size: 10.5px; }
     .row .track { height: 5px; border-radius: 3px; background: rgb(255 255 255 / 0.12); overflow: hidden; }
     .row .fill { height: 100%; border-radius: 3px; }
 
@@ -72,7 +57,6 @@
     .primary { background: #d97757; color: #fff; font-weight: 600; }
     .primary:hover { background: #c76a4c; }
     .error { color: #f0883e; }
-    [hidden] { display: none; }
   </style>
 </head>
 <body>

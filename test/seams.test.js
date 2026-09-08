@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
@@ -303,4 +304,24 @@ test('a rung that is not a rung falls back to medium rather than to nothing', as
   const { groundShares } = await import('../src/guest/manifest-settings.js');
   assert.deepEqual(groundShares({}), groundShares({ focused: 'medium', quiet: 'medium' }));
   assert.deepEqual(groundShares({ focused: 'loud', quiet: null }), groundShares({}));
+});
+
+// A seam reaches the runtime through `api` and nothing else, and the two are in different files
+// on different module systems - so a seam calling something the preload does not expose fails
+// INSIDE a window, at the moment that seam runs, with nothing on any console anyone is reading.
+// Read from the source because runtime.cjs requires electron and cannot be loaded here.
+test('every api a seam calls is one the runtime hands it', () => {
+  const runtime = fs.readFileSync(new URL('../src/guest/runtime.cjs', import.meta.url), 'utf8');
+  const literal = runtime.match(/const api = \{([\s\S]*?)\n\};/);
+  assert.ok(literal, 'the runtime no longer declares an `api` object literal');
+  const offered = new Set([...literal[1].matchAll(/(?:^|\n)\s*(?:get\s+)?([A-Za-z]\w*)[(:,]/g)]
+    .map((hit) => hit[1]));
+
+  const dir = new URL('../src/guest/seams/', import.meta.url);
+  for (const file of fs.readdirSync(dir)) {
+    const source = fs.readFileSync(new URL(file, dir), 'utf8');
+    for (const [, used] of source.matchAll(/\bapi\.(\w+)/g)) {
+      assert.ok(offered.has(used), `${file} calls api.${used}, which runtime.cjs does not offer`);
+    }
+  }
 });

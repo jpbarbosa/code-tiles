@@ -3,29 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <title>Claude Events</title>
+  <link rel="stylesheet" href="panel.css" />
   <!-- One small window, so it carries its own style rather than pulling the strip's in. It is
        drawn by the OS, above the tiles, which is the whole reason it is a window at all. -->
   <style>
-    :root { color-scheme: dark; }
-
     body {
-      margin: 0;
-      background: #232325;
-      color: #d6d6d8;
-      font: 12px/1.3 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-      cursor: default;
+      background: var(--panel);
       display: flex;
       flex-direction: column;
       height: 100vh;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-      color: #8b8b90;
     }
 
     header {
@@ -42,8 +28,8 @@
     #now { display: flex; flex-direction: column; gap: 3px; }
     #now .line { display: grid; grid-template-columns: 140px 80px 1fr; gap: 10px; align-items: baseline; }
     #now .project { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #now .hook { color: #8b8b90; }
-    #now .icon { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; color: #8b8b90; }
+    #now .hook { color: var(--ink-quiet); }
+    #now .icon { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; color: var(--ink-quiet); }
 
     /* The whole reason the two sources share a window: one of them is wrong, and either can be. */
     #now .line.disagrees .hook,

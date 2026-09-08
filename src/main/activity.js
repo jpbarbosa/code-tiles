@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { pythonCandidates } from './platform.js';
+import { writeAtomic } from './json.js';
 
 // What Claude is doing in each project, taken from the hooks Claude Code fires. A hook writes one
 // marker file per session; this reads them, maps each session to the project it started in, and
@@ -238,9 +239,7 @@ export class Activity {
       fs.mkdirSync(path.dirname(this.#settings), { recursive: true });
       const backup = `${this.#settings}.ct-backup`;
       if (raw !== null && !fs.existsSync(backup)) fs.writeFileSync(backup, raw);
-      const temporary = `${this.#settings}.ct-tmp`;
-      fs.writeFileSync(temporary, `${JSON.stringify({ ...settings, hooks }, null, 2)}\n`);
-      fs.renameSync(temporary, this.#settings);
+      writeAtomic(this.#settings, `${JSON.stringify({ ...settings, hooks }, null, 2)}\n`);
       console.log('[activity] Claude hooks installed');
     } catch (error) {
       console.error('[activity] could not write ~/.claude/settings.json:', error.message);

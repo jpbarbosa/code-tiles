@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import seams from '../manifest-settings.js';
+import { matchCount } from '../shape.cjs';
 
 // The seams' other on-disk part. A `settings` entry asks the editor for something it already
 // offers; a `patch` is for the far rarer case where the editor HAS the thing and offers no way
@@ -35,9 +36,9 @@ export function patchServer(bin) {
     // Refusing beats a half-patched bundle: the shape is minified code matched by its structure,
     // and a release that moves it must be re-derived rather than guessed at. The seam that
     // declared this says what it degrades to when the patch is missing.
-    const hits = source.match(new RegExp(patch.find.source, 'g')) || [];
-    if (hits.length !== 1) {
-      console.error(`[patch] ${name}: shape matched ${hits.length} times, expected 1 - not patched`);
+    const hits = matchCount(source, patch.find);
+    if (hits !== 1) {
+      console.error(`[patch] ${name}: shape matched ${hits} times, expected 1 - not patched`);
       continue;
     }
     fs.writeFileSync(file, source.replace(patch.find, patch.replace));

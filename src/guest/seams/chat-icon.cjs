@@ -1,5 +1,7 @@
 'use strict';
 
+const { matchCount: hits } = require('../shape.cjs');
+
 // The Claude chat tab's icon, animated for as long as the session is: a ring that turns while
 // Claude works, a dot that pulses while it waits on you, the same dot held still and breathing
 // once it is done. Three states at one width, so only the motion tells them apart - the language
@@ -97,7 +99,6 @@ function inject(vscode, join) {
     + 'n||s.__ctRest||"claude-logo.svg"))}catch(_){}}';
 }
 
-const hits = (source, re) => (source.match(new RegExp(re.source, 'g')) || []).length;
 
 // The states `inject` knows, against the union the extension declares them in. Two things this
 // seam reads are STRINGS rather than shapes - the session states, and the resting icons REST

@@ -128,7 +128,7 @@ module.exports = {
 
   init(api) {
     api.whenWorkbench((workbench) => {
-      whenPresent(workbench, '.part.panel', (panel) => {
+      api.whenPresent(workbench, '.part.panel', (panel) => {
         const titleOf = () => panel.querySelector(':scope > .composite.title');
         const selectOf = () => titleOf()?.querySelector('.title-actions .switch-terminal select');
         // Buttons are addressed by CODICON CLASS, never by aria-label: the label carries a
@@ -279,16 +279,4 @@ function draw(title, names, active, actions) {
   add.title = 'New Terminal';
   add.addEventListener('mousedown', (event) => { event.preventDefault(); actions.add(); });
   strip.appendChild(add);
-}
-
-function whenPresent(root, selector, callback) {
-  const found = () => root.querySelector(selector);
-  if (found()) return void callback(found());
-  const observer = new MutationObserver(() => {
-    const element = found();
-    if (!element) return;
-    observer.disconnect();
-    callback(element);
-  });
-  observer.observe(root, { childList: true, subtree: true });
 }
