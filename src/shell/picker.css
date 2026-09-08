@@ -1,0 +1,263 @@
+/* The picker's own half. panel.css carries what all four panel windows share; everything here is
+   about a screen that covers the stage and has to stay readable over four live editors. */
+/* The tokens are panel.css's; this is the one only the picker spends. */
+:root { --plate: rgb(255 255 255 / 0.07); }
+
+/* Content-box would make the panel's own padding and border 18px MORE than the 560 below, so
+   a window narrower than the panel would overflow rather than fit. */
+* { box-sizing: border-box; }
+
+body {
+  height: 100vh;
+  line-height: 1.2;
+  user-select: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 24px 24px;
+}
+
+/* The scrim is an ELEMENT and not the body's background, which is the whole difference
+   between dimming the grid and not. A background on the body propagates to the root canvas,
+   and this window is transparent, so the canvas is forced clear and the propagated colour is
+   never painted: the opaque panel showed over the tiles while the dim did not.
+   No backdrop-filter either - the grid is in another window, so there is nothing of it in
+   this one's backdrop to blur. */
+#scrim {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.55);
+  /* The window is square so its top edge covers the stage's corners; its bottom edge sits on
+     the parent's own rounded ones, and 55% black painted into those would show outside the
+     window's silhouette. This is the system's window radius, which nothing here can read, so
+     it errs LARGE on purpose: too big leaves a couple of undimmed pixels in a gutter corner,
+     too small paints a dark nub on the desktop. */
+  border-radius: 0 0 14px 14px;
+}
+
+#panel {
+  /* Over the scrim, which is its sibling rather than its parent. */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: 100%;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 0.55);
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 2px 8px;
+}
+
+/* The field and the button that empties it are one box, so the button sits INSIDE the border
+   rather than beside it - which is also what tells it apart from the × that shuts the panel. */
+.field {
+  flex: 1 1 auto;
+  min-width: 0;
+  position: relative;
+  display: flex;
+}
+
+/* The field is the title: what the panel is for is said by the placeholder, so the words are
+   gone the moment they stop being true. */
+#query {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 28px;
+  padding: 0 30px 0 10px;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.25);
+  color: var(--ink);
+  font: inherit;
+  user-select: text;
+  cursor: text;
+}
+
+#query::placeholder { color: var(--ink-quiet); }
+#query:focus { border-color: rgb(255 255 255 / 0.28); outline: none; }
+
+/* macOS's own search-field clear: a filled disc, which reads as a control ON the field where
+   the panel's bare × reads as a control on the panel. */
+#clear {
+  position: absolute;
+  top: 0;
+  right: 6px;
+  bottom: 0;
+  width: 18px;
+  display: grid;
+  place-items: center;
+  color: var(--panel);
+}
+
+/* Every cross here is DRAWN, not typed. A × glyph's ink sits 1.53px below the centre of its
+   own line box at 14px (measured with actualBoundingBox*), so a plate around it hands all the
+   slack to one edge and no centring primitive can see it. Each is an EVEN size in an even
+   plate - 9 into 20 leaves 11 to halve, and the odd half pixel is a real one at 2x. */
+#clear .disc {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.3);
+}
+
+#clear:hover .disc { background: rgb(255 255 255 / 0.45); }
+/* An ID beats the [hidden] rule below on specificity, so the button says its own hidden. */
+#clear[hidden] { display: none; }
+
+/* padding included: a button keeps the UA's 1px 6px otherwise, and with border-box its
+   CONTENT box is 12px narrower than the plate you sized - so a mark centred in it is not
+   centred in the plate. Every button below either sizes its own padding or wants none. */
+button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: default;
+}
+
+#dismiss {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  color: var(--ink-quiet);
+}
+
+#list {
+  flex: 0 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One shape for a project, for a folder found on disk and for the two rows in the footer:
+   all four are things you open, and the field's selection walks them as one list. */
+.row,
+.quick {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 40px;
+  border-radius: 8px;
+  text-align: left;
+}
+
+/* The field keeps the focus while the arrows move a selection, so the plate is the only thing
+   that says where Return will land - hover sets the same selection, so the two never disagree. */
+.row.is-active,
+.quick.is-active { background: var(--plate); }
+
+:focus-visible { outline: none; }
+#dismiss:focus-visible { outline: 1px solid rgb(255 255 255 / 0.16); outline-offset: -1px; }
+
+.choose {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 100%;
+  padding: 0 4px 0 10px;
+  text-align: left;
+}
+
+/* Every mark sits in one 20px box, so a project with a favicon, one without and a plain folder
+   all line up. */
+.choose img,
+.choose .monogram,
+.choose .mark {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+}
+
+.choose .monogram,
+.choose .mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.choose .monogram {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.choose .mark { color: var(--ink-quiet); }
+
+/* The name is what you read and the path is what tells two folders of the same name apart, so
+   they share a line and the path is what gives way. NOT direction: rtl to truncate a path from
+   the left: a path starts with weak characters, and bidi reorders ~/Sites/x to Sites/x/~. */
+.choose .name {
+  flex: 0 0 auto;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.choose .path,
+.quick .path {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--ink-quiet);
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Forgetting a row must not sit in the way of the click that opens it, which is what every row
+   is for. Hidden until the row is the selected one, which the pointer and the arrows both set. */
+.row .forget {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin-right: 6px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  color: var(--ink-quiet);
+  opacity: 0;
+}
+
+.row.is-active .forget { opacity: 1; }
+
+#dismiss:hover,
+.forget:hover { color: var(--ink); background: rgb(255 255 255 / 0.14); }
+
+/* The two rows that are always there, whatever was typed. The rule sits on the footer so the
+   plate under either one keeps all four of its corners and stands clear of the line. */
+footer {
+  flex: 0 0 auto;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+
+  .quick { gap: 10px; padding: 0 8px 0 10px; }
+  .quick .glyph { flex: 0 0 auto; display: inline-flex; width: 20px; justify-content: center; color: var(--ink-quiet); }
+  .quick .label { flex: 0 0 auto; }
+  .quick .chord { flex: 1 1 auto; color: var(--ink-quiet); font-size: 11px; text-align: right; }
+}
+
+.shapes { display: none; }
+#none { padding: 18px 10px; color: var(--ink-quiet); text-align: center; }
+[hidden] { display: none; }

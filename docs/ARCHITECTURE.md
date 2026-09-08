@@ -240,7 +240,11 @@ src/main/icon.js        which file is a project's mark, and the cache a decode f
 src/main/sampler.js     the offscreen renderer that reads those bytes: a hue, and a mark small
                         enough for a command line
 src/main/hue.js         that colour as the angle an oklch() reads back, or the path's hash
-src/main/activity.js    Claude's own hooks: installing them, and what each project's state is
+src/main/activity.js    the markers Claude's hooks leave, and what each project's state is
+src/main/activity-hooks.js  the other half: the hook script, and the entries in your own
+                        ~/.claude/settings.json that call it. The only thing here that writes.
+src/main/panel.js       what the app's four small windows have in common
+src/main/json.js        reading a file the app does not own, and replacing one it does
 src/main/desktop.js     your VS Code install, read-only: profiles, associations, extension ids
 src/main/extensions.js  the one shared extensions directory: install, prune
 src/main/profiles.js    the profile mirror on the server's disk, and keeping it alive
@@ -258,7 +262,9 @@ src/shell/index.html    strip, gutters, glow, the empty state
 src/shell/shell.js      one module, talks to main through window.ct
 src/shell/shell.css
 src/shell/usage.html    the usage panel: its own page in its own window, on the same preload
-src/shell/picker.html   the project picker: the same, one screen wide
+src/shell/picker.html   the project picker: the same, one screen wide, with picker.css and
+                        picker.js beside it
+src/shell/panel.css     what the four panel pages agree on: the ink, and the label above it
 src/shell/preferences.html  the two dials: the same again, one small panel
 src/shell/format.js     what the pages agree on: the colour ramp, a reset time, and a project's
                         mark - its favicon, or its initial on its own hue
@@ -268,6 +274,8 @@ src/guest/manifest.js   the seam list. Adding a seam means adding a line here.
 src/guest/runtime.cjs   the preload: loads seams, owns the style element, owns the context
 src/guest/rungs.cjs     what a rung's NAME is worth: the ladder, and the ground share the shell
                         has to agree with. The one thing outside a window that main may read.
+src/guest/shape.cjs     counting a shape in a bundle, for the patches that refuse unless it
+                        appears exactly once
 src/guest/seams/*.js    one seam per file
 src/guest/disk/         the seams' parts that land before the server starts: their settings and
                        keybindings, merged into its files and every profile's, and the patches to
