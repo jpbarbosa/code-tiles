@@ -185,6 +185,13 @@ export class Desk {
     this.render();
   }
 
+  // The keyboard back to the tile focus is already on, moving that focus nowhere. macOS gives a
+  // clicked button the keyboard, and a focused button answers Enter with a click, so a press in
+  // the strip leaves the shell page holding the next keystroke on behalf of that button.
+  returnKeyboard() {
+    this.#tiles.focus(this.#projects.focused);
+  }
+
   focusByIndex(index) {
     const open = this.#projects.open();
     if (index >= 0 && index < open.length) this.focus(open[index].folder);

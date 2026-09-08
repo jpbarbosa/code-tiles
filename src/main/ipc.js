@@ -13,6 +13,12 @@ export function installIpc({ desk, usage, popover, picker, preferences, events }
   // The screen goes first either way: a folder dialog behind a scrim reads as two dialogs.
   const browse = () => { picker.close(); return desk.browse(); };
 
+  // The strip's own buttons, each of them finished the moment it is clicked. The keyboard goes
+  // back to the tile BEFORE the command runs, so a screen this opens (the picker, the usage
+  // panel) still takes it from there, and the press that dismisses that screen leaves the next
+  // keystroke in an editor rather than in the shell page, where it would re-fire the button.
+  const STRIP_COMMANDS = new Set(['layout:set', 'mode:set', 'project:pick', 'usage:popover']);
+
   const commands = {
     'state': () => { desk.render(); usage.publish(); picker.publish(); },
     'ground': ({ ground }) => desk.setGround(ground),
@@ -78,6 +84,7 @@ export function installIpc({ desk, usage, popover, picker, preferences, events }
   const dispatch = async (message) => {
     const command = commands[message?.type];
     if (!command) throw new Error(`unknown command: ${message?.type}`);
+    if (STRIP_COMMANDS.has(message.type)) desk.returnKeyboard();
     // The sender's folder, for the commands that are a window talking about itself.
     return command(message.payload || {}, message.folder);
   };

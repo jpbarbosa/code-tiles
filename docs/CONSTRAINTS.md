@@ -494,6 +494,16 @@ own are both in `shell.css`; `picker.html` and `usage.html` always had the decla
 - measured by reading the colour out of a light and a dark document, and by forcing the pseudo-class
 over CDP and dumping the pixels: `#e5972d` + `#ffffff` before, neither after.
 
+**A focused button answers Enter with a click of its own**, and the click above is what focused
+it: Chromium on macOS gives a clicked `<button>` the focus Safari withholds. So a press in the
+strip leaves the shell page holding the keyboard on that button's behalf, the window restores it
+on a cmd-tab back, and the next Enter re-fires whatever was pressed last - `+` re-opening the
+picker is how it was found. `STRIP_COMMANDS` in `src/main/ipc.js` hands the keyboard to the
+focused tile BEFORE the command runs, so a screen that opens after it still takes it, and the
+press dismissing that screen leaves the next keystroke in an editor. **[checked]** - the click,
+the `activeElement` it leaves and the Enter firing the same handler with `detail: 0`, driven over
+`sendInputEvent`; AppKit restoring the first responder on a cmd-tab back was not driven.
+
 **The app writes Claude Code's hooks into `~/.claude/settings.json` with the absolute path of its
 own data directory**, and replaces its own entries rather than appending. So a second instance
 started on a throwaway `--user-data-dir` - which is how a packaged build is tried while the source
