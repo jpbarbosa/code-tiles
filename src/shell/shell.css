@@ -396,7 +396,8 @@ body[data-sorting] .chip .close { cursor: grabbing; }
   position: absolute;
   border-radius: 10px;
   pointer-events: none;
-  background: color-mix(in oklab, var(--bg) var(--survives), oklch(0.62 0.15 var(--hue)));
+  /* No share means no tint, rather than an invalid color-mix and no ground at all. */
+  background: color-mix(in oklab, var(--bg) var(--survives, 100%), oklch(0.62 0.15 var(--hue)));
 }
 
 /* The focus mark that lives OUTSIDE the tile. The view paints over the middle of this element,

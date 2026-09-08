@@ -1,19 +1,15 @@
 'use strict';
 
+const { groundShare, rungOf, stateOf, survives } = require('../rungs.cjs');
+
 const STYLE_ID = 'code-tiles-tint';
 
-// How much of its colour a window wears. Each rung is 0.55 of the one above rather than an even
-// step down: the same 0.45 is half the colour off 1 and nearly all of it off 0.55.
-const RUNGS = { subtle: 0.3, medium: 0.55, strong: 1 };
-
-// The project's share of each mix at `strong`, the rung of 1. `color-mix` is written the other
-// way round - how much of the THEME survives - so each is spent as its complement.
+// The project's share of each mix at `strong`, the rung of 1. The ground's own share is not here:
+// the shell paints a tile's ground before that tile has a window, so it lives in `rungs.cjs`
+// where both sides read it.
 const SHARE = {
   veil: 7,     // over the whole of a part
   wash: 26,    // on a plate: the side bar's title row, the menubar, an active tab
-  // The gaps the parts float in, which is the surface focus is read off - so this is the one
-  // amount that is already two before any dial moves it.
-  ground: { focused: 38, quiet: 15 },
 };
 // A mark ON that ground is a colour rather than a mix, so its own dial is chroma.
 const INK = { focused: 0.05, quiet: 0.025 };
@@ -23,10 +19,6 @@ const INK = { focused: 0.05, quiet: 0.025 };
 // a light one.
 const TURN = { step: 10, chroma: 0.028 };
 
-const rungOf = (context) => RUNGS[context.tint] || RUNGS.medium;
-const stateOf = (context) => (context.focused ? 'focused' : 'quiet');
-// What is left of the theme once the project's colour has taken its share.
-const survives = (share, rung) => `${Math.round((100 - share * rung) * 100) / 100}%`;
 const chroma = (amount, rung) => Math.round(amount * rung * 10000) / 10000;
 
 // The tokens, said once and spent in two sheets: a frame shares no cascade with the document
@@ -296,7 +288,7 @@ ${tokens(context)}
    cannot otherwise outrank. */
 .monaco-workbench {
   --modern-ui-shell-background: color-mix(in oklab,
-    var(--vscode-titleBar-activeBackground) ${survives(SHARE.ground[stateOf(context)], rungOf(context))},
+    var(--vscode-titleBar-activeBackground) ${groundShare(context)},
     var(--ct-brand)) !important;
 }
 `,

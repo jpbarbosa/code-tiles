@@ -190,8 +190,10 @@ One store, `src/main/store.js`, one file, atomic writes, a `version` field:
 
 `tint` is the app's one preference and the only field here that is a taste rather than a
 position: how much of its own colour a window wears, on the tile you are in and on the tiles you
-are not. It is stored as the RUNG's name; what a name is worth in a mix is the tint seam's, and a
-window is handed only the one rung that applies to it.
+are not. It is stored as the RUNG's name; what a name is worth in a mix is `src/guest/rungs.cjs`,
+and a window is handed only the one rung that applies to it. The shell reads that module too,
+through main: it paints a tile's ground before that tile has a window, so two layers draw one
+colour and neither may hold its own copy of the ladder.
 
 What is derivable is not stored. A project's **name** is its folder's basename and its **hue**
 is the average of the colourful pixels in its favicon - a hash of its path when there is no
@@ -264,6 +266,8 @@ src/shell/preload.cjs   contextBridge: window.ct
 
 src/guest/manifest.js   the seam list. Adding a seam means adding a line here.
 src/guest/runtime.cjs   the preload: loads seams, owns the style element, owns the context
+src/guest/rungs.cjs     what a rung's NAME is worth: the ladder, and the ground share the shell
+                        has to agree with. The one thing outside a window that main may read.
 src/guest/seams/*.js    one seam per file
 src/guest/disk/         the seams' parts that land before the server starts: their settings and
                        keybindings, merged into its files and every profile's, and the patches to

@@ -1,12 +1,14 @@
 import { BrowserWindow } from 'electron';
 
 import { files } from './paths.js';
+import { rungNames } from '../guest/manifest-settings.js';
 
 // The app's one preference: how much of its own colour a window wears, on the tile you are in and
 // on the tiles you are not. Two dials, three rungs each, and the rungs are NAMES here - what a
-// name is worth in a mix is the tint seam's business, which is the same split every other thing a
-// window is told about itself is on.
-const RUNGS = ['subtle', 'medium', 'strong'];
+// name is worth in a mix is the guest's business, which is the same split every other thing a
+// window is told about itself is on. Read from there, so a rung this app offers is one a window
+// can actually wear.
+const RUNGS = rungNames();
 const DIALS = ['focused', 'quiet'];
 const DEFAULT = 'medium';
 const WIDTH = 380;

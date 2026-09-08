@@ -12,7 +12,8 @@ const usage = document.getElementById('usage');
 const splitters = document.getElementById('splitters');
 const stripScrim = document.getElementById('strip-scrim');
 
-let state = { projects: [], rects: [], splitters: [], mode: 'grid', focused: null, strip: 36, parts: {} };
+let state = { projects: [], rects: [], splitters: [], mode: 'grid', focused: null, strip: 36, parts: {},
+  grounds: {} };
 let drag = null;
 let sorting = null;
 
@@ -92,10 +93,6 @@ function renderChips(open) {
   }));
 }
 
-// How much of the theme's ground survives the project's colour, focused and quiet: the two shares
-// the tint seam spends on a window's own ground, so a tile does not change colour as it arrives.
-const GROUND = { focused: '62%', quiet: '85%' };
-
 // A tile's colour is the app's to draw before its window exists to draw it: main places the views
 // over these rects, and until each one has painted, this is what fills it. Under the glow, which
 // goes on saying which tile is focused.
@@ -106,7 +103,8 @@ function renderGrounds(open) {
     const ground = document.createElement('div');
     ground.className = 'ground';
     ground.style.setProperty('--hue', project.hue);
-    ground.style.setProperty('--survives', GROUND[project.folder === state.focused ? 'focused' : 'quiet']);
+    const share = state.grounds?.[project.folder === state.focused ? 'focused' : 'quiet'];
+    if (share) ground.style.setProperty('--survives', share);
     ground.style.left = `${rect.x}px`;
     ground.style.top = `${rect.y - state.strip}px`;
     ground.style.width = `${rect.width}px`;

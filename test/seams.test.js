@@ -275,3 +275,32 @@ test('the chat-icon seam looks the Claude panel up by its view type', () => {
   assert.ok(TAB_MARKUP.resource.startsWith(asked[0].match(/\^="([^"]+)"/)[1]),
     `${asked[0]} would not match ${TAB_MARKUP.resource}`);
 });
+
+// The shell paints a tile's ground before that tile has a window, so two places draw one colour
+// and only one of them owns the rungs. They drifted: the shell held `strong`'s shares as literals
+// while the shipped default is `medium`, so every tile's corners - which the card seam leaves
+// unpainted - carried a colour no window ever wore. The share the shell is SENT is asserted here
+// against the seam's own stylesheet, which is the only place that can still tell them apart.
+test('the ground the shell is sent is the ground the tint seam paints', async () => {
+  const { groundShares } = await import('../src/guest/manifest-settings.js');
+  const tint = seams.find((seam) => seam.name === 'tint');
+
+  for (const rung of ['subtle', 'medium', 'strong']) {
+    const shares = groundShares({ focused: rung, quiet: rung });
+    for (const [dial, focused] of [['focused', true], ['quiet', false]]) {
+      const css = tint.css({ hue: 200, tint: rung, focused });
+      assert.ok(
+        css.includes(`var(--vscode-titleBar-activeBackground) ${shares[dial]},`),
+        `${rung}/${dial}: the seam does not paint the ${shares[dial]} the shell is handed`,
+      );
+    }
+  }
+});
+
+// An unreadable rung is one window at the middle setting, never a window with no ground: the
+// state file is editable by hand and older builds wrote rungs this one may not know.
+test('a rung that is not a rung falls back to medium rather than to nothing', async () => {
+  const { groundShares } = await import('../src/guest/manifest-settings.js');
+  assert.deepEqual(groundShares({}), groundShares({ focused: 'medium', quiet: 'medium' }));
+  assert.deepEqual(groundShares({ focused: 'loud', quiet: null }), groundShares({}));
+});

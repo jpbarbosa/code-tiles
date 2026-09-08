@@ -2,6 +2,7 @@ import { app, dialog, screen } from 'electron';
 
 import { METRICS, gridResize, gridSplitters, rectAt, shapeKey, tileRects } from './layout.js';
 import { badgeFor } from './dock.js';
+import { groundShares } from '../guest/manifest-settings.js';
 import { learn } from './icon.js';
 import { IS_WINDOWS } from './platform.js';
 
@@ -72,6 +73,9 @@ export class Desk {
       ground: this.#ground,
       parts: this.#shownParts(focused),
       mode: this.#projects.mode,
+      // What each tile's ground is worth, from the seam that owns the rungs: the shell paints a
+      // tile's rect before that tile has a window, and both have to arrive at one colour.
+      grounds: groundShares(levels),
       strip: METRICS.strip,
       gap: METRICS.gap,
       focused,
