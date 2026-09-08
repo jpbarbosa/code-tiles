@@ -147,8 +147,11 @@ test('every patch rewrites its shape once, into code that parses', () => {
 // The server is a dependency, so it arrives in whatever shape its installer chose, and only one
 // of the three is the one this tree has ever run from. Each is built here rather than described:
 // finding the root is a walk over real directories, and a described one would prove nothing.
+// Resolved, because `serverRoot` resolves the binary it is handed and macOS's temp directory is
+// reached through a symlink: os.tmpdir() answers /var/folders/... and every path the walk returns
+// is under /private/var/folders/..., so an unresolved base compares equal to nothing it finds.
 function layout(...dirs) {
-  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'ct-root-'));
+  const base = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ct-root-')));
   for (const dir of dirs) fs.mkdirSync(path.join(base, ...dir), { recursive: true });
   return base;
 }
