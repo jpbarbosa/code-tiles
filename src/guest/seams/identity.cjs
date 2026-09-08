@@ -98,16 +98,17 @@ ${RINGS[context.claudeState] ? `
     left: 50%;
     top: 50%;
     /* Concentric with the card, which is the whole reason for these numbers: an 18px badge
-       rounded by 3px, a ring standing 4.5px off it, so 27px at a radius of 7.5 - and the 2px the
-       stroke eats inward leaves 2.5px of air on the flats AND round the corners. box-sizing is
-       said out loud because the padding is the stroke: under content-box the ring grows by 4px
-       and stops being concentric with anything. */
+       rounded by 3px, a ring standing 5.5px off it, so 29px at a radius of 8.5 - and the 3px the
+       stroke eats inward leaves 2.5px of air on the flats AND round the corners. A thicker stroke
+       grows OUTWARD, so that air is what stays fixed. box-sizing is said out loud because the
+       padding is the stroke: under content-box the ring grows by 6px and stops being concentric
+       with anything. */
     box-sizing: border-box;
-    width: 27px;
-    height: 27px;
-    margin: -13.5px 0 0 -13.5px;
-    border-radius: 7.5px;
-    padding: 2px;
+    width: 29px;
+    height: 29px;
+    margin: -14.5px 0 0 -14.5px;
+    border-radius: 8.5px;
+    padding: 3px;
     mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     mask-composite: exclude;
     ${RINGS[context.claudeState]}
