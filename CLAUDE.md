@@ -13,6 +13,7 @@ app this one replaces.
 
 ```bash
 npm start                     # run from source
+npm run start:dev             # a SECOND instance, beside your installed app, on ~/.code-tiles-dev
 npm test                      # the pure parts (geometry, so far)
 npm run fetch-code-server     # vendor the pinned server
 npm run install-app           # package, sign and replace /Applications/Code Tiles.app
@@ -52,6 +53,22 @@ from a screenshot alone.
 
 The app is normally already running with live sessions in its tiles; terminals live in the
 server, not in the window, so reloading the shell (⇧⌘R) is free and restarting the app is not.
+Never kill it by name - `pkill -f "Code Tiles"` matches the shared code-server too and takes every
+terminal in every tile with it.
+
+**A terminal inside a tile cannot launch this app, and `scripts/start.js` is why `npm start` still
+works from one.** That environment exports `ELECTRON_RUN_AS_NODE`, which runs the electron binary
+as plain node so every ESM import in `src/main` fails naming an export that is genuinely there, and
+`CODE_SERVER_PARENT_PID`, which the app's own code-server child inherits and reads as "I am already
+a child" - it then looks for an IPC channel it was not spawned with and exits, so startup fails on a
+health poll that only ever learns nothing answered. Both are cleared in that script rather than in
+whatever you remember to type in front of the command.
+
+`npm run start:dev` is the second instance: `--user-data-dir` gives it its own single-instance lock,
+state, server port and login partition, since every path is derived from `app.getPath('userData')`.
+The one path that is NOT - `~/.claude/settings.json`, where the Claude hooks live - is why it also
+sets `CODE_TILES_HOOKS=0`: without that, whichever instance started last points every hook at its
+own `activity-hook.py` and silently takes the other's Claude rings away.
 `⌥⌘I` opens devtools on the focused project's window and `⇧⌃⌘I` on the shell, both in a window of
 their own: a docked pane is part of the page, and the tiles paint over it.
 

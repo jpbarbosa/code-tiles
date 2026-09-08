@@ -176,3 +176,37 @@ test('the hook script pins a session to the folder it started in', (t) => {
   fire('working', { session_id: '../escaped', cwd: project });
   assert.ok(!fs.existsSync(path.join(base, 'escaped.json')));
 });
+
+// ~/.claude/settings.json is the one path this app writes outside its own data directory, so a
+// second instance on its own --user-data-dir shares it with the first. Told it does not own the
+// hooks, it must leave that file exactly as it found it: whichever instance started last would
+// otherwise point every hook at its own script and take the other's Claude rings away silently.
+// Its own fixture rather than bench(), which installs hooks of its own on the way in.
+test('an instance that does not own the hooks leaves your settings alone', (t) => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'ct-unowned-'));
+  const settings = path.join(base, 'settings.json');
+  const script = path.join(base, 'activity-hook.py');
+  const yours = { hooks: { Stop: [{ hooks: [{ type: 'command', command: '/other/activity-hook.py end' }] }] } };
+  fs.writeFileSync(settings, JSON.stringify(yours, null, 2));
+
+  const quiet = new Activity({ dir: path.join(base, 'activity'), script, settings: null });
+  quiet.start();
+  t.after(() => quiet.stop());
+
+  assert.deepEqual(JSON.parse(fs.readFileSync(settings, 'utf8')), yours, 'it rewrote a file it does not own');
+  assert.ok(!fs.existsSync(`${settings}.ct-backup`), 'it backed up a file it never meant to touch');
+  assert.ok(!fs.existsSync(script), 'it wrote a hook script nothing points at');
+});
+
+// The other side of the same switch, so the guard cannot be satisfied by never installing at all.
+test('an instance that does own them still installs', (t) => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'ct-owned-'));
+  const settings = path.join(base, 'settings.json');
+  const owner = new Activity({
+    dir: path.join(base, 'activity'), script: path.join(base, 'activity-hook.py'), settings,
+  });
+  owner.start();
+  t.after(() => owner.stop());
+  assert.ok(fs.existsSync(settings), 'no settings file was written');
+  assert.match(fs.readFileSync(settings, 'utf8'), /activity-hook\.py/);
+});

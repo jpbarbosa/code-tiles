@@ -46,6 +46,10 @@ function findPython() {
 // The script, then the entries that call it: a hook naming a script that is not there yet fails
 // on every event of every session until it is.
 export function installHooks({ dir, script, settings: file }) {
+  // An instance that does not own them. ~/.claude/settings.json is the one path this app writes
+  // outside its own data directory, so --user-data-dir does not isolate it and two instances
+  // would trade the other's rings away by starting.
+  if (!file) return void console.log('[activity] not installing hooks; another instance owns them');
   const python = findPython();
   if (!python) {
     console.error(`[activity] no python3 at ${pythonCandidates().join(' or ')}, so no hooks and no Claude state`);

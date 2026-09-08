@@ -134,7 +134,10 @@ app.whenReady().then(async () => {
   activity = new Activity({
     dir: paths.activity,
     script: paths.activityHook,
-    settings: claudePaths().settings,
+    // Whether this instance owns the hooks. A second one running beside your installed app is
+    // started with this off, because the file they are written to is the one thing a separate
+    // --user-data-dir does not give it a copy of - see scripts/start.js.
+    settings: process.env.CODE_TILES_HOOKS === '0' ? null : claudePaths().settings,
     // The log gets the conclusion, not the markers: what a project's badge is about to draw is
     // the same thing the tab icon is supposed to agree with, and disagreement is what it is for.
     onChange: () => {
