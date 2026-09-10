@@ -1,14 +1,50 @@
 import { rgbFor } from './icon.js';
 
-// A project's colour is a fact about its folder, never a stored preference: the hue its own
-// favicon is mostly made of, and the hash of its path when there is none to take one from. So
-// there is no field to migrate when this rule changes and no colour to reconcile when a folder
-// moves. Nothing is memoised, which is load-bearing rather than an omission: the sample arrives
+// A project's colour as its folder says it: the hue its favicon - or the image chosen for its mark
+// - is mostly made of, and the hash of its path when there is none to take one from. A hue chosen
+// from the project's menu is laid over this by src/main/projects.js and never reaches here.
+// Nothing is memoised, which is load-bearing rather than an omission: the sample arrives
 // asynchronously, and a folder answered before it landed would keep its path's hue for the run.
-export function hueFor(folder) {
-  const rgb = rgbFor(folder);
+export function hueFor(folder, image = null) {
+  const rgb = rgbFor(folder, image);
   if (!rgb) return hueOfPath(folder);
   return oklchHue(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255);
+}
+
+// The plate a window draws an initial on, `oklch(0.62 0.15 <hue>)`, as the sRGB bytes a native
+// swatch is painted in: said a third time, after src/shell/format.js and the identity seam. sRGB
+// cannot hold every hue at that chroma - yellows and teals fall outside - so the chroma comes down
+// until it fits, keeping the hue and the lightness, which are what a swatch is read by.
+const PLATE_LIGHTNESS = 0.62;
+const PLATE_CHROMA = 0.15;
+
+export function plateRgb(hue) {
+  const fits = (chroma) => linearRgb(PLATE_LIGHTNESS, chroma, hue).every((c) => c >= 0 && c <= 1);
+  let chroma = PLATE_CHROMA;
+  if (!fits(chroma)) {
+    let [low, high] = [0, chroma];
+    for (let step = 0; step < 16; step += 1) {
+      const middle = (low + high) / 2;
+      if (fits(middle)) low = middle;
+      else high = middle;
+    }
+    chroma = low;
+  }
+  const encode = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+  return linearRgb(PLATE_LIGHTNESS, chroma, hue).map((c) => Math.round(encode(c) * 255));
+}
+
+function linearRgb(lightness, chroma, hue) {
+  const angle = hue * Math.PI / 180;
+  const [a, b] = [chroma * Math.cos(angle), chroma * Math.sin(angle)];
+  const long = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const medium = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const short = (lightness - 0.0894841775 * a - 1.2914855480 * b) ** 3;
+  return [
+    4.0767416621 * long - 3.3077115913 * medium + 0.2309699292 * short,
+    -1.2684380046 * long + 2.6097574011 * medium - 0.3413193965 * short,
+    -0.0041960863 * long - 0.7034186147 * medium + 1.7076147010 * short,
+  ];
 }
 
 function hueOfPath(folder) {

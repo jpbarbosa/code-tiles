@@ -4,9 +4,10 @@ import { hueFor } from './hue.js';
 import { iconFor } from './icon.js';
 import { arranged, inserted, rebound, swapped } from './order.js';
 
-// A project IS its folder. No generated id, no stored name, no stored colour: everything a
-// project has is either the path or derived from it, so nothing can fall out of step with the
-// folder and there is no field to migrate when a rule changes.
+// A project IS its folder. No generated id and no stored name: everything a project has is the
+// path or derived from it, so nothing can fall out of step with the folder - save the mark and the
+// hue you CHOSE from its menu, the one thing on an entry that is a taste rather than a fact. Those
+// win over the derivation until Automatic takes them back off the entry.
 export class Projects {
   #store;
   #profileFor;
@@ -72,6 +73,12 @@ export class Projects {
     return this.#describeAll(this.#entries().filter((entry) => entry.open));
   }
 
+  // What each project's mark is read from, for the decoder: the image chosen for it, or null for
+  // the folder's own favicon.
+  sources() {
+    return this.#entries().map((entry) => ({ folder: entry.folder, image: chosenOf(entry).image }));
+  }
+
   // In one pass, because which project a Claude session belongs to is answered against the whole
   // list at once: a session in a nested folder belongs to the deeper of two open projects.
   #describeAll(entries) {
@@ -81,11 +88,14 @@ export class Projects {
   }
 
   #describe(entry, focused, claude) {
+    const chosen = chosenOf(entry);
     return {
       folder: entry.folder,
       name: path.basename(entry.folder),
-      hue: hueFor(entry.folder),
-      icon: iconFor(entry.folder),
+      hue: chosen.hue ?? hueFor(entry.folder, chosen.image),
+      icon: chosen.initial ? null : iconFor(entry.folder, chosen.image),
+      // What the project's menu checks, null wherever the derivation is in force.
+      chosen,
       // Which of your VS Code profiles this folder belongs to. Derived from the same place the
       // name and the hue are - the path - so nothing here can fall out of step with the desktop.
       profile: this.#profileFor(entry.folder),
@@ -138,6 +148,19 @@ export class Projects {
     this.#write(this.#entries().filter((entry) => entry.folder !== folder));
   }
 
+  // Merged into what was chosen before, so the icon and the colour move apart. A null is Automatic
+  // again, and an entry with nothing chosen keeps no field at all.
+  choose(folder, choice) {
+    const entries = this.#entries();
+    const entry = entries.find((item) => item.folder === folder);
+    if (!entry) return;
+    const chosen = Object.fromEntries(Object.entries({ ...entry.chosen, ...choice })
+      .filter(([, value]) => value !== null && value !== undefined && value !== false));
+    if (Object.keys(chosen).length) entry.chosen = chosen;
+    else delete entry.chosen;
+    this.#write(entries);
+  }
+
   // The strip's gesture, the grid's, and either of them abandoned. What each one means is in
   // src/main/order.js, with nothing around it; what this list adds is that an order is written
   // once and only ever for the open slots.
@@ -169,4 +192,14 @@ export class Projects {
   #write(entries) {
     this.#store.update({ entries });
   }
+}
+
+// One shape whatever the file holds, so every reader can ask `chosen.hue ?? derived`.
+function chosenOf(entry) {
+  const chosen = entry.chosen || {};
+  return {
+    image: typeof chosen.image === 'string' ? chosen.image : null,
+    initial: chosen.initial === true,
+    hue: Number.isFinite(chosen.hue) ? chosen.hue : null,
+  };
 }

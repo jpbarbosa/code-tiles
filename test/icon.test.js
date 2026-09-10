@@ -4,9 +4,10 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { iconFor } from '../src/main/icon.js';
+import { forget, iconFor } from '../src/main/icon.js';
 
 const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex');
+const JPEG = Buffer.from('ffd8ffe000104a464946', 'hex');
 
 function folderWith(files) {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'ct-icon-'));
@@ -69,4 +70,35 @@ test('an icon too big for a command line is no icon until something shrinks it',
   // Read all the same, because a hue is a number whatever it was sampled from. What it cannot do
   // is ride `additionalArguments` unre-encoded, and nothing has re-encoded it here.
   assert.equal(iconFor(folderWith({ 'favicon.png': Buffer.alloc(200 * 1024) })), null);
+});
+
+// An image chosen from the project's menu, which is read from wherever it is rather than searched
+// for - and which may be any picture a browser can name from its bytes, not only a favicon's two.
+test('a chosen image is the mark, and the folder keeps its own favicon behind it', () => {
+  const folder = folderWith({ 'favicon.svg': '<svg/>', 'art/logo.jpg': JPEG });
+  assert.ok(iconFor(folder, path.join(folder, 'art/logo.jpg')).startsWith('data:image/jpeg;base64,'));
+  assert.ok(iconFor(folder).startsWith('data:image/svg+xml;base64,'));
+});
+
+test('a chosen image that has gone is the favicon again, not no icon at all', () => {
+  const folder = folderWith({ 'favicon.ico': PNG });
+  assert.ok(iconFor(folder, path.join(folder, 'deleted.png')).startsWith('data:image/png;base64,'));
+});
+
+test('a chosen image is typed from its bytes, whatever it is called', () => {
+  const kinds = { gif: Buffer.from('GIF89a'), webp: Buffer.from('RIFF\0\0\0\0WEBPVP8 ') };
+  for (const [kind, bytes] of Object.entries(kinds)) {
+    const folder = folderWith({ 'picture.bin': bytes });
+    assert.ok(iconFor(folder, path.join(folder, 'picture.bin')).startsWith(`data:image/${kind};base64,`), kind);
+  }
+});
+
+test('a chosen image is read once a run, until it is chosen again', () => {
+  const folder = folderWith({ 'logo.png': PNG });
+  const image = path.join(folder, 'logo.png');
+  assert.ok(iconFor(folder, image).startsWith('data:image/png;base64,'));
+  fs.writeFileSync(image, '<svg xmlns="http://www.w3.org/2000/svg"/>');
+  assert.ok(iconFor(folder, image).startsWith('data:image/png;base64,'), 'held for the run');
+  forget(image);
+  assert.ok(iconFor(folder, image).startsWith('data:image/svg+xml;base64,'));
 });

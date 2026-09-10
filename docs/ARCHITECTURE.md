@@ -206,6 +206,12 @@ is the average of the colourful pixels in its favicon - a hash of its path when 
 favicon, or no colour in one. So neither can drift out of step with the folder, and neither needs
 a migration when the rule changes.
 
+The exception is a CHOICE. An entry may carry `chosen` - an image or the initial letter for the
+mark, a hue for the colour - picked from the project's own menu, and it wins over the derivation
+until Automatic deletes it. It holds only what was picked, never a copy of what was derived, and it
+belongs to the folder: a tile that re-points takes the target's choices and leaves its own with the
+folder it left.
+
 Which favicon is a fixed list of literal relative paths, never a traversal: a `find` in a folder
 holding six apps picks one of them at random. The order IS the ruleset - directory-major with the
 root first, and rasters before the SVG inside each directory - and `src/main/icon.js` says why
@@ -245,7 +251,10 @@ src/main/projects.js    the project list and its ordering
 src/main/icon.js        which file is a project's mark, and the cache a decode fills
 src/main/sampler.js     the offscreen renderer that reads those bytes: a hue, and a mark small
                         enough for a command line
-src/main/hue.js         that colour as the angle an oklch() reads back, or the path's hash
+src/main/hue.js         that colour as the angle an oklch() reads back, or the path's hash - and a
+                        hue back as the plate's sRGB, for a swatch
+src/main/appearance.js  a project's own menu: what it offers, which item is checked, a swatch's
+                        pixels. No Electron.
 src/main/activity.js    the markers Claude's hooks leave, and what each project's state is
 src/main/activity-hooks.js  the other half: the hook script, and the entries in your own
                         ~/.claude/settings.json that call it. The only thing here that writes.

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { hueFor } from '../src/main/hue.js';
+import { hueFor, plateRgb } from '../src/main/hue.js';
 
 // A project's colour is derived from its folder and never stored, so this is the only place the
 // answer exists. It is spent as `oklch(0.62 0.15 <hue>)`, which is why the angle has to be OKLCH's
@@ -36,4 +36,21 @@ test('a realistic set of sibling folders spreads across the wheel', () => {
   assert.equal(new Set(hues).size, names.length, `collision among ${hues.join(', ')}`);
   // At least half the quadrants used, which a clustered hash would fail.
   assert.ok(new Set(hues.map((hue) => Math.floor(hue / 90))).size >= 2, `bunched: ${hues.join(', ')}`);
+});
+
+// The other direction, for a native swatch: the plate a window paints, as sRGB bytes. Where sRGB
+// holds the plate these are the bytes Chromium's own canvas fills `oklch(0.62 0.15 <hue>)` with.
+test('a hue sRGB can hold at the plate chroma comes back as the plate exactly', () => {
+  assert.deepEqual(plateRgb(25), [209, 92, 86]);
+  assert.deepEqual(plateRgb(145), [64, 157, 72]);
+  assert.deepEqual(plateRgb(255), [64, 135, 222]);
+});
+
+test('a hue sRGB cannot hold loses chroma rather than putting a channel out of range', () => {
+  for (let hue = 0; hue < 360; hue += 5) {
+    const rgb = plateRgb(hue);
+    assert.ok(rgb.every((channel) => Number.isInteger(channel) && channel >= 0 && channel <= 255), `${hue}: ${rgb}`);
+  }
+  const [red, green, blue] = plateRgb(95);
+  assert.ok(red > blue && green > blue, `yellow is still yellow: ${[red, green, blue]}`);
 });

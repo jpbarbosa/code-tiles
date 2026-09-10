@@ -272,6 +272,14 @@ chips.addEventListener('click', (event) => {
 //
 // The pointer is captured by the ROW rather than by the chip, and only once the drag has actually
 // begun. By the row, because every render replaces the chips and a captured node that is replaced
+});
+
+// The project's own menu, the one its badge opens inside the window. Main draws it, at the cursor.
+chips.addEventListener('contextmenu', (event) => {
+  const chip = event.target.closest('.chip');
+  if (!chip) return;
+  event.preventDefault();
+  call('project:menu', { folder: chip.dataset.folder });
 // drops the drag - on the first reorder, which is the reorder the gesture exists to make. Only
 // then, because a capture retargets the click that ends the press to the capturing element: taken
 // on the press, it leaves every chip in the strip unclickable.

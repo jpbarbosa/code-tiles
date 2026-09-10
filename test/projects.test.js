@@ -168,6 +168,40 @@ test('Claude state is asked for every folder in one pass', () => {
   assert.deepEqual(states, ['idle', 'working']);
 });
 
+// What you choose from a project's menu is the one thing about it that is stored, and it wins over
+// the derivation until Automatic takes it back off the entry.
+test('a chosen hue and mark win over the derived ones, and Automatic takes them back', () => {
+  const root = tree('alpha');
+  const folder = path.join(root, 'alpha');
+  fs.writeFileSync(path.join(folder, 'favicon.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
+  const held = store({ entries: [open(folder)] });
+  const projects = new Projects(held);
+  const [derived] = projects.open();
+  assert.ok(derived.icon);
+  assert.deepEqual(derived.chosen, { image: null, initial: false, hue: null });
+
+  projects.choose(folder, { hue: 185 });
+  projects.choose(folder, { initial: true });
+  const [chosen] = projects.open();
+  assert.equal(chosen.hue, 185);
+  assert.equal(chosen.icon, null, 'the initial is drawn over the favicon the folder has');
+  assert.deepEqual(chosen.chosen, { image: null, initial: true, hue: 185 }, 'and the two move apart');
+
+  projects.choose(folder, { hue: null, initial: null });
+  assert.equal(projects.open()[0].hue, derived.hue);
+  assert.equal('chosen' in held.state.entries[0], false, 'nothing chosen keeps no field at all');
+});
+
+test('what the decoder reads is the chosen image where there is one', () => {
+  const root = tree('a', 'b');
+  const [a, b] = ['a', 'b'].map((n) => path.join(root, n));
+  const projects = new Projects(store({ entries: [
+    open(a), { folder: b, open: false, chosen: { image: '/art/logo.png', hue: 'red' } },
+  ] }));
+  assert.deepEqual(projects.sources(), [{ folder: a, image: null }, { folder: b, image: '/art/logo.png' }]);
+  assert.ok(Number.isInteger(projects.all()[1].hue), 'a hue that is not a number is no choice');
+});
+
 test('the profile a folder belongs to is derived, like everything else about it', () => {
   const root = tree('a');
   const folder = path.join(root, 'a');

@@ -159,6 +159,7 @@ html, body {
   & .monogram {
     display: flex;
     align-items: center;
+    object-fit: contain;
     justify-content: center;
     color: #fff;
     font-size: 9px;
@@ -547,6 +548,7 @@ body[data-resizing] #glow { transition: none; }
 
 #empty-add {
   border: 0;
+      object-fit: contain;
   border-radius: 8px;
   padding: 9px 18px;
   background: var(--accent);

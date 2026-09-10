@@ -6,7 +6,7 @@ const VERSION = 1;
 
 const EMPTY = {
   version: VERSION,
-  entries: [],        // [{ folder, open, lastOpened }] - order IS the project order
+  entries: [],        // [{ folder, open, chosen? }] - order IS the project order
   focusedFolder: null,
   mode: 'grid',       // 'grid' | 'single'
   // Which project holds the master column, by folder, or null for the even grid. Not the focus:

@@ -51,10 +51,13 @@ export function rebound(entries, from, to) {
   const slot = entries.find((entry) => entry.folder === from);
   if (!slot?.open || from === to) return null;
   if (entries.some((entry) => entry.open && entry.folder === to)) return null;
+  // What was chosen for a project belongs to its FOLDER rather than to the slot: the tile takes
+  // whatever the target already had, and the folder it left keeps its own.
+  const target = entries.find((entry) => entry.folder === to);
   return [
     ...entries
       .filter((entry) => entry.folder !== to)
-      .map((entry) => (entry.folder === from ? { ...entry, folder: to } : entry)),
-    { folder: from, open: false },
+      .map((entry) => (entry.folder === from ? { ...target, folder: to, open: true } : entry)),
+    { ...slot, open: false },
   ];
 }

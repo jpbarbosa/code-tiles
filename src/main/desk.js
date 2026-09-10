@@ -1,9 +1,13 @@
-import { app, dialog, screen } from 'electron';
+import fs from 'node:fs';
+import path from 'node:path';
+import { Menu, app, dialog, nativeImage, screen } from 'electron';
 
 import { METRICS, gridResize, gridSplitters, rectAt, shapeKey, tileRects } from './layout.js';
+import { SWATCH, appearanceMenu, swatchBitmap } from './appearance.js';
 import { badgeFor } from './dock.js';
 import { groundShares } from '../guest/manifest-settings.js';
-import { learn } from './icon.js';
+import { hueFor } from './hue.js';
+import { CHOSEN_LIMIT, IMAGE_TYPES, forget, learn } from './icon.js';
 import { IS_WINDOWS } from './platform.js';
 
 // The parts the strip's layout control flips, and what a window shows before anyone has chosen:
@@ -90,7 +94,7 @@ export class Desk {
   // is drawn again once the decoder has had it. One extra render per new project, never a loop:
   // `learn` answers a folder once and says whether it found anything to change.
   #learn() {
-    learn(this.#projects.all().map((project) => project.folder))
+    learn(this.#projects.sources())
       .then((learned) => { if (learned) this.render(); })
       .catch((error) => console.error('[icon] sampling failed:', error.message));
   }
@@ -268,6 +272,51 @@ export class Desk {
   closeFocused() {
     const focused = this.#projects.focused;
     if (focused) this.close(focused);
+  }
+
+  // A project's own menu, from a right-click on its chip or on the badge inside its window: the
+  // mark it wears and its hue. Built on every open, since its checks are what is chosen NOW.
+  projectMenu(folder) {
+    const project = this.#projects.all().find((candidate) => candidate.folder === folder);
+    if (!project) return;
+    const report = (error) => console.error('[appearance]', error);
+    Menu.buildFromTemplate(appearanceMenu(project, {
+      automaticHue: hueFor(folder, project.chosen.image),
+      swatch: (hue) => nativeImage.createFromBitmap(swatchBitmap(hue), SWATCH),
+      choose: (choice) => this.choose(folder, choice).catch(report),
+      chooseImage: () => this.chooseImage(folder).catch(report),
+    })).popup({ window: this.#window });
+  }
+
+  // An image is read before anything is drawn from it, or it would draw once on the path's hue and
+  // again in its own - and forgotten first, so choosing a file edited since reads it anew.
+  async choose(folder, choice) {
+    if (choice.image) forget(choice.image);
+    this.#projects.choose(folder, choice);
+    if (choice.image) await learn([{ folder, image: choice.image }]);
+    this.render();
+  }
+
+  async chooseImage(folder) {
+    const picked = await dialog.showOpenDialog(this.#window, {
+      message: `Choose an icon for ${path.basename(folder)}`,
+      defaultPath: folder,
+      properties: ['openFile'],
+      filters: [{ name: 'Images', extensions: IMAGE_TYPES }],
+    });
+    if (picked.canceled || !picked.filePaths.length) return;
+    const [file] = picked.filePaths;
+    // Refused here, where you can hear why: past the limit it is never read, and the favicon would
+    // go on showing under a menu that says otherwise.
+    if (fs.statSync(file).size > CHOSEN_LIMIT) {
+      await dialog.showMessageBox(this.#window, {
+        type: 'warning',
+        message: 'That image is too large to use as an icon.',
+        detail: `Choose one under ${CHOSEN_LIMIT / 1024 / 1024} MB.`,
+      });
+      return;
+    }
+    await this.choose(folder, { image: file, initial: null });
   }
 
   // Devtools in a window of their own. Docked, they are part of the PAGE, and every tile is a

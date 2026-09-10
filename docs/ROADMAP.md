@@ -58,6 +58,14 @@ What the tree does today, what comes next, and what to check when the server is 
   monorepo's `packages/web/public/` - and decoded in an offscreen renderer, which is what reads a
   true ICO and an SVG at all. 30 of the 83 projects on this machine now wear their own colour
   where 17 did; the rest of the gain was a zero-byte Laravel placeholder shadowing real icons.
+- A project's own menu, from a right-click on its badge inside the window or on its chip in the
+  strip: **Icon** - Automatic, the initial letter, or an image of your own from anywhere on disk -
+  and **Color** - Automatic, or one of eight hues, each shown as a swatch of the plate it will
+  paint. It is NATIVE and main's, because the choice is the app's rather than the editor's; on the
+  badge it replaces the activity bar's menu, whose Hide Menu took the badge itself away, and that
+  menu still opens everywhere below it. What you choose is the one thing on a project's entry that
+  is a taste rather than a fact: it wins over the derivation until Automatic takes it back off the
+  entry, and it stays with the FOLDER when a tile re-points to another.
 - The layout control: the editor's own three title bar buttons, in the strip, flipping the side
   bar, the panel or the secondary side bar in every open project at once. A part nobody has
   chosen for is left alone, and the buttons show the focused window's own answer, so a Cmd+B
@@ -181,7 +189,9 @@ What the tree does today, what comes next, and what to check when the server is 
   rectangle concentric with the card - which is why the comet turns by its own angle rather than
   by a transform, a mask being something that turns with the element it masks. The badge is also
   the tile's own drag handle, which costs it no node: the listener goes on the button the badge is
-  drawn on, delegated off the workbench because the menubar is rebuilt whenever the menu changes),
+  drawn on, delegated off the workbench because the menubar is rebuilt whenever the menu changes.
+  A right-click on it is the project's own menu rather than the bar's, and a control-click is
+  swallowed rather than held, being macOS's right-click),
   `chat-icon` (the same three states on the Claude chat tab's own icon, which is the extension's
   `panelTab.iconPath` pointed at SVGs that animate themselves - a patch to the extension's bundle,
   since a still image is all VS Code has and stepping one through frames blinks over http; its

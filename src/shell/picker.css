@@ -185,6 +185,7 @@ button {
   width: 20px;
   height: 20px;
   border-radius: 5px;
+  object-fit: contain;
 }
 
 .choose .monogram,

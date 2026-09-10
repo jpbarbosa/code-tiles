@@ -40,6 +40,11 @@ matches, and a project without one gets a stable colour derived from its path. T
 up in a few deliberate places inside the editor - the sidebar header, the branch pill, the active
 tab - which is what stops you typing into the wrong project.
 
+Right-click a project's icon - at the top of its tile, or on its chip in the strip - to choose for
+yourself. **Icon** puts an image of your own, or the project's initial letter, in place of the
+favicon, and **Color** picks one of eight hues. **Automatic**, in either, goes back to what the app
+worked out.
+
 **Settings** has one preference: how strong that colour is, on a dial for the tile you are in and
 another for the ones you are not. Turn them both down and the tiles stay apart by their icons and
 names alone.

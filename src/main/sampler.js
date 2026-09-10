@@ -29,9 +29,13 @@ window.read = (url, shrink) => new Promise((done) => {
     }
     let mark = null;
     if (shrink) {
+      // Contained rather than stretched: a favicon is square, an image you chose need not be.
+      const [wide, tall] = [img.naturalWidth || 1, img.naturalHeight || 1];
+      const scale = ${MARK} / Math.max(wide, tall);
       const small = document.createElement('canvas');
       small.width = small.height = ${MARK};
-      small.getContext('2d').drawImage(img, 0, 0, ${MARK}, ${MARK});
+      small.getContext('2d').drawImage(img, (${MARK} - wide * scale) / 2, (${MARK} - tall * scale) / 2,
+        wide * scale, tall * scale);
       mark = small.toDataURL('image/png');
     }
     // A black-and-white icon has no hue to take, and says so rather than averaging to a grey.

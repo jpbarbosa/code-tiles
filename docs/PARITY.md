@@ -57,7 +57,8 @@ rebuilt, with the reason in the last section.
 
 | | old | new | |
 |---|---|---|---|
-| A hue per project, sampled from its favicon, hashed from the path otherwise | yes | yes | derived and never stored in both |
+| A hue per project, sampled from its favicon, hashed from the path otherwise | yes | yes | derived in both |
+| The mark and the hue chosen by hand | no | yes | a right-click on the badge or the chip: Icon is an image of your own or the initial letter, Color is one of eight hues shown as swatches. The one thing on an entry that is stored, and only while it differs from Automatic |
 | Favicon on the chip | yes | yes | the same mark the badge wears inside the window, drawn from one function both the strip and the picker call, with the Claude ring around it - and the project's initial on its own hue where there is no favicon, or where the one there is turns out not to decode |
 | A monogram where a project has no favicon | yes | yes | the picker, the strip and the badge inside the window, all on the project's own hue - the badge draws it as the same pseudo-element a favicon uses, so it survives a workbench rebuild and the ring still fits it |
 | Dragging the badge rearranges the grid | yes | yes | and in single view the press belongs to the menu underneath, as it did there |
@@ -190,6 +191,8 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 - **Gutter resizing keyed by the grid's SHAPE**, not by its track count, so a 2x2 dragged with four projects is the 2x2 three of them fall back to - and `⌃⌘0`, which evens both axes at once. The old tree had the gesture, in shares and persisted; what it had no key for was the shape.
 - **Zoom as one app.** Every tile moves together and a project opened later comes up at the
   same size, because Chromium keeps zoom per host and every tile is a window of one server.
+- **A project's mark and colour are yours to choose**, from a right-click on its badge or its chip.
+  The old tree could only derive them, so a black template favicon stayed invisible on a dark tile.
 - **A seam contract.** One file per change, declared in `src/guest/manifest.cjs`, with its
   settings, keybindings, patches, CSS and behaviour in the same place. The old tree spread a
   seam across `renderer.js`, a guest module and a disk script.

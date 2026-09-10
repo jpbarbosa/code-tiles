@@ -94,3 +94,18 @@ test('a closed entry is not a second project, so the tile takes its folder', () 
   assert.deepEqual(shown(next), ['b']);
   assert.deepEqual(next.map((entry) => entry.folder), ['b', 'a'], 'one entry per folder, still');
 });
+
+test('what was chosen for a project goes with its folder, not with the slot', () => {
+  const entries = [
+    { folder: 'a', open: true, chosen: { hue: 25 } },
+    { folder: 'b', open: false, chosen: { hue: 255 } },
+  ];
+  assert.deepEqual(rebound(entries, 'a', 'b'), [
+    { folder: 'b', open: true, chosen: { hue: 255 } },
+    { folder: 'a', open: false, chosen: { hue: 25 } },
+  ]);
+  assert.deepEqual(rebound([entries[0]], 'a', 'x'), [
+    { folder: 'x', open: true },
+    { folder: 'a', open: false, chosen: { hue: 25 } },
+  ], 'a folder never seen here starts with nothing chosen');
+});

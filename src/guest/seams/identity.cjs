@@ -172,9 +172,13 @@ ${context.tiled ? `
       };
 
       workbench.addEventListener('pointerdown', (event) => {
-        if (event.button !== 0 || !api.context.tiled) return;
+        if (event.button !== 0) return;
         const button = event.target.closest(HANDLE);
         if (!button) return;
+        // A control-click is macOS's right-click, which the contextmenu below answers - so the
+        // menubar must not open on the same press, and a press that is a menu is never a drag.
+        if (event.ctrlKey) return void event.preventDefault();
+        if (!api.context.tiled) return;
         // Held, not taken: this suppresses the mousedown the menubar opens on, which is the only
         // way to tell a drag from a click before the hand has said which it is.
         event.preventDefault();
@@ -196,6 +200,16 @@ ${context.tiled ? `
       workbench.addEventListener('pointercancel', () => finish(true), true);
       workbench.ownerDocument.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') finish(true);
+      }, true);
+
+      // A right-click on the badge is the PROJECT's menu - its icon, its colour - which main draws
+      // natively at the cursor, rather than the activity bar's, whose Hide Menu takes the badge
+      // itself away. Stopped on the way down, before the bar's own listener under it hears it.
+      workbench.addEventListener('contextmenu', (event) => {
+        if (!event.target.closest(HANDLE)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        api.send('project:menu');
       }, true);
     });
   },

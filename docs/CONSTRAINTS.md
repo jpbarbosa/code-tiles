@@ -53,6 +53,9 @@ colour tuned for the theme you actually use went silently dead with it.
 
 **Derive rather than store.** Name from the folder, hue from the folder's favicon, order from one
 list. Anything stored twice will disagree, and every stored field is a migration you owe yourself.
+A choice you make OVER a derivation is stored as the choice alone - `chosen` on an entry is what
+you picked, never a copy of what was derived - and Automatic deletes it rather than writing the
+derived value back.
 
 **A workaround dies with its cause.** Every seam that exists because of a code-server bug
 names the version it was written against. `docs/ROADMAP.md` carries the bump checklist; a
@@ -122,6 +125,14 @@ can be hung on that; and the menu is given the press back by dispatching `moused
 on the button, which a synthetic `click` alone does not do. Measured against 4.135.0 by driving
 real input at the button: stock press opens it, held press does not, and the dispatched pair opens
 it again. **[checked]**
+
+**A control-click on macOS is a left press AND a `contextmenu`.** Its `pointerdown` reports
+`button: 0` with `ctrlKey`, and the `contextmenu` follows, so anything that holds a left press takes
+the one a right-click is made of. The badge's drag did: it held the press, the project's menu was
+asked for, and the release - which never moved - was replayed into the menubar, opening the
+editor's menu under the project's. A control press on the badge is swallowed rather than held.
+**[checked]** - driven with `sendInputEvent` and `modifiers: ['control']` against 4.135.0 on
+Electron 44: `project:menu` sent AND the menubar open, before the fix.
 
 **A pointer capture retargets the click that ends the press, and a render between the two cancels
 it.** Both bite the same thing: a row that reorders live under the hand, which is what the strip's
@@ -597,3 +608,10 @@ pixel that is a real one at 2x. **[checked]**
 mark centred in that content box is not centred in the plate you can see - the picker's row × was
 1px left of its own hover plate this way, while every rect in the file read as correct. Put
 `padding: 0` in the `button` reset, not on the one button you noticed. **[checked]**
+
+**Electron checks the first radio of a group that has none checked**, when the menu is about to
+SHOW rather than when it is built: read back after `buildFromTemplate` it reports nothing checked,
+and it pops up with a check on its first item. So a menu whose honest state can be "none of these"
+- the Color palette while the hue is Automatic, a separator away from the item that IS checked - is
+built of checkboxes, which macOS draws the same. **[checked]** - `_menuWillShow()` on two unchecked
+radios turned `[false, false]` into `[true, false]`, Electron 44.

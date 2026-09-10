@@ -17,7 +17,7 @@ export function installIpc({ desk, usage, popover, picker, preferences, events }
   // back to the tile BEFORE the command runs, so a screen this opens (the picker, the usage
   // panel) still takes it from there, and the press that dismisses that screen leaves the next
   // keystroke in an editor rather than in the shell page, where it would re-fire the button.
-  const STRIP_COMMANDS = new Set(['layout:set', 'mode:set', 'project:pick', 'usage:popover']);
+  const STRIP_COMMANDS = new Set(['layout:set', 'mode:set', 'project:menu', 'project:pick', 'usage:popover']);
 
   const commands = {
     'state': () => { desk.render(); usage.publish(); picker.publish(); },
@@ -64,6 +64,9 @@ export function installIpc({ desk, usage, popover, picker, preferences, events }
     'project:drag': (_payload, folder) => desk.startDrag(folder),
     'project:drop': ({ cancel }) => desk.endDrag(Boolean(cancel)),
     'project:forget': ({ folder }) => { projects.forget(folder); desk.render(); },
+    // A project's own menu, drawn by main at the cursor: a chip names its project, and the badge
+    // inside a window is the sender and says nothing.
+    'project:menu': ({ folder }, sender) => desk.projectMenu(folder || sender),
     'project:open': ({ folder }) => desk.open(folder),
     // The strip's chip drag, one insertion per chip it passes. The grid's swap has no row here:
     // that gesture is held by main from the press to the release, so it moves the projects itself.
