@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 
 import { packager } from '@electron/packager';
 
+import { placeBuiltins } from '../src/guest/disk/builtin.js';
+
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 // Everything that is not the app: build output, the sources an icon is baked from, the docs and
@@ -36,6 +38,13 @@ const carriesServer = native && fs.existsSync(vendored);
 if (!carriesServer) {
   const why = native ? 'nothing vendored yet - run npm run fetch-code-server' : `built for ${process.platform}`;
   console.warn(`carrying no server (${why}); the app will look on PATH`);
+}
+
+// Every start places the seams' built-ins into the server it runs, and a start writing into the app
+// it was packaged in breaks that bundle's seal - so the vendored tree is brought up to date first.
+if (carriesServer) {
+  const placed = placeBuiltins(vendored);
+  if (placed.length) console.log(`placed ${placed.join(', ')} into the vendored server`);
 }
 
 const paths = await packager({

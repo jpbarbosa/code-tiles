@@ -23,7 +23,8 @@ import { readDesktop } from './desktop.js';
 import { seedProfileRegistry } from './registry.js';
 import { PARTITION, claudePaths, desktopPaths, resolveCodeServer, userPaths } from './paths.js';
 import { patchExtensions } from '../guest/disk/extension.js';
-import { patchServer } from '../guest/disk/patch.js';
+import { patchServer, serverRoot } from '../guest/disk/patch.js';
+import { placeBuiltins } from '../guest/disk/builtin.js';
 import { writeKeybindings } from '../guest/disk/keybindings.js';
 import { writeSettings } from '../guest/disk/settings.js';
 import { MOD_KEY } from './platform.js';
@@ -103,6 +104,11 @@ app.whenReady().then(async () => {
   // files as a window loads, and nothing re-reads them until one does.
   const rewritten = patchExtensions(paths.extensions);
   if (rewritten.length) console.log(`[extension] ${rewritten.join(', ')}`);
+
+  // And an extension of the app's own, among the server's built-ins: every profile has it, and
+  // nothing that installs, prunes or mirrors the shared directory ever sees it.
+  const placed = placeBuiltins(serverRoot(bin));
+  if (placed.length) console.log(`[builtin] ${placed.join(', ')}`);
 
   mirror = new ProfileMirror({ home: paths.profiles, profiles: desktop.profiles, extensions });
   mirror.write();

@@ -440,6 +440,13 @@ gitignored and holds no tracked files. Reverting a seam leaves its patch applied
 in `workbench.js` today for exactly this reason, put there by a seam version that no longer names
 that file. **[checked]**
 
+**The server's scan of its built-ins is cached against the mtime of the folder holding them.** It
+is reused while `lib/vscode/extensions` keeps its own mtime and the product is unchanged, so a file
+rewritten INSIDE a built-in reaches the next window as the manifest from before, and the cache is
+dropped only by a validator running after it was served. `builtin` replaces its folder whole for
+this, which moves the one mtime the cache compares. **[checked]** - read off `server-main.js`
+(the scanner input's `equals`) in 4.135.0, not driven.
+
 **One `--user-data-dir` is one settings file for every tile**, so a per-project difference
 cannot be a setting. It has to be a seam, or a profile. *[inherited]*
 

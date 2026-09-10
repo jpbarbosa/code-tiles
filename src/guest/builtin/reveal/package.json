@@ -1,0 +1,35 @@
+{
+  "name": "reveal",
+  "displayName": "Reveal in OS",
+  "description": "Reveal in Finder, File Explorer or the file manager, for the files in a tile.",
+  "publisher": "code-tiles",
+  "version": "1.0.0",
+  "engines": { "vscode": "^1.74.0" },
+  "extensionKind": ["workspace"],
+  "main": "./extension.js",
+  "capabilities": { "untrustedWorkspaces": { "supported": true } },
+  "contributes": {
+    "commands": [
+      { "command": "codeTiles.revealInFinder", "title": "Reveal in Finder", "category": "File" },
+      { "command": "codeTiles.revealInFileExplorer", "title": "Reveal in File Explorer", "category": "File" },
+      { "command": "codeTiles.openContainingFolder", "title": "Open Containing Folder", "category": "File" }
+    ],
+    "menus": {
+      "explorer/context": [
+        { "command": "codeTiles.revealInFinder", "group": "navigation@20", "when": "isMac && resourceScheme == vscode-remote" },
+        { "command": "codeTiles.revealInFileExplorer", "group": "navigation@20", "when": "isWindows && resourceScheme == vscode-remote" },
+        { "command": "codeTiles.openContainingFolder", "group": "navigation@20", "when": "isLinux && resourceScheme == vscode-remote" }
+      ],
+      "editor/title/context": [
+        { "command": "codeTiles.revealInFinder", "group": "2_files@0", "when": "isMac && resourceScheme == vscode-remote" },
+        { "command": "codeTiles.revealInFileExplorer", "group": "2_files@0", "when": "isWindows && resourceScheme == vscode-remote" },
+        { "command": "codeTiles.openContainingFolder", "group": "2_files@0", "when": "isLinux && resourceScheme == vscode-remote" }
+      ],
+      "commandPalette": [
+        { "command": "codeTiles.revealInFinder", "when": "isMac && resourceScheme == vscode-remote" },
+        { "command": "codeTiles.revealInFileExplorer", "when": "isWindows && resourceScheme == vscode-remote" },
+        { "command": "codeTiles.openContainingFolder", "when": "isLinux && resourceScheme == vscode-remote" }
+      ]
+    }
+  }
+}

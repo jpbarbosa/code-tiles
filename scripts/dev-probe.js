@@ -256,6 +256,19 @@ const READ = `(() => {
   };
 })()`;
 
+// The reveal seam draws nothing at rest - it is an item in a context menu - so the explorer's menu
+// is opened in the throwaway window to be read. Null where no explorer row is showing.
+const REVEAL = `(async () => {
+  const row = document.querySelector('.explorer-folders-view .monaco-list-row');
+  if (!row) return null;
+  const box = row.getBoundingClientRect();
+  row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2,
+    clientX: box.x + 10, clientY: box.y + box.height / 2 }));
+  await new Promise((resolve) => setTimeout(resolve, 700));
+  return [...document.querySelectorAll('.monaco-menu .action-label')]
+    .map((label) => label.textContent.trim()).filter(Boolean);
+})()`;
+
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function run({ window }) {
@@ -292,6 +305,7 @@ export async function run({ window }) {
   // surface), so the picture of a window's inside comes from a throwaway BrowserWindow with the
   // SAME preload, partition and context: the same document, in a thing that can be photographed.
   const first = guests[0];
+  let reveal = null;
   if (first) {
     // Tiled and not the master, which is the shape that draws every control a window can have:
     // the maximize item offering the column, and the grip beside the close in the corner.
@@ -312,8 +326,10 @@ export async function run({ window }) {
     await shot.loadURL(first.getURL());
     await wait(12000);
     fs.writeFileSync(path.join(OUT, 'tile.png'), (await shot.webContents.capturePage()).toPNG());
+    // After the capture, or the picture of the window has the menu open in it.
+    reveal = await shot.webContents.executeJavaScript(REVEAL).catch((error) => String(error));
     shot.destroy();
   }
-  console.log('PROBE ' + JSON.stringify({ guests: guests.length, bounds: window.getBounds(), report }, null, 2));
+  console.log('PROBE ' + JSON.stringify({ guests: guests.length, bounds: window.getBounds(), report, reveal }, null, 2));
   if (!process.env.CT_PROBE_HOLD) app.exit(0);
 }

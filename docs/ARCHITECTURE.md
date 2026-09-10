@@ -57,6 +57,7 @@ export default {
   keybindings: [{ key, command: '-some.command' }],     // a chord given back, same moment
   patch: { file, marker, find, replace },               // the server's own bundle, same moment
   extension: { id, file, marker, apply },               // an extension's bundle, same moment
+  builtin: dir,                                         // an extension of the app's own, same moment
   css: (ctx) => `...`,                                  // one stylesheet, appended last
   init: (ctx, api) => { ... },                          // runs in the guest, after the workbench
 };
@@ -81,6 +82,11 @@ export default {
   in the same moment and on the same terms, plus one: an extension replaces itself, so the
   pristine bundle is kept beside it and every patch is applied to that. A shape that stops
   matching restores the stock file rather than leaving an edit nobody can reason about.
+- **`builtin`** is an extension of the app's OWN, for a thing the extension API can do and the web
+  build simply lacks - Reveal in Finder is one. `src/guest/disk/builtin.js` places the folder among
+  the server's built-ins in the same moment, which puts it in every profile with no entry in any
+  manifest the app installs, prunes or mirrors, and takes back out any `code-tiles-` folder no
+  seam declares any more, so reverting the seam reverts the extension.
 - **`css(ctx)`** returns plain CSS. The runtime concatenates every seam's CSS into ONE
   `<style>` element and keeps that element **last in `<head>`**, so our rules win on cascade
   order rather than on `!important`. `!important` in a seam is a smell and should carry a
@@ -277,7 +283,8 @@ src/guest/rungs.cjs     what a rung's NAME is worth: the ladder, and the ground 
 src/guest/shape.cjs     counting a shape in a bundle, for the patches that refuse unless it
                         appears exactly once
 src/guest/seams/*.js    one seam per file
+src/guest/builtin/      extensions of the app's own, one folder each, named by a seam's `builtin`
 src/guest/disk/         the seams' parts that land before the server starts: their settings and
-                       keybindings, merged into its files and every profile's, and the patches to
-                       the server's own bundle and to an extension's
+                       keybindings, merged into its files and every profile's, the patches to
+                       the server's own bundle and to an extension's, and the built-ins
 ```

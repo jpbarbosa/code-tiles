@@ -123,7 +123,7 @@ What the tree does today, what comes next, and what to check when the server is 
   is, is `pythonCandidatesFor`. macOS and Linux keep one at a fixed place and Windows ships none,
   so there it is the `py` launcher the python.org installer leaves - and with no interpreter the
   hooks are not installed at all, which is every ring dark rather than anything broken.
-- Twenty seams, verified in a live window rather than from a screenshot:
+- Twenty-one seams, verified in a live window rather than from a screenshot:
   `dark` (your desktop's theme, a dark one only as the fallback under it, auto-detect off, and
   the colour scheme of every document the window holds - web's default theme is the light one,
   and a webview that says nothing shows Chromium's white canvas through every pixel its own page
@@ -216,7 +216,13 @@ What the tree does today, what comes next, and what to check when the server is 
   app's gutter and not the app's gutter plus the editor's - one share read by the stylesheet and
   the patch alike; see *The frame inside a tile* below),
   `zoom` (Cmd+0 given back off the editor, which binds it to Focus into Primary Side Bar and
-  would otherwise swallow the key before the View menu's Actual Size ever saw it).
+  would otherwise swallow the key before the View menu's Actual Size ever saw it),
+  `reveal` (Reveal in Finder back in the explorer's and a tab's context menus, where the desktop
+  puts it - the web build registers no `revealFileInOS` at all, and would hide the desktop's item
+  for a `vscode-remote` file anyway. An extension of the app's own, placed among the server's
+  built-ins so every profile has it, runs `open -R` from the extension host, which is on this
+  machine. File Explorer and a Linux file manager are the same handler under the title each
+  host's desktop uses, and neither has been run).
 - ⚠ **A URI's path is not a path on disk, and only Windows tells you so.** The profile registry
   names each mirrored directory as the path of a `vscode-remote` URI, and the workbench compares
   that against one it built itself - deleting every directory no registered profile claims, in
