@@ -17,6 +17,9 @@ const call = (type, payload) => window.ct.call(type, payload);
 // what Return acts on, and it walks the found rows and the footer's two as one list.
 let active = 0;
 let asked = 0;
+// The row the next list should land on, when a key already knows which one that is. Consumed by
+// the render it was set for; a list that arrives for anything else falls back to the first row.
+let wanted = null;
 
 const rows = () => [...list.querySelectorAll('.row'), homeRow, browseRow];
 
@@ -32,7 +35,9 @@ function render(found) {
   list.replaceChildren(...found.map(row));
   none.hidden = found.length > 0;
   none.textContent = field.value.trim() ? 'Nothing here.' : 'No projects opened yet.';
-  select(0);
+  const at = wanted ? rows().findIndex((node) => node.dataset.into === wanted) : -1;
+  wanted = null;
+  select(at < 0 ? 0 : at);
 }
 
 // Only main has a filesystem, so every keystroke asks it. Answers can land out of order, and
@@ -66,7 +71,6 @@ function row(entry) {
     window.close();
   });
   item.append(choose);
-  item.addEventListener('pointerenter', () => select(rows().indexOf(item)));
 
   // Nothing marks an open project. Nearly every project in this list is open, so a badge on
   // each was a word repeated down the column that told you only what the column was.
@@ -120,6 +124,20 @@ function descend() {
   search();
 }
 
+// A path only, because in a name query Left is the caret and a text field owes it that. The
+// segment dropped is the row to land on up there, so Left and Right are each other's undo
+// rather than Left putting you back at the top of a list you just came out of.
+function ascend() {
+  if (!field.value.startsWith('~') && !field.value.startsWith('/')) return false;
+  const cut = field.value.replace(/\/+$/, '');
+  const at = cut.lastIndexOf('/');
+  if (at < 0) return false;
+  wanted = cut;
+  field.value = cut.slice(0, at + 1);
+  search();
+  return true;
+}
+
 field.addEventListener('input', search);
 
 field.addEventListener('keydown', (event) => {
@@ -132,6 +150,8 @@ field.addEventListener('keydown', (event) => {
   // Right at the END of what you typed has nothing else to do, so it steps INTO the selected
   // folder rather than opening it - the field becomes its path, which is a query already.
   if (event.key === 'ArrowRight' && caretAtEnd()) return descend();
+  // And back out of it. The caret is already at the end after either one, so the two walk.
+  if (event.key === 'ArrowLeft' && caretAtEnd() && ascend()) return event.preventDefault();
   // The row's own × without reaching for it, which is how a list you type into loses a line.
   if (event.key === 'Backspace' && (event.metaKey || event.altKey)) {
     event.preventDefault();
@@ -164,9 +184,13 @@ clear.addEventListener('click', () => {
 browseRow.addEventListener('click', () => call('project:browse'));
 document.getElementById('dismiss').addEventListener('click', () => window.close());
 
-for (const node of [homeRow, browseRow]) {
-  node.addEventListener('pointerenter', () => select(rows().indexOf(node)));
-}
+// Hover picks a row, but only once the pointer has MOVED. A list rebuilt under a still pointer
+// fires enter events for whatever appeared beneath it, which took the selection straight back
+// off the key that rebuilt the list - so a descend landed mid-list instead of on the first row.
+panel.addEventListener('pointermove', (event) => {
+  const index = rows().indexOf(event.target.closest('.row, .quick'));
+  if (index >= 0 && index !== active) select(index);
+});
 
 // Anywhere off the panel is the scrim, which is a dismissal like any other sheet's.
 document.addEventListener('click', (event) => {

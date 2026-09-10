@@ -92,8 +92,11 @@ What the tree does today, what comes next, and what to check when the server is 
   against the PATH, so `sites/orbit` finds a folder that no single name matches; without one it is
   a name. A query that STARTS like a path is read as one instead, so `~/Sites/` lists what is in
   it and every `/` walks a level down; a child that is already a project keeps its icon and its ×. The field holds the focus the whole time, so the arrows move a selection rather
-  than the focus, → at the end of the text steps INTO the selected folder without opening it, and
-  the home row above the folder dialog seeds `~` - a place to browse from.
+  than the focus, → at the end of the text steps INTO the selected folder without opening it and
+  ← steps back out of it onto the folder you came from, and the home row above the folder dialog
+  seeds `~` - a place to browse from. Hover picks a row only once the pointer has MOVED: a list
+  rebuilt under a still one fires enter events for whatever appeared beneath it, which took the
+  selection off the key that rebuilt the list.
 - Links out of a tile, in one policy (`src/main/links.js`, with tests): an external link goes to
   your browser, but a popup that KEEPS its opener stays here, because the grant it is about to
   write belongs on the server's origin in this partition and a sign-in finished in Safari writes
