@@ -40,6 +40,9 @@ html, body {
   position: fixed;
   inset: 0 0 auto 0;
   height: var(--strip);
+  /* Over the stage, which follows it in the page and would otherwise paint the focused tile's halo
+     across every control in this row. The row itself stays lit, having no ground of its own. */
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -415,12 +418,11 @@ body[data-sorting] .chip .close { cursor: grabbing; }
 /* A screen over the stage is a window, and it stops where the stage does so the traffic lights
    stay usable. That leaves the strip lit, and with it the 22px of focus halo that reaches up into
    the strip's row - measured, and not clippable at the stage's edge without cutting the halo off
-   in a hard line. So the shell dims its own row to match. Last in the page because #stage paints
-   after #strip, so the halo would otherwise paint over anything the strip put on top of itself. */
+   in a hard line. So the shell dims its own row to match, from the strip's LAST child: the halo
+   passes under the strip, and the chips' marks are positioned and paint over any earlier one. */
 #strip-scrim {
-  position: fixed;
-  inset: 0 0 auto 0;
-  height: var(--strip);
+  position: absolute;
+  inset: 0;
   background: rgb(0 0 0 / 0.55);
   pointer-events: none;
 }
