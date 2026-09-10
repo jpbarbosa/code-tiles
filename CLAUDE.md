@@ -68,7 +68,9 @@ whatever you remember to type in front of the command.
 state, server port and login partition, since every path is derived from `app.getPath('userData')`.
 The one path that is NOT - `~/.claude/settings.json`, where the Claude hooks live - is why it also
 sets `CODE_TILES_HOOKS=0`: without that, whichever instance started last points every hook at its
-own `activity-hook.py` and silently takes the other's Claude rings away.
+own `activity-hook.py` and silently takes the other's Claude rings away. It still SHOWS the rings:
+an instance that owns no hooks reads the owner's markers instead of its own empty directory, which
+it finds from the hook command in `~/.claude/settings.json`, and it never writes there.
 `⌥⌘I` opens devtools on the focused project's window and `⇧⌃⌘I` on the shell, both in a window of
 their own: a docked pane is part of the page, and the tiles paint over it.
 

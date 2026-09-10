@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { app, dialog, nativeTheme, session } from 'electron';
 
 import { Activity } from './activity.js';
+import { hooksWriteInto } from './activity-hooks.js';
 import { CodeServer } from './server.js';
 import { Desk } from './desk.js';
 import { Extensions } from './extensions.js';
@@ -131,13 +132,17 @@ app.whenReady().then(async () => {
   // What Claude is doing in each project, from its own hooks. A project asks for its state the
   // way it asks for its hue - derived, never stored - and a marker landing on disk re-renders the
   // desk, which is what carries a new state into the window that has to draw it.
+  // Whether this instance owns the hooks. A second one running beside your installed app is
+  // started with this off, because the file they are written to is the one thing a separate
+  // --user-data-dir does not give it a copy of - see scripts/start.js.
+  const ownsHooks = process.env.CODE_TILES_HOOKS !== '0';
+  const claudeSettings = claudePaths().settings;
   activity = new Activity({
-    dir: paths.activity,
+    // A guest watches the OWNER's markers rather than its own directory, which nothing writes
+    // to: one hook script serves every instance on the machine, wherever it was installed from.
+    dir: (ownsHooks ? null : hooksWriteInto(claudeSettings)) || paths.activity,
     script: paths.activityHook,
-    // Whether this instance owns the hooks. A second one running beside your installed app is
-    // started with this off, because the file they are written to is the one thing a separate
-    // --user-data-dir does not give it a copy of - see scripts/start.js.
-    settings: process.env.CODE_TILES_HOOKS === '0' ? null : claudePaths().settings,
+    settings: ownsHooks ? claudeSettings : null,
     // The log gets the conclusion, not the markers: what a project's badge is about to draw is
     // the same thing the tab icon is supposed to agree with, and disagreement is what it is for.
     onChange: () => {

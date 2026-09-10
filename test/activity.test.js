@@ -6,6 +6,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 import { Activity } from '../src/main/activity.js';
+import { hooksWriteInto } from '../src/main/activity-hooks.js';
 import { pythonCandidates } from '../src/main/platform.js';
 
 // A live session is one marker file, so a state is a fixture: this writes the markers a hook
@@ -209,4 +210,33 @@ test('an instance that does own them still installs', (t) => {
   t.after(() => owner.stop());
   assert.ok(fs.existsSync(settings), 'no settings file was written');
   assert.match(fs.readFileSync(settings, 'utf8'), /activity-hook\.py/);
+});
+
+test('a guest finds the owner\'s markers in the settings file, and writes nothing', (t) => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'ct-owner-'));
+  const file = path.join(base, 'settings.json');
+  const owner = path.join(base, 'Code Tiles');
+  t.after(() => fs.rmSync(base, { recursive: true, force: true }));
+
+  assert.equal(hooksWriteInto(file), null, 'nothing installed is nobody to read');
+
+  fs.writeFileSync(file, JSON.stringify({
+    hooks: {
+      // A hook of your own first, so the search is not just taking the first command it sees.
+      SessionStart: [{ hooks: [{ type: 'command', command: 'echo hi' }] }],
+      Stop: [{ hooks: [{ type: 'command',
+        command: `"/usr/bin/python3" ${JSON.stringify(path.join(owner, 'activity-hook.py'))} finished` }] }],
+    },
+  }));
+  assert.equal(hooksWriteInto(file), path.join(owner, 'activity'));
+
+  // And it reads that directory without touching it: the expired marker a sweep would drop stays.
+  const dir = path.join(owner, 'activity');
+  fs.mkdirSync(dir, { recursive: true });
+  const stale = path.join(dir, 'old.json');
+  fs.writeFileSync(stale, JSON.stringify({ state: 'active', cwd: base, ts: 0 }));
+  const guest = new Activity({ dir, script: path.join(base, 'activity-hook.py'), settings: null });
+  guest.start();
+  t.after(() => guest.stop());
+  assert.ok(fs.existsSync(stale), 'a guest never sweeps a directory it does not own');
 });

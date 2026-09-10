@@ -36,6 +36,29 @@ const EVENTS = [
 // a different checkout would append one more live copy of every hook instead of replacing it.
 const HOOK_MARKER = 'activity-hook.py';
 
+// Where the installed hooks WRITE, for an instance that owns none of them. One hook script
+// serves every instance, so its markers are the only ones on this machine; the command names
+// that script, and it writes into the `activity` beside itself. Null where nothing of ours is
+// installed at all, which is a machine where no instance has ever run and nobody has rings.
+export function hooksWriteInto(file) {
+  let settings;
+  try { settings = JSON.parse(fs.readFileSync(file, 'utf8')); }
+  catch { return null; }
+  const commands = Object.values(settings?.hooks || {})
+    .flat()
+    .flatMap((group) => group?.hooks || [])
+    .map((hook) => hook?.command)
+    .filter((command) => typeof command === 'string' && command.includes(HOOK_MARKER));
+  // The script is one of the command's quoted arguments, quoted by `installHooks` below.
+  for (const command of commands) {
+    const script = [...command.matchAll(/"([^"]+)"/g)]
+      .map(([, value]) => value)
+      .find((value) => value.endsWith(HOOK_MARKER));
+    if (script) return path.join(path.dirname(script), 'activity');
+  }
+  return null;
+}
+
 // The interpreter is named absolutely: a hook runs in your login shell's environment, where a
 // version manager can put anything on PATH. WHERE it is, is the host's answer - `platform.js`
 // keeps that - and the first of those that exists is the one the hooks are written against.
@@ -49,7 +72,7 @@ export function installHooks({ dir, script, settings: file }) {
   // An instance that does not own them. ~/.claude/settings.json is the one path this app writes
   // outside its own data directory, so --user-data-dir does not isolate it and two instances
   // would trade the other's rings away by starting.
-  if (!file) return void console.log('[activity] not installing hooks; another instance owns them');
+  if (!file) return void console.log(`[activity] another instance owns the hooks; reading its markers from ${dir}`);
   const python = findPython();
   if (!python) {
     console.error(`[activity] no python3 at ${pythonCandidates().join(' or ')}, so no hooks and no Claude state`);

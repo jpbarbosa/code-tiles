@@ -42,7 +42,9 @@ export class Activity {
 
   start() {
     installHooks({ dir: this.#dir, script: this.#script, settings: this.#settings });
-    this.#sweep();
+    // A guest reads the owner's directory and leaves it alone. The markers it would sweep are
+    // expired ones both instances already ignore, and the owner drops them at its own start.
+    if (this.#settings) this.#sweep();
     this.#read();
     this.#watch();
   }
