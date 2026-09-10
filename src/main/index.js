@@ -194,6 +194,7 @@ app.whenReady().then(async () => {
   for (const event of ['resize', 'enter-full-screen', 'leave-full-screen']) {
     window.on(event, () => desk.render());
   }
+  window.on('focus', () => desk.reclaimKeyboard());
   // The app IS this window, so it dies with it.
   window.on('closed', () => app.quit());
 

@@ -192,6 +192,14 @@ export class Desk {
     this.#tiles.focus(this.#projects.focused);
   }
 
+  // The window back in front, from another app or another of its own windows. Electron then hands
+  // the keyboard to the window's own page, the strip - docs/CONSTRAINTS.md. [Electron 44] Only
+  // while the strip still holds it and the window is key: a click that brought the window forward
+  // has put it where it landed, and focusing a tile would take the key from a panel.
+  reclaimKeyboard() {
+    if (this.#window.isFocused() && this.#window.webContents.isFocused()) this.returnKeyboard();
+  }
+
   focusByIndex(index) {
     const open = this.#projects.open();
     if (index >= 0 && index < open.length) this.focus(open[index].folder);

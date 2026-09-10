@@ -503,13 +503,27 @@ over CDP and dumping the pixels: `#e5972d` + `#ffffff` before, neither after.
 
 **A focused button answers Enter with a click of its own**, and the click above is what focused
 it: Chromium on macOS gives a clicked `<button>` the focus Safari withholds. So a press in the
-strip leaves the shell page holding the keyboard on that button's behalf, the window restores it
-on a cmd-tab back, and the next Enter re-fires whatever was pressed last - `+` re-opening the
-picker is how it was found. `STRIP_COMMANDS` in `src/main/ipc.js` hands the keyboard to the
-focused tile BEFORE the command runs, so a screen that opens after it still takes it, and the
-press dismissing that screen leaves the next keystroke in an editor. **[checked]** - the click,
-the `activeElement` it leaves and the Enter firing the same handler with `detail: 0`, driven over
-`sendInputEvent`; AppKit restoring the first responder on a cmd-tab back was not driven.
+strip leaves the shell page holding the keyboard on that button's behalf, and the next Enter
+re-fires whatever was pressed last - `+` re-opening the picker is how it was found. `STRIP_COMMANDS`
+in `src/main/ipc.js` hands the keyboard to the focused tile BEFORE the command runs, so a screen
+that opens after it still takes it, and the press dismissing that screen leaves the next keystroke
+in an editor. **[checked]** - the click, the `activeElement` it leaves and the Enter firing the
+same handler with `detail: 0`, driven over `sendInputEvent`.
+
+**Electron gives the keyboard to the window's own page every time the window comes to the
+front**, and that page is the strip. `BrowserWindow::OnWindowFocus` calls `RestoreFocus()` on it
+(and on Windows and Linux `Focus()` outright); Electron registers no `WebContentsViewDelegate`, so
+nothing was ever stored and Chromium falls back to `SetInitialFocus()`. AppKit has already put the
+first responder back on the tile you were typing in, and this takes it away: a cmd-tab back, a Dock
+click or a panel closing leaves every tile blurred and the strip holding the keys - on the button
+pressed last, if there was one, which re-arms the Enter above. Regular VS Code never shows it,
+because its window's page IS the editor. `Desk.reclaimKeyboard` takes it back on the window's
+`focus` event, which Electron emits on a posted task after the takeover, and only while the strip
+still holds it, so a click that brought the window forward keeps the tile it landed in.
+**[checked]** on Electron 44, with two `WebContentsView`s in a BrowserWindow and typing in one, sent
+behind another window of the app and then behind another app: the strip held the keyboard both
+times, and with the handler the tile did, its `textarea` still `activeElement`. The click case is
+reasoned from the same order, not driven.
 
 **The app writes Claude Code's hooks into `~/.claude/settings.json` with the absolute path of its
 own data directory**, and replaces its own entries rather than appending. So a second instance
