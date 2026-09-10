@@ -1,0 +1,13 @@
+/* macOS draws every window's corner as a squircle, so a round corner inside one is the odd shape
+   out. This is the switch for the app's own corners: 1 draws squircles, 0 puts back the circles.
+   A radius is written as the circle's times --corner-scale: 1.84 cuts a squircle in exactly as far
+   at the diagonal, so shapes nested inside each other keep their gap there. A circle or a pill
+   says `corner-shape: round` and stays out of it. */
+:root {
+  --squircle: 1;
+  --corner-scale: calc(1 + 0.84 * var(--squircle));
+}
+
+*,
+::before,
+::after { corner-shape: superellipse(calc(1 + var(--squircle))); }

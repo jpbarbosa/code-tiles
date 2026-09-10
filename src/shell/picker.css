@@ -27,12 +27,12 @@ body {
   position: fixed;
   inset: 0;
   background: rgb(0 0 0 / 0.55);
-  /* The window is square so its top edge covers the stage's corners; its bottom edge sits on
-     the parent's own rounded ones, and 55% black painted into those would show outside the
-     window's silhouette. This is the system's window radius, which nothing here can read, so
-     it errs LARGE on purpose: too big leaves a couple of undimmed pixels in a gutter corner,
-     too small paints a dark nub on the desktop. */
-  border-radius: 0 0 14px 14px;
+  /* The bottom corners sit on the parent window's, which macOS 27 draws as a squircle of 29.4px
+     (measured off its mask) and nothing here can read. Erring large leaves a few undimmed pixels
+     in a gutter corner; erring small paints 55% black onto the desktop outside the window. The
+     window's shape, so it takes no part in the switch in corners.css. */
+  border-radius: 0 0 30px 30px;
+  corner-shape: squircle;
 }
 
 #panel {
@@ -43,7 +43,7 @@ body {
   width: min(560px, 100%);
   max-height: 100%;
   padding: 8px;
-  border-radius: 12px;
+  border-radius: calc(12px * var(--corner-scale));
   background: var(--panel);
   border: 1px solid rgb(255 255 255 / 0.08);
   box-shadow: 0 18px 48px rgb(0 0 0 / 0.55);
@@ -73,7 +73,7 @@ header {
   height: 28px;
   padding: 0 30px 0 10px;
   border: 1px solid rgb(255 255 255 / 0.12);
-  border-radius: 6px;
+  border-radius: calc(6px * var(--corner-scale));
   background: rgb(0 0 0 / 0.25);
   color: var(--ink);
   font: inherit;
@@ -107,6 +107,7 @@ header {
   width: 14px;
   height: 14px;
   border-radius: 50%;
+  corner-shape: round;
   background: rgb(255 255 255 / 0.3);
 }
 
@@ -132,7 +133,7 @@ button {
   height: 20px;
   display: grid;
   place-items: center;
-  border-radius: 4px;
+  border-radius: calc(4px * var(--corner-scale));
   color: var(--ink-quiet);
 }
 
@@ -153,7 +154,7 @@ button {
   align-items: center;
   width: 100%;
   height: 40px;
-  border-radius: 8px;
+  border-radius: calc(8px * var(--corner-scale));
   text-align: left;
 }
 
@@ -184,7 +185,7 @@ button {
   flex: 0 0 auto;
   width: 20px;
   height: 20px;
-  border-radius: 5px;
+  border-radius: calc(5px * var(--corner-scale));
   object-fit: contain;
 }
 
@@ -235,7 +236,7 @@ button {
   margin-right: 6px;
   display: grid;
   place-items: center;
-  border-radius: 4px;
+  border-radius: calc(4px * var(--corner-scale));
   color: var(--ink-quiet);
   opacity: 0;
 }

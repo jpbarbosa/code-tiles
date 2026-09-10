@@ -1,3 +1,5 @@
+@import url("corners.css");
+
 /* What the app's four panel windows agree on. Each of them - the usage panel, preferences, the
    Claude Events log and the picker - is a window rather than a region of the shell page, because
    a WebContentsView paints above that page; and each was carrying its own copy of these colours,

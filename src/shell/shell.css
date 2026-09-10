@@ -1,3 +1,5 @@
+@import url("corners.css");
+
 /* One flat ground for the strip and the gutters, so a tile's edge never shows a step against
    them. --bg is the dark theme's own ground, held until a seam reports the running theme's back
    and main hands it over; behind a tile it carries that project's colour until its window paints. */
@@ -13,7 +15,7 @@
   /* One height for every control in the strip, so the row's edges line up rather than only its
      centres. Where each one sits vertically is the strip's `align-items: center` and nothing else. */
   --control: 24px;
-  --chip-radius: 7px;
+  --chip-radius: calc(7px * var(--corner-scale));
   --accent: #4a8cff;
   --claude: #d97757;
   /* The usage ramp, green while there is room and red at the cap. */
@@ -90,7 +92,7 @@ html, body {
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 5px;
+  border-radius: calc(5px * var(--corner-scale));
   background: transparent;
   color: var(--ink-quiet);
   cursor: default;
@@ -159,6 +161,7 @@ html, body {
     width: 15px;
     height: 15px;
     border-radius: 3.5px;
+    corner-shape: round;
     object-fit: contain;
   }
 
@@ -175,7 +178,8 @@ html, body {
   /* What Claude is doing there, as the ring the badge wears one size up: a rounded rectangle
      standing 4.5px off a 15px mark, so 24px at a radius of 8, and the 3px the stroke eats inward
      leaves 1.5px of air on the flats and round the corners - a thicker stroke grows OUTWARD, so
-     that air is what stays fixed. box-sizing is said out loud because the padding IS the stroke. */
+     that air is what stays fixed. box-sizing is said out loud because the padding IS the stroke.
+     Round, and so is the mark: a squircle cutting in as far needs 14.7px, past half of 24. */
   &:is([data-claude="working"], [data-claude="attention"], [data-claude="finished"])::after {
     content: "";
     position: absolute;
@@ -186,6 +190,7 @@ html, body {
     height: 24px;
     margin: -12px 0 0 -12px;
     border-radius: 8px;
+    corner-shape: round;
     padding: 3px;
     mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     mask-composite: exclude;
@@ -263,7 +268,7 @@ body[data-sorting] .chip .close { cursor: grabbing; }
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 4px;
+  border-radius: calc(4px * var(--corner-scale));
   background: transparent;
   color: inherit;
   font-size: 13px;
@@ -280,7 +285,7 @@ body[data-sorting] .chip .close { cursor: grabbing; }
   width: var(--control);
   height: var(--control);
   border: 0;
-  border-radius: 6px;
+  border-radius: calc(6px * var(--corner-scale));
   background: var(--accent);
   color: #fff;
   font-size: 15px;
@@ -312,7 +317,7 @@ body[data-sorting] .chip .close { cursor: grabbing; }
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 4px;
+  border-radius: calc(4px * var(--corner-scale));
   background: transparent;
   color: var(--ink-quiet);
   cursor: default;
@@ -360,6 +365,7 @@ body[data-sorting] .chip .close { cursor: grabbing; }
     width: 64px;
     height: 4px;
     border-radius: 2px;
+    corner-shape: round;
     background: rgb(255 255 255 / 0.14);
   }
 
@@ -368,6 +374,7 @@ body[data-sorting] .chip .close { cursor: grabbing; }
     inset: 0 auto 0 0;
     width: 0;
     border-radius: 2px;
+    corner-shape: round;
     background: var(--ok);
     transition: width 0.5s ease, background 0.4s ease;
   }
@@ -392,7 +399,7 @@ body[data-sorting] .chip .close { cursor: grabbing; }
     height: var(--control);
     align-items: center;
     padding: 0 9px;
-    border-radius: 6px;
+    border-radius: calc(6px * var(--corner-scale));
     background: var(--claude);
     color: #fff;
     font-weight: 600;
@@ -411,10 +418,12 @@ body[data-sorting] .chip .close { cursor: grabbing; }
 }
 
 /* Each tile's ground, held from the first frame until its own window paints over it, so the app
-   arrives as itself rather than as an empty dark window with one lit cell. */
+   arrives as itself rather than as an empty dark window with one lit cell. Round, like the glow
+   and the tile's own clip in card.cjs: the three are one shape. */
 .ground {
   position: absolute;
   border-radius: 10px;
+  corner-shape: round;
   pointer-events: none;
   /* No share means no tint, rather than an invalid color-mix and no ground at all. */
   background: color-mix(in oklab, var(--bg) var(--survives, 100%), oklch(0.62 0.15 var(--hue)));
@@ -426,6 +435,7 @@ body[data-sorting] .chip .close { cursor: grabbing; }
 #glow {
   position: absolute;
   border-radius: 10px;
+  corner-shape: round;
   pointer-events: none;
   transition: left 0.12s ease, top 0.12s ease, width 0.12s ease, height 0.12s ease;
   background: oklch(0.45 0.09 var(--hue));
@@ -465,6 +475,7 @@ body[data-sorting] .chip .close { cursor: grabbing; }
     position: absolute;
     background: rgb(255 255 255 / 0);
     border-radius: 2px;
+    corner-shape: round;
     transition: background 0.12s ease;
   }
 
@@ -509,7 +520,7 @@ body[data-resizing] #glow { transition: none; }
   gap: 7px;
   padding: 8px;
   border: 1px solid rgb(255 255 255 / 0.08);
-  border-radius: 10px;
+  border-radius: calc(10px * var(--corner-scale));
   background: color-mix(in oklab, var(--bg) 88%, oklch(0.6 0.14 var(--hue)) 12%);
   color: var(--ink-quiet);
   font: inherit;
@@ -547,7 +558,7 @@ body[data-resizing] #glow { transition: none; }
       display: block;
       width: 30px;
       height: 30px;
-      border-radius: 7px;
+      border-radius: calc(7px * var(--corner-scale));
       object-fit: contain;
     }
 
@@ -565,7 +576,7 @@ body[data-resizing] #glow { transition: none; }
 
 #empty-add {
   border: 0;
-  border-radius: 8px;
+  border-radius: calc(8px * var(--corner-scale));
   padding: 9px 18px;
   background: var(--accent);
   color: #fff;
