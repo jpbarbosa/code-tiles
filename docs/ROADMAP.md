@@ -79,10 +79,14 @@ What the tree does today, what comes next, and what to check when the server is 
   Persisted, and every open window follows the moment it moves, with no reload.
 - The usage meter: a 5-hour and a 7-day bar, live from `/api/oauth/usage` behind the app's own
   PKCE login, one poll for the account with a five minute floor and a back-off on 429. The grant
-  is encrypted with `safeStorage`. Clicking opens the panel - exact numbers, reset times,
-  per-model buckets, and the sign-in itself - which is a WINDOW of its own, because a panel drawn
-  in the shell page would sit behind the tiles. It sizes itself to what it drew and dismisses on
-  blur, except while a sign-in is in flight, since that blur is you fetching the code.
+  is encrypted with `safeStorage`. Each bar carries a mark at how far its window has run, read back
+  from the reset, so the fill reads against time: short of the mark is room to spare, past it is
+  the cap arriving before the reset. Clicking opens the panel - exact numbers, reset times,
+  per-model buckets with their bars cut into hours or days, and the sign-in itself - which is a
+  WINDOW of its own, because a panel drawn in the shell page would sit behind the tiles. With no
+  account the same click opens the consent page as well, and the panel is already waiting for its
+  code. It sizes itself to what it drew and dismisses on blur, except while a sign-in is in
+  flight, since that blur is you fetching the code.
 - The picker: every folder ever opened here, in the one project order, each with its favicon or
   its initial on its own hue, and the path that tells two of the same name apart. One already open
   is focused rather than opened twice; nothing marks it, because nearly every row is open and a

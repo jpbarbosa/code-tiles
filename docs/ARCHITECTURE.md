@@ -259,6 +259,7 @@ src/main/activity.js    the markers Claude's hooks leave, and what each project'
 src/main/activity-hooks.js  the other half: the hook script, and the entries in your own
                         ~/.claude/settings.json that call it. The only thing here that writes.
 src/main/panel.js       what the app's four small windows have in common
+src/main/clock.js       the clock the OS shows, which a panel's own locale cannot say. No Electron.
 src/main/json.js        reading a file the app does not own, and replacing one it does
 src/main/desktop.js     your VS Code install, read-only: profiles, associations, extension ids
 src/main/extensions.js  the one shared extensions directory: install, prune

@@ -1,6 +1,8 @@
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, app, systemPreferences } from 'electron';
 
+import { hourCycleFor } from './clock.js';
 import { files } from './paths.js';
+import { IS_MAC } from './platform.js';
 
 // The app draws four windows besides the one holding the tiles - the usage panel, the picker,
 // preferences and the Claude Events log - and every one of them is a window for the same reason:
@@ -12,6 +14,17 @@ import { files } from './paths.js';
 // way to one. Two processes, so it is spelled twice; those are the only two.
 export const PANEL_GROUND = '#232325';
 
+// Read as each panel opens, so a clock changed in System Settings reaches the next one. macOS
+// keeps an explicit 12/24-hour choice apart from the region; elsewhere the locale is all there is.
+export function systemHourCycle() {
+  const chosen = (key) => IS_MAC && systemPreferences.getUserDefault(key, 'boolean');
+  return hourCycleFor({
+    force24: chosen('AppleICUForce24HourTime'),
+    force12: chosen('AppleICUForce12HourTime'),
+    systemLocale: app.getSystemLocale(),
+  });
+}
+
 export function panelWindow({ parent, page, ...options }) {
   const window = new BrowserWindow({
     parent,
@@ -21,7 +34,12 @@ export function panelWindow({ parent, page, ...options }) {
     maximizable: false,
     fullscreenable: false,
     backgroundColor: PANEL_GROUND,
-    webPreferences: { preload: files.shellPreload, contextIsolation: true, sandbox: true },
+    webPreferences: {
+      preload: files.shellPreload,
+      contextIsolation: true,
+      sandbox: true,
+      additionalArguments: [`--ct-hour-cycle=${systemHourCycle()}`],
+    },
     ...options,
   });
 

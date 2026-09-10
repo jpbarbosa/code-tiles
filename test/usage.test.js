@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { authorizeUrl, decodeToken, decodeUsage, pkce, splitCode } from '../src/main/oauth.js';
+import { USAGE_WINDOWS, elapsedFraction, resetLabel } from '../src/shell/format.js';
 
 test('a usage window the account does not have is absent, not zero', () => {
   const usage = decodeUsage({
@@ -22,6 +23,29 @@ test('a reading outside 0-100, or missing entirely, never reaches a bar', () => 
   assert.deepEqual(decodeUsage(null), {
     fiveHour: null, sevenDay: null, sevenDayOpus: null, sevenDaySonnet: null,
   });
+});
+
+test('the now-mark sits as far along a bar as its window has run, read back from the reset', () => {
+  const now = Date.parse('2026-09-10T12:00:00Z');
+  const hour = 60 * 60 * 1000;
+  assert.equal(elapsedFraction(USAGE_WINDOWS.fiveHour, { resetsAt: now + 2 * hour }, now), 0.6);
+  assert.equal(elapsedFraction(USAGE_WINDOWS.sevenDay, { resetsAt: now + 84 * hour }, now), 0.5);
+});
+
+test('a window with no reset has no mark, and a reset outside the window is held to the bar', () => {
+  const now = Date.parse('2026-09-10T12:00:00Z');
+  const day = 24 * 60 * 60 * 1000;
+  assert.equal(elapsedFraction(USAGE_WINDOWS.fiveHour, { utilization: 0, resetsAt: null }, now), null);
+  assert.equal(elapsedFraction(USAGE_WINDOWS.fiveHour, null, now), null);
+  assert.equal(elapsedFraction(USAGE_WINDOWS.fiveHour, { resetsAt: now - 1000 }, now), 1);
+  assert.equal(elapsedFraction(USAGE_WINDOWS.sevenDay, { resetsAt: now + 8 * day }, now), 0);
+});
+
+test('a reset time is written in the clock the panel is handed, not the one its language implies', () => {
+  const tonight = new Date();
+  tonight.setHours(23, 30, 0, 0);
+  assert.match(resetLabel(tonight.getTime(), 'h23'), /^resets 23:30$/);
+  assert.doesNotMatch(resetLabel(tonight.getTime(), 'h12'), /23:30/);
 });
 
 test('the pasted code carries the state after a hash, and survives without one', () => {

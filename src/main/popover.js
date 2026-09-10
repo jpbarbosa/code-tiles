@@ -9,6 +9,7 @@ const WIDTH = 272;
 export class UsagePopover {
   #parent;
   #window = null;
+  #shown = null;
   #pinned = false;
 
   constructor({ parent }) {
@@ -31,10 +32,11 @@ export class UsagePopover {
       resizable: false,
       movable: false,
     });
+    this.#shown = new Promise((resolve) => this.#window.once('show', resolve));
     // Leaving for the browser and coming back with a code is part of signing in, so a pinned
     // panel outlives that blur. Every other blur dismisses it.
     this.#window.on('blur', () => { if (!this.#pinned) this.close(); });
-    this.#window.on('closed', () => { this.#window = null; this.#pinned = false; });
+    this.#window.on('closed', () => { this.#window = null; this.#shown = null; this.#pinned = false; });
   }
 
   fit(height) {
@@ -43,6 +45,12 @@ export class UsagePopover {
 
   pin() {
     this.#pinned = true;
+  }
+
+  // Showing the panel takes the foreground, so whatever hands it to another app - the consent
+  // page - waits for this, or a panel appearing late pulls the app back over the browser.
+  shown() {
+    return this.#shown;
   }
 
   close() {

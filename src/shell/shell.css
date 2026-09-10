@@ -64,7 +64,12 @@ html, body {
 /* The space the OS draws its own window controls over: macOS lays traffic lights across the left,
    and the caption overlay Windows and Linux draw lands at the right instead. Their inset is set
    from the strip's height in src/main/window.js, the only place either lets that be said. */
-#lights { width: 72px; flex: 0 0 auto; }
+#lights {
+  /* The lights end at 73px and sit 9px apart, so the first control starts about twice that past
+     them, at 92px: any closer and its plate reads as a fourth light. */
+  width: 84px;
+  flex: 0 0 auto;
+}
 
 :root[data-controls="right"] {
   & #lights { width: 4px; }
@@ -331,6 +336,7 @@ body[data-sorting] .chip .close { cursor: grabbing; }
   border: 0;
   background: transparent;
   color: var(--ink-quiet);
+  font: inherit;
   cursor: default;
 
   /* One grid, so the two bars start at the same x whatever the tags say, and the tags set the
@@ -351,11 +357,10 @@ body[data-sorting] .chip .close { cursor: grabbing; }
 
   & .bar {
     position: relative;
-    width: 46px;
+    width: 64px;
     height: 4px;
     border-radius: 2px;
     background: rgb(255 255 255 / 0.14);
-    overflow: hidden;
   }
 
   & .fill {
@@ -365,6 +370,17 @@ body[data-sorting] .chip .close { cursor: grabbing; }
     border-radius: 2px;
     background: var(--ok);
     transition: width 0.5s ease, background 0.4s ease;
+  }
+
+  /* Where now falls in the window, so the fill reads against time: short of the mark is room to
+     spare, past it is the cap arriving before the reset. It overhangs the bar by a pixel each way,
+     which is what keeps it legible over a fill as well as over the track. */
+  & .now {
+    position: absolute;
+    inset-block: -1px;
+    left: calc(var(--at) * (100% - 1px));
+    width: 1px;
+    background: var(--ink);
   }
 
   &:hover .bar { background: rgb(255 255 255 / 0.2); }

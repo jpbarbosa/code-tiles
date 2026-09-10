@@ -20,8 +20,14 @@
     .row { display: flex; flex-direction: column; gap: 4px; }
     .row .head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
     .row .reset { color: var(--ink-quiet); font-size: 10.5px; }
-    .row .track { height: 5px; border-radius: 3px; background: rgb(255 255 255 / 0.12); overflow: hidden; }
+    .row .track { position: relative; height: 5px; border-radius: 3px; background: rgb(255 255 255 / 0.12); }
     .row .fill { height: 100%; border-radius: 3px; }
+    /* A unit of the window per segment, an hour or a day, cut through track and fill alike. The
+       mark is now, overhanging the track so it reads over a fill too; the two share one formula,
+       so a mark on a unit's boundary lands on that gap's pixels. */
+    .row .gap, .row .now { position: absolute; left: calc(var(--at) * (100% - 1px)); width: 1px; }
+    .row .gap { inset-block: 0; background: var(--panel); }
+    .row .now { inset-block: -1px; background: var(--ink); }
 
     form { display: flex; flex-direction: column; gap: 8px; }
     form .line { display: flex; align-items: center; gap: 7px; }
@@ -63,8 +69,6 @@
   <h1>Claude usage</h1>
   <div id="rows"></div>
 
-  <button id="connect" class="primary" hidden>Connect account</button>
-
   <form id="paste" hidden>
     <div class="line">
       <input id="code" type="text" spellcheck="false" autocomplete="off"
@@ -74,14 +78,13 @@
     <span class="error" role="alert"></span>
   </form>
 
-  <button id="disconnect" hidden>Disconnect account</button>
+  <button id="disconnect" hidden>Disconnect Account</button>
 
   <script type="module">
-    import { rampFor, resetLabel } from './format.js';
+    import { USAGE_WINDOWS, elapsedFraction, rampFor, resetLabel } from './format.js';
 
     const rows = document.getElementById('rows');
     const paste = document.getElementById('paste');
-    const connect = document.getElementById('connect');
     const disconnect = document.getElementById('disconnect');
     const code = document.getElementById('code');
     const error = paste.querySelector('.error');
@@ -94,32 +97,52 @@
     // The window is sized by what it drew, so a state with two rows is not a panel with four.
     const fit = () => window.ct.call('usage:height', { height: document.documentElement.scrollHeight });
 
+    const isConnected = (account) => Boolean(account.connected) && !account.needsReauth;
+
     function render(account) {
-      const connected = Boolean(account.connected) && !account.needsReauth;
+      const connected = isConnected(account);
       const readings = Object.entries(LABELS)
-        .map(([key, label]) => [label, account[key]])
-        .filter(([, reading]) => reading);
+        .map(([key, label]) => [key, label, account[key]])
+        .filter(([, , reading]) => reading);
 
-      rows.replaceChildren(...readings.map(([label, reading]) => row(label, reading)));
+      rows.replaceChildren(...readings.map(([key, label, reading]) => row(key, label, reading)));
       if (connected && !readings.length) rows.append(quiet('No reading yet.'));
-      if (!connected) rows.append(quiet(account.needsReauth ? 'That grant expired.' : 'Not connected.'));
+      if (!connected) {
+        rows.append(quiet(account.needsReauth
+          ? 'That grant expired. Approve again in the browser, then paste the code.'
+          : 'Approve in the browser, then paste the code it shows.'));
+      }
 
-      connect.hidden = connected;
-      connect.textContent = account.needsReauth ? 'Connect again' : 'Connect account';
+      paste.hidden = connected;
       disconnect.hidden = !connected;
       fit();
     }
 
-    function row(label, reading) {
+    function row(key, label, reading) {
       const node = document.createElement('div');
       node.className = 'row';
       node.innerHTML = '<div class="head"><span></span><span class="reset"></span></div>'
         + '<div class="track"><div class="fill"></div></div>';
       node.querySelector('.head span').textContent = `${label}  ${Math.round(reading.utilization)}%`;
-      node.querySelector('.reset').textContent = resetLabel(reading.resetsAt);
+      node.querySelector('.reset').textContent = resetLabel(reading.resetsAt, window.ct.hourCycle);
       const fill = node.querySelector('.fill');
       fill.style.width = `${reading.utilization}%`;
       fill.style.background = rampFor(reading.utilization);
+
+      const usageWindow = USAGE_WINDOWS[key];
+      const track = node.querySelector('.track');
+      for (let unit = 1; unit < usageWindow.units; unit++) {
+        track.append(marker('gap', unit / usageWindow.units));
+      }
+      const elapsed = elapsedFraction(usageWindow, reading);
+      if (elapsed !== null) track.append(marker('now', elapsed));
+      return node;
+    }
+
+    function marker(className, at) {
+      const node = document.createElement('span');
+      node.className = className;
+      node.style.setProperty('--at', at);
       return node;
     }
 
@@ -129,15 +152,6 @@
       node.textContent = text;
       return node;
     }
-
-    // The consent page opens in the browser you are already signed into, and prints a code.
-    connect.addEventListener('click', async () => {
-      connect.hidden = true;
-      paste.hidden = false;
-      code.focus();
-      fit();
-      await window.ct.call('usage:connect');
-    });
 
     paste.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -157,7 +171,15 @@
       if (event.key === 'Escape') window.close();
     });
 
-    render(await window.ct.call('usage:state'));
+    // With no account there is nothing to show but the way to connect one, so opening the panel
+    // takes it: the consent page opens in the browser you are already signed into, and prints the
+    // code this field is waiting for.
+    const account = await window.ct.call('usage:state');
+    render(account);
+    if (!isConnected(account)) {
+      code.focus();
+      await window.ct.call('usage:connect');
+    }
   </script>
 </body>
 </html>

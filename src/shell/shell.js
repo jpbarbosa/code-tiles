@@ -1,7 +1,7 @@
 // The shell draws around the tiles: the strip, the empty state, and the focused tile's glow in
 // the gutter. It never draws over a tile, because a WebContentsView paints above this page by
 // construction - anything that has to appear inside a window is a seam, not an overlay.
-import { projectMark, rampFor } from './format.js';
+import { USAGE_WINDOWS, elapsedFraction, projectMark, rampFor } from './format.js';
 
 const chips = document.getElementById('chips');
 const grounds = document.getElementById('grounds');
@@ -99,7 +99,6 @@ function emptyTile(project) {
 // Account-global, so this widget is about the account and not about any tile. Green while there
 // is room, red at the cap: the colour is the reading, the length is how far along.
 function renderUsage(account) {
-  const readings = [account.fiveHour, account.sevenDay];
   const connected = Boolean(account.connected) && !account.needsReauth;
   const shown = (reading) => (reading ? `${Math.round(reading.utilization)}%` : '-');
 
@@ -109,10 +108,19 @@ function renderUsage(account) {
     ? `Claude usage: 5h ${shown(account.fiveHour)}, 7d ${shown(account.sevenDay)}. Click for detail.`
     : 'Connect your Claude account to see usage.';
 
-  document.querySelectorAll('#usage .fill').forEach((fill, index) => {
-    const utilization = readings[index]?.utilization || 0;
+  // No clock of its own: the mark moves when a reading is published, every five minutes, which is
+  // about a pixel on the 5h bar and far less on the 7d.
+  usage.querySelectorAll('.bar').forEach((bar) => {
+    const reading = account[bar.dataset.window];
+    const utilization = reading?.utilization || 0;
+    const fill = bar.querySelector('.fill');
     fill.style.width = `${utilization}%`;
     fill.style.background = rampFor(utilization);
+
+    const elapsed = elapsedFraction(USAGE_WINDOWS[bar.dataset.window], reading);
+    const mark = bar.querySelector('.now');
+    mark.hidden = elapsed === null;
+    mark.style.setProperty('--at', elapsed ?? 0);
   });
 }
 

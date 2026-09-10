@@ -31,7 +31,7 @@ export function installIpc({ desk, usage, popover, picker, preferences, events }
     'usage:popover': ({ anchor }) => popover.toggle(anchor),
     'usage:state': () => usage.state,
     'usage:height': ({ height }) => popover.fit(height),
-    'usage:connect': () => { popover.pin(); return usage.connect(); },
+    'usage:connect': async () => { popover.pin(); await popover.shown(); return usage.connect(); },
     'usage:code': ({ code }) => usage.submit(code),
     'usage:disconnect': () => usage.disconnect(),
     // The preferences window, which is a window of its own for the reason the other two are. A
