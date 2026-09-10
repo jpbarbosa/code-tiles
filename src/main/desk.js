@@ -219,8 +219,11 @@ export class Desk {
     this.open(picked.filePaths[0]);
   }
 
+  // A project opened into the maximized grid takes the COLUMN too, for the reason `cycle` does:
+  // it arrives focused, and focus alone would hand you the project you just asked for 30% wide.
   open(folder) {
-    this.#projects.add(folder);
+    const added = this.#projects.add(folder);
+    if (this.#shape(this.#projects.open().length) === 'master') this.#projects.maximized = added;
     this.render();
     this.#learn();
   }
