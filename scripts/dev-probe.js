@@ -208,6 +208,31 @@ const READ = `(() => {
       };
       return walk(document);
     })(),
+    // The chat-calm seam, read in the Claude page itself: what a tool's output is painted with and
+    // how loud the Learn button is at rest. A page with no sheet in it is the gate missing it; the
+    // two readings are null while no tool has run or onboarding is off.
+    chatCalm: (() => {
+      const walk = (doc) => {
+        if (doc.querySelector('link[href*="anthropic.claude-code-"]')) {
+          const view = doc.defaultView;
+          const output = doc.querySelector('[class*="toolResult_"]');
+          const learn = doc.querySelector('[aria-label="Learn Claude Code"]');
+          return {
+            sheet: Boolean(doc.getElementById('code-tiles-chat-calm')),
+            output: output ? view.getComputedStyle(output).backgroundColor : null,
+            learn: learn ? view.getComputedStyle(learn).opacity : null,
+          };
+        }
+        let frames;
+        try { frames = doc.querySelectorAll('iframe'); } catch { return null; }
+        for (const frame of frames) {
+          try { if (frame.contentDocument) { const hit = walk(frame.contentDocument); if (hit) return hit; } }
+          catch { /* cross-origin */ }
+        }
+        return null;
+      };
+      return walk(document);
+    })(),
     // The activity bar's icons, which are written inline from JS and so are read off the label
     // rather than off a variable. On the focused window every unchecked one carries the hue; the
     // checked one is the theme's, and a column of identical colours means the tie was lost.

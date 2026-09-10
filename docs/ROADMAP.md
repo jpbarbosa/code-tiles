@@ -135,7 +135,7 @@ What the tree does today, what comes next, and what to check when the server is 
   is, is `pythonCandidatesFor`. macOS and Linux keep one at a fixed place and Windows ships none,
   so there it is the `py` launcher the python.org installer leaves - and with no interpreter the
   hooks are not installed at all, which is every ring dark rather than anything broken.
-- Twenty-one seams, verified in a live window rather than from a screenshot:
+- Twenty-two seams, verified in a live window rather than from a screenshot:
   `dark` (your desktop's theme, a dark one only as the fallback under it, auto-detect off, and
   the colour scheme of every document the window holds - web's default theme is the light one,
   and a webview that says nothing shows Chromium's white canvas through every pixel its own page
@@ -215,6 +215,10 @@ What the tree does today, what comes next, and what to check when the server is 
   column of its own - one edit to the extension's own fallback, which is what its command reads
   before it runs `workbench.action.lockEditorGroup`; an explicit column and an existing Claude
   group are both left as they were),
+  `chat-calm` (the Claude panel with less to look at, said inside its own page: a tool's output
+  without the plate 2.1.267 put under it, by redefining the extension's own variable on the
+  element, and the Learn Claude Code button at a fifth of its strength until you point at it or it
+  has focus - dimmed at rest only, so the extension's own hover and press are untouched),
   `branch` (the branch and its sync as two pills at the bottom of the side bar, mirrored from the
   status bar entries that hiding the bar leaves alive, so a click still checks out or syncs - in
   a footer the side bar is taught to give REAL room to rather than an overlay over the tree),

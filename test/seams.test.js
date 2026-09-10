@@ -325,3 +325,45 @@ test('every api a seam calls is one the runtime hands it', () => {
     }
   }
 });
+
+// The Claude page is found by the stylesheet it links out of its own install directory. However the
+// host spells that resource - a plain path or a percent-encoded `path=` - the id has nothing to
+// encode, and a sweep that comes back every second must find its own sheet rather than add another.
+test('the chat-calm sheet lands in the Claude page once, and in no other webview', () => {
+  const seam = seams.find((candidate) => candidate.name === 'chat-calm');
+  const sheetFor = (href) => {
+    const element = { id: '', textContent: '', parentElement: null };
+    let appends = 0;
+    const root = { appendChild: (node) => { node.parentElement = root; appends += 1; } };
+    const document = {
+      documentElement: root,
+      querySelector: (selector) => {
+        const needle = selector.match(/^link\[href\*="([^"]+)"\]$/)[1];
+        return href && href.includes(needle) ? {} : null;
+      },
+      getElementById: () => (element.parentElement ? element : null),
+      createElement: () => element,
+    };
+    seam.init({ eachDocument: (visit) => { visit(document); visit(document); } });
+    assert.ok(appends <= 1, `${appends} sheets for one page`);
+    return element.parentElement === root ? element.textContent : null;
+  };
+
+  const plain = sheetFor('https://file+.vscode-resource.vscode-cdn.net/Users/jp/Library'
+    + '/Application%20Support/Code%20Tiles/extensions/anthropic.claude-code-2.1.267-darwin-arm64'
+    + '/webview/index.css');
+  const encoded = sheetFor('http://127.0.0.1:57846/stable-de89/vscode-remote-resource?path=%2FUsers'
+    + '%2Fjp%2Fextensions%2Fanthropic.claude-code-2.1.267-darwin-arm64%2Fwebview%2Findex.css');
+  assert.ok(plain, 'no sheet in the Claude page');
+  assert.equal(encoded, plain);
+  assert.equal(sheetFor('https://file+.vscode-resource.vscode-cdn.net/x'
+    + '/vscode.markdown-language-features/media/markdown.css'), null, 'a Markdown preview got it');
+  assert.equal(sheetFor(null), null, 'the frame wrapping a webview got it');
+
+  const output = plain.match(/\[class\*="toolResult_"\] \{([\s\S]*?)\n\}/);
+  assert.ok(output, "no rule for a tool's output");
+  assert.match(output[1], /--app-code-background: transparent/);
+  assert.doesNotMatch(output[1], /background-color/, 'the extension paints it, not us');
+  assert.match(plain, /\[aria-label="Learn Claude Code"\]:not\(:hover, :focus\) \{/,
+    'the Learn button has to be dimmed at rest only');
+});
