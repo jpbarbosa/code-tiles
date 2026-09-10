@@ -118,8 +118,11 @@
         const hit = inputs[dial].find((input) => input.value === wanted) || inputs[dial][1];
         hit.checked = true;
       }
-      // The window is sized by what the page drew, so nothing here counts rows.
-      window.ct.call('preferences:height', { height: document.documentElement.scrollHeight });
+      // The window is sized by what the page drew, so nothing here counts rows - and by the body,
+      // since the root's scrollHeight is never less than the window: it could only grow.
+      window.ct.call('preferences:height', {
+        height: Math.ceil(document.body.getBoundingClientRect().height),
+      });
     }
 
     document.addEventListener('keydown', (event) => {

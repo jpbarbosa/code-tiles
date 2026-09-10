@@ -19,7 +19,6 @@
 
     .row { display: flex; flex-direction: column; gap: 4px; }
     .row .head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-    .row .reset { color: var(--ink-quiet); font-size: 10.5px; }
     .row .track { position: relative; height: 5px; border-radius: 3px; background: rgb(255 255 255 / 0.12); }
     .row .fill { height: 100%; border-radius: 3px; }
     /* A unit of the window per segment, an hour or a day, cut through track and fill alike. The
@@ -62,6 +61,7 @@
     button:hover { background: rgb(255 255 255 / 0.16); }
     .primary { background: #d97757; color: #fff; font-weight: 600; }
     .primary:hover { background: #c76a4c; }
+    .quiet { color: var(--ink-quiet); font-size: 10.5px; }
     .error { color: #f0883e; }
   </style>
 </head>
@@ -94,8 +94,11 @@
       sevenDayOpus: '7-day Opus', sevenDaySonnet: '7-day Sonnet',
     };
 
-    // The window is sized by what it drew, so a state with two rows is not a panel with four.
-    const fit = () => window.ct.call('usage:height', { height: document.documentElement.scrollHeight });
+    // The window is sized by what it drew, so a state with two rows is not a panel with four. Off
+    // the body, because the root's scrollHeight is never less than the window: it could only grow.
+    const fit = () => window.ct.call('usage:height', {
+      height: Math.ceil(document.body.getBoundingClientRect().height),
+    });
 
     const isConnected = (account) => Boolean(account.connected) && !account.needsReauth;
 
@@ -110,7 +113,7 @@
       if (!connected) {
         rows.append(quiet(account.needsReauth
           ? 'That grant expired. Approve again in the browser, then paste the code.'
-          : 'Approve in the browser, then paste the code it shows.'));
+          : 'Approve in the browser, then paste the code.'));
       }
 
       paste.hidden = connected;
@@ -121,7 +124,7 @@
     function row(key, label, reading) {
       const node = document.createElement('div');
       node.className = 'row';
-      node.innerHTML = '<div class="head"><span></span><span class="reset"></span></div>'
+      node.innerHTML = '<div class="head"><span></span><span class="reset quiet"></span></div>'
         + '<div class="track"><div class="fill"></div></div>';
       node.querySelector('.head span').textContent = `${label}  ${Math.round(reading.utilization)}%`;
       node.querySelector('.reset').textContent = resetLabel(reading.resetsAt, window.ct.hourCycle);
@@ -148,7 +151,7 @@
 
     function quiet(text) {
       const node = document.createElement('div');
-      node.className = 'reset';
+      node.className = 'quiet';
       node.textContent = text;
       return node;
     }
