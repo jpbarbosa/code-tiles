@@ -272,10 +272,11 @@ ${tokens(context)}
 
   /* The activity bar rounds its own right corners and clips to them, so a square plate reaching
      that far loses a chamfer - and a plate is what this tint makes of the menubar, which nothing
-     paints in a stock window. One step in from the part's own radius clears the arc. */
+     paints in a stock window. Rounded as the identity seam's badge asks, since its ring is this
+     plate's edge; without that seam, one step in from the part's own radius clears the arc. */
   & .part.activitybar .menubar {
     background-color: var(--ct-plate);
-    border-radius: var(--vscode-cornerRadius-small, 4px);
+    border-radius: var(--ct-plate-radius, var(--vscode-cornerRadius-small, 4px));
   }
 }
 

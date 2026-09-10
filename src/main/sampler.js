@@ -7,7 +7,7 @@ const SHOWING = 128;
 // ...and below this spread it is a grey - the white of a letterform, the black of an outline, the
 // plate a logo sits on - which would drag the average toward no hue at all.
 const COLOURFUL = 24;
-// What a mark too big for the command line is re-encoded to: twice the 18px badge at 2x.
+// What a mark too big for the command line is re-encoded to: more than the 24px badge's 48 at 2x.
 const MARK = 64;
 
 const PAGE = `<!doctype html><meta charset="utf-8"><script>

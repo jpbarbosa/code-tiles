@@ -65,65 +65,68 @@ const RINGS = {
 module.exports = {
   name: 'identity',
   css: (context) => `
-.monaco-workbench .part.activitybar .menubar .menubar-menu-button > .menubar-menu-title::before {
-  /* The !importants here, and the rule that forced them: the product icon theme sets this same
-     pseudo's glyph AND the font it is drawn in with !importants of its own (content:
-     var(--vscode-icon-menu-content), font-family: var(--vscode-icon-menu-font-family)), so a
-     plain override loses and the hamburger paints on top of the mark - and a letter left in the
-     codicon font is a glyph nobody has. */
-  content: ${JSON.stringify(context.icon ? '' : initial(context.name))} !important;
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 3px;
-  ${context.icon ? `background-image: url("${context.icon}");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;` : `background: oklch(${MARK_LIGHTNESS} ${MARK_CHROMA} ${context.hue});
-  font-family: system-ui !important;
-  font-size: 11px;
-  font-weight: 600;
-  color: #fff;`}
-}
-${RINGS[context.claudeState] ? `
-.monaco-workbench .part.activitybar .menubar .menubar-menu-button > .menubar-menu-title {
-  /* The editor already positions this box, and the ring is placed against it; said again so a
-     build that stopped puts the ring nowhere rather than in the window's top left corner. */
-  position: relative;
+.monaco-workbench .part.activitybar .menubar {
+  /* The card the badge is drawn on, which the tint paints: rounded here, since the ring is its
+     edge and a card rounded any less would show its corners outside the ring. */
+  --ct-plate-radius: 8.5px;
 
-  &::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    /* Concentric with the card, which is the whole reason for these numbers: an 18px badge
-       rounded by 3px, a ring standing 5.5px off it, so 29px at a radius of 8.5 - and the 3px the
-       stroke eats inward leaves 2.5px of air on the flats AND round the corners. A thicker stroke
-       grows OUTWARD, so that air is what stays fixed. box-sizing is said out loud because the
-       padding is the stroke: under content-box the ring grows by 6px and stops being concentric
-       with anything. */
-    box-sizing: border-box;
-    width: 29px;
-    height: 29px;
-    margin: -14.5px 0 0 -14.5px;
-    border-radius: 8.5px;
-    padding: 3px;
-    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    mask-composite: exclude;
-    ${RINGS[context.claudeState]}
-    /* The button under it is still the editor's, and still opens the menu. */
-    pointer-events: none;
+  & .menubar-menu-button > .menubar-menu-title {
+    /* The editor pads this 8px a side for a row of text menus, leaving 20px - which squeezes a
+       24px badge, and which widens the title past the bar's clipped edge if the badge refuses. */
+    padding: 0;
+    /* The editor already positions this box, and the ring is placed against it; said again so a
+       build that stopped puts the ring nowhere rather than in the window's top left corner. */
+    position: relative;
 
-    /* Stopping the motion has to leave three states that still read apart: working keeps the
-       comet, whose gap stands in for the turn, and waiting is dimmed where it would have pulsed. */
-    @media (prefers-reduced-motion: reduce) {
-      animation: none;
-      opacity: ${context.claudeState === 'attention' ? '0.45' : '1'};
+    &::before {
+      /* The !importants here, and the rule that forced them: the product icon theme sets this same
+         pseudo's glyph AND the font it is drawn in with !importants of its own (content:
+         var(--vscode-icon-menu-content), font-family: var(--vscode-icon-menu-font-family)), so a
+         plain override loses and the hamburger paints on top of the mark - and a letter left in the
+         codicon font is a glyph nobody has. */
+      content: ${JSON.stringify(context.icon ? '' : initial(context.name))} !important;
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 3px;
+      ${context.icon ? `background-image: url("${context.icon}");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;` : `background: oklch(${MARK_LIGHTNESS} ${MARK_CHROMA} ${context.hue});
+      font-family: system-ui !important;
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;`}
     }
+${RINGS[context.claudeState] ? `
+    &::after {
+      content: "";
+      position: absolute;
+      /* The button's own box, so the ring is the card's edge and the badge gets the room inside it:
+         a 3px stroke and 2.5px of air either side of 24px - the size the bar draws its own icons
+         at - fill the editor's 35. Rounded as the card is, which keeps all three concentric: 3 on
+         the badge, 5.5 inside the stroke, 8.5 outside it. The box is 36 wide, so the air is half
+         a pixel more across than down. */
+      inset: 0;
+      border-radius: var(--ct-plate-radius);
+      padding: 3px;
+      mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      mask-composite: exclude;
+      ${RINGS[context.claudeState]}
+      /* The button under it is still the editor's, and still opens the menu. */
+      pointer-events: none;
+
+      /* Stopping the motion has to leave three states that still read apart: working keeps the
+         comet, whose gap stands in for the turn, and waiting is dimmed where it would have pulsed. */
+      @media (prefers-reduced-motion: reduce) {
+        animation: none;
+        opacity: ${context.claudeState === 'attention' ? '0.45' : '1'};
+      }
+    }` : ''}
   }
 }
-
+${RINGS[context.claudeState] ? `
 /* Registered, or it is a string the gradient cannot read and the comet never moves. */
 @property --ct-ring-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
 @keyframes ct-ring-turn { to { --ct-ring-angle: 360deg; } }
