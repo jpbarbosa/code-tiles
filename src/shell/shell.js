@@ -7,6 +7,8 @@ const chips = document.getElementById('chips');
 const grounds = document.getElementById('grounds');
 const glow = document.getElementById('glow');
 const empty = document.getElementById('empty');
+const emptyProjects = document.getElementById('empty-projects');
+const emptyAdd = document.getElementById('empty-add');
 const stage = document.getElementById('stage');
 const usage = document.getElementById('usage');
 const splitters = document.getElementById('splitters');
@@ -16,6 +18,10 @@ let state = { projects: [], rects: [], splitters: [], mode: 'grid', focused: nul
   grounds: {} };
 let drag = null;
 let sorting = null;
+// Which tiles in the empty state are ticked. The page's own, not the app's: it is a selection
+// being made, and it is gone the moment the projects it names are open.
+const selected = new Set();
+const EMPTY_TILES = 8;
 
 const call = (type, payload) => window.ct.call(type, payload).catch((error) => console.error(error));
 
@@ -25,7 +31,7 @@ function render() {
   renderGrounds(open);
   renderGlow(open);
   renderSplitters();
-  empty.hidden = open.length > 0;
+  renderEmpty(open);
   for (const segment of document.querySelectorAll('.segment')) {
     segment.setAttribute('aria-pressed', String(segment.dataset.mode === state.mode));
   }
@@ -33,6 +39,61 @@ function render() {
   for (const button of document.querySelectorAll('.part')) {
     button.setAttribute('aria-pressed', String(Boolean(state.parts?.[button.dataset.part])));
   }
+}
+
+// The stage with nothing on it: the projects this app already knows, offered as tiles, and one
+// button under them. In the app's one project order, which is the order the picker's empty query
+// answers with and the only one this tree has - nothing here is sorted by recency, because
+// recency is not derivable from a folder and nothing stores it.
+function renderEmpty(open) {
+  empty.hidden = open.length > 0;
+  if (empty.hidden) {
+    selected.clear();
+    return;
+  }
+  const shown = state.projects.slice(0, EMPTY_TILES);
+  // A project forgotten while its tile was ticked would otherwise be opened by a button counting
+  // a row that is no longer on screen.
+  const folders = new Set(shown.map((project) => project.folder));
+  for (const folder of selected) if (!folders.has(folder)) selected.delete(folder);
+
+  // Rebuilt only when the LIST changes, never when a tick does: replacing the button the keyboard
+  // is on drops the focus to the body, and the tile after it then costs a walk back through the
+  // strip. The icon is in the signature because a favicon arrives one render late.
+  const signature = shown.map((project) => `${project.folder}\u0000${project.icon || ''}`).join('\n');
+  if (signature !== emptyProjects.dataset.signature) {
+    emptyProjects.dataset.signature = signature;
+    emptyProjects.replaceChildren(...shown.map(emptyTile));
+  }
+  emptyProjects.hidden = shown.length === 0;
+  for (const tile of emptyProjects.children) {
+    tile.setAttribute('aria-pressed', String(selected.has(tile.dataset.folder)));
+  }
+  emptyAdd.textContent = selected.size
+    ? `Open ${selected.size} Selected Project${selected.size > 1 ? 's' : ''}`
+    : 'Open Project';
+}
+
+// The same mark the chip and the picker row wear, at this page's own size. A button rather than
+// a link, so the keyboard ticks one with Space for nothing; which tiles are ticked is written
+// above, on every render, because a tile outlives the tick it is wearing.
+function emptyTile(project) {
+  const tile = document.createElement('button');
+  tile.className = 'project-tile';
+  tile.style.setProperty('--hue', project.hue);
+  tile.dataset.folder = project.folder;
+  tile.title = project.folder;
+
+  const mark = document.createElement('span');
+  mark.className = 'mark';
+  mark.append(projectMark(project));
+
+  const name = document.createElement('span');
+  name.className = 'name';
+  name.textContent = project.name;
+
+  tile.append(mark, name);
+  return tile;
 }
 
 // Account-global, so this widget is about the account and not about any tile. Green while there
@@ -316,9 +377,24 @@ for (const segment of document.querySelectorAll('.segment')) {
   segment.addEventListener('click', () => call('mode:set', { mode: segment.dataset.mode }));
 }
 
-for (const id of ['add', 'empty-add']) {
-  document.getElementById(id).addEventListener('click', () => call('project:pick'));
-}
+document.getElementById('add').addEventListener('click', () => call('project:pick'));
+
+emptyProjects.addEventListener('click', (event) => {
+  const folder = event.target.closest('.project-tile')?.dataset.folder;
+  if (!folder) return;
+  if (!selected.delete(folder)) selected.add(folder);
+  render();
+});
+
+// Nothing ticked leaves the button what it was: the picker, which is the only way to reach a
+// folder this app has never opened. The ticks are dropped before the calls, so the state that
+// comes back cannot re-tick a project that is now a tile on the stage.
+emptyAdd.addEventListener('click', () => {
+  if (!selected.size) return void call('project:pick');
+  const folders = [...selected];
+  selected.clear();
+  for (const folder of folders) call('project:open', { folder });
+});
 
 // The layout control drives every open project at once, which is the only reason it is here
 // rather than in each window's own title bar.

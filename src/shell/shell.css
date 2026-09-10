@@ -465,19 +465,91 @@ body[data-resizing] #glow { transition: none; }
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 12px;
-  color: var(--ink-quiet);
+  gap: 16px;
 }
 
 #empty[hidden] { display: none; }
 
+/* Two rows of four, whatever the count: a fifth project starts the second row rather than
+   stretching the first, so the block keeps one silhouette as the list grows. */
+#empty-projects {
+  display: grid;
+  grid-template-columns: repeat(4, 120px);
+  gap: 8px;
+
+  &[hidden] { display: none; }
+}
+
+/* A tile holds its mark over its name, so it centres them rather than aligning them: two rows
+   in one grid, each centred in its own. */
+.project-tile {
+  height: 76px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--bg) 88%, oklch(0.6 0.14 var(--hue)) 12%);
+  color: var(--ink-quiet);
+  font: inherit;
+  cursor: default;
+
+  &:hover { color: var(--ink); border-color: rgb(255 255 255 / 0.16); }
+
+  /* Ticked: the accent says it, on the border and in the ground, so a tile reads as chosen at a
+     glance across two rows rather than only against its neighbours. */
+  &[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--ink);
+    background: color-mix(in oklab, var(--bg) 76%, var(--accent) 24%);
+  }
+
+  &:focus-visible {
+    outline: 1px solid rgb(255 255 255 / 0.28);
+    outline-offset: -1px;
+  }
+
+  & .name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The chip's mark at the size a tile can afford. */
+  & .mark {
+    width: 30px;
+    height: 30px;
+
+    & img,
+    & .monogram {
+      display: block;
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+    }
+
+    & .monogram {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1;
+    }
+  }
+}
+
 #empty-add {
   border: 0;
-  border-radius: 7px;
-  padding: 7px 14px;
+  border-radius: 8px;
+  padding: 9px 18px;
   background: var(--accent);
   color: #fff;
-  font-size: 12px;
+  font-size: 13px;
   cursor: default;
 
   &:focus-visible {
