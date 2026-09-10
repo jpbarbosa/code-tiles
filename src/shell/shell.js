@@ -266,20 +266,20 @@ chips.addEventListener('click', (event) => {
   else call('project:focus', { folder: chip.dataset.folder });
 });
 
-// The strip's own gesture: a chip dragged along the row INSERTS, the chips it passes shifting
-// along, the way a row of tabs behaves everywhere else. The grid's is the other one, and it starts
-// inside a window - the two never contend, because the row is only shown in single view.
-//
-// The pointer is captured by the ROW rather than by the chip, and only once the drag has actually
-// begun. By the row, because every render replaces the chips and a captured node that is replaced
-});
-
 // The project's own menu, the one its badge opens inside the window. Main draws it, at the cursor.
 chips.addEventListener('contextmenu', (event) => {
   const chip = event.target.closest('.chip');
   if (!chip) return;
   event.preventDefault();
   call('project:menu', { folder: chip.dataset.folder });
+});
+
+// The strip's own gesture: a chip dragged along the row INSERTS, the chips it passes shifting
+// along, the way a row of tabs behaves everywhere else. The grid's is the other one, and it starts
+// inside a window - the two never contend, because the row is only shown in single view.
+//
+// The pointer is captured by the ROW rather than by the chip, and only once the drag has actually
+// begun. By the row, because every render replaces the chips and a captured node that is replaced
 // drops the drag - on the first reorder, which is the reorder the gesture exists to make. Only
 // then, because a capture retargets the click that ends the press to the capturing element: taken
 // on the press, it leaves every chip in the strip unclickable.

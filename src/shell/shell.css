@@ -154,12 +154,12 @@ html, body {
     width: 15px;
     height: 15px;
     border-radius: 3.5px;
+    object-fit: contain;
   }
 
   & .monogram {
     display: flex;
     align-items: center;
-    object-fit: contain;
     justify-content: center;
     color: #fff;
     font-size: 9px;
@@ -532,6 +532,7 @@ body[data-resizing] #glow { transition: none; }
       width: 30px;
       height: 30px;
       border-radius: 7px;
+      object-fit: contain;
     }
 
     & .monogram {
@@ -548,7 +549,6 @@ body[data-resizing] #glow { transition: none; }
 
 #empty-add {
   border: 0;
-      object-fit: contain;
   border-radius: 8px;
   padding: 9px 18px;
   background: var(--accent);
