@@ -86,6 +86,18 @@ on the projects either file would have served. **[checked]**
 draws nothing, and being a hit it stops the search before anything real is found. Any candidate
 list that walks a project needs the size check, not just the `statSync`. **[checked]**
 
+**A favicon's canvas is not its mark.** Seven of the nine favicons the app draws on this machine
+keep a transparent margin inside their own canvas - 2px a side of lumen's 48px `.ico`, 5 to 8 of 48
+round `atlas`'s - and every place a mark is drawn contains the whole canvas in its box, so each draws
+smaller than a full-bleed neighbour by the width of that margin, and off-centre by any difference
+between its sides. The sampler cuts a mark to the square its ink fills, centred on the ink, once
+that gains a pixel of the 24px badge; a mark whose ink already reaches the canvas ships as its own
+file. What a cut cannot give back is detail: `atlas`'s largest frame is 32px, so filling the badge
+with it is an enlargement, and softer than the file drawn small. Nor does the re-encode want an
+`imageSmoothingQuality`: a 512px favicon cut to 64 matches an exact box filter to 0.02/255 on
+average at `low`, `medium` and `high` alike. **[checked]** - margins read by ink at the badge's 48
+device pixels on every project in the app's list, before and after.
+
 **A `WebContentsView` paints above the window's page, always.** There is no z-mixing with
 HTML, and a view swallows every mouse event inside its rect. Consequences, all deliberate:
 anything that must appear inside a tile is a seam; the shell draws only in the gutters and the

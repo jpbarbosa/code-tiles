@@ -223,7 +223,9 @@ each half is that way round. Those bytes are decoded in an offscreen renderer
 or an SVG, and because a canvas weights a colour by the area it covers. That makes the reading
 asynchronous, so `learn` fills a cache that `iconFor` and `hueFor` read synchronously: awaited
 before the first render, and awaited again when a project is added, which draws once on the
-path's hue and once more in the project's own.
+path's hue and once more in the project's own. The same pass cuts a mark to the square its ink
+fills: most favicons keep a margin inside their canvas, which every box they are drawn in would
+show as a smaller mark.
 
 ## IPC
 

@@ -42,9 +42,10 @@ const found = new Map();
 const chosen = new Map();
 const decoded = new Map();
 
-// The mark a window and a chip wear: the re-encoded one where the file was too big to ship, and
-// the file itself otherwise, which is always at least as sharp as a downscale of it. `image` is
-// the one chosen from the project's menu, or null for the folder's own favicon.
+// The mark a window and a chip wear: the re-encoded one where the file was too big to ship or had
+// a margin to cut, and the file itself otherwise, which is always at least as sharp as a
+// downscale of it. `image` is the one chosen from the project's menu, or null for the folder's
+// own favicon.
 export function iconFor(folder, image = null) {
   const source = sourceFor(folder, image);
   if (!source) return null;
