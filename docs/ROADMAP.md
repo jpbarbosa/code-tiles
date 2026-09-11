@@ -139,7 +139,7 @@ What the tree does today, what comes next, and what to check when the server is 
   is, is `pythonCandidatesFor`. macOS and Linux keep one at a fixed place and Windows ships none,
   so there it is the `py` launcher the python.org installer leaves - and with no interpreter the
   hooks are not installed at all, which is every ring dark rather than anything broken.
-- Twenty-three seams, verified in a live window rather than from a screenshot:
+- Twenty-four seams, verified in a live window rather than from a screenshot:
   `dark` (your desktop's theme, a dark one only as the fallback under it, auto-detect off, and
   the colour scheme of every document the window holds - web's default theme is the light one,
   and a webview that says nothing shows Chromium's white canvas through every pixel its own page
@@ -153,6 +153,8 @@ What the tree does today, what comes next, and what to check when the server is 
   `corners` (the editor's own corners as the Corners preference has them: its radius tokens and the
   Claude panel's scaled 1.84x and every corner a squircle, said inside each webview page too, with
   the circles and pills - dots, badges, a switch, the app's own badge and ring - left round by name),
+  `webview-clip` (an editor webview - the Claude panel - clipped by its part's inner edge like the
+  rest of the part, where the editor clipped it to the part's outer box and it covered the border),
   `chrome` (title bar, status bar and the chat panel gone through the editor's own settings,
   no dead band; and the activity bar down to the three views a project is worked in, the rest moved
   into the editor's own Additional Views overflow by a patch that filters the list the bar is about

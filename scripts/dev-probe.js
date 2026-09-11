@@ -168,6 +168,14 @@ const READ = `(() => {
         return part ? getComputedStyle(part).getPropertyValue('corner-top-left-shape') : null;
       })(),
     } : null,
+    // The webview-clip seam: the wrapper the editor clips a webview with, padded to its part's
+    // inner edge and rounded as the part is.
+    webviewClip: (() => {
+      const wrapper = document.querySelector('.monaco-workbench > div:has(> .webview-overlay-content)');
+      if (!wrapper) return null;
+      const style = getComputedStyle(wrapper);
+      return { padding: style.paddingRight, radius: style.borderBottomRightRadius };
+    })(),
     // The terminals seam: the panel's header taken over, and what the strip says. Armed only
     // where the editor's own <select> is, so a false here and a setting that never landed read
     // the same - which is the point.

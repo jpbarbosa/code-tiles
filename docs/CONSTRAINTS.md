@@ -402,6 +402,13 @@ and `closest('.part')` on it is null. What points back is CSS anchor positioning
 carries `position-anchor: --overlay-anchor-<uuid>` and the part declares that name in an inline
 `anchor-name` - which is how the `tint` seam knows which surface a frame is drawn over. **[checked]**
 
+**A floating part lays its contents out 2px too wide.** The editor sizes what is inside a part from
+the part's full width, the modern UI's two 1px borders included, so everything in it overhangs the
+right border by 2px. The part's `overflow: hidden` hides that from all of it but a hoisted webview,
+whose wrapper the editor clips to the part's OUTER box: the Claude panel covered the border, which
+stopped dead where the panel began and ended. `webview-clip` pads that wrapper by the border. A side
+bar's webview view is clipped to its pane's scroller instead, which is just as wide. **[checked]**
+
 **A webview's `--vscode-*` are written INLINE on its `documentElement`**, cleared and rewritten
 there on every theme change, and an extension resolves its own names from them at `:root` - the
 Claude panel's page is `--app-primary-background: var(--vscode-sideBar-background)`, declared on

@@ -8,6 +8,7 @@ module.exports = [
   require('./seams/modern.cjs'),
   require('./seams/card.cjs'),
   require('./seams/corners.cjs'),
+  require('./seams/webview-clip.cjs'),
   require('./seams/frame.cjs'),
   require('./seams/chrome.cjs'),
   require('./seams/welcome.cjs'),
