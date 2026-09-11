@@ -96,11 +96,12 @@ export default {
   is handed `api.onContext`, `api.send` and `api.whenReady`.
 
 `ctx` is the project context:
-`{ folder, name, hue, icon, tint, claudeState, focused, tiled, maximized, layout }`. It arrives
+`{ folder, name, hue, icon, tint, claudeState, focused, tiled, maximized, layout, corners }`. It arrives
 before the first paint (through `additionalArguments`) and is updated by IPC. A seam reads it and
 re-renders; it never asks main for it. `tiled` is the one fact both of the app's own controls in
 a window hang on - whether this is one of several tiles - and `maximized` says nothing while it
 is false. `tint` is the rung for the state this window is IN, never the preference behind it.
+`corners` is the shape the Corners preference names, the same in every window.
 
 ### Why a preload, and not injection from the host
 
@@ -191,15 +192,17 @@ One store, `src/main/store.js`, one file, atomic writes, a `version` field:
 ```json
 { "version": 1, "projects": [{ "id": "...", "folder": "/abs/path" }],
   "order": ["id", ...], "focusedId": "id", "mode": "grid", "serverPort": 51234,
-  "tint": { "focused": "medium", "quiet": "medium" } }
+  "tint": { "focused": "medium", "quiet": "medium" }, "corners": "squircle" }
 ```
 
-`tint` is the app's one preference and the only field here that is a taste rather than a
-position: how much of its own colour a window wears, on the tile you are in and on the tiles you
-are not. It is stored as the RUNG's name; what a name is worth in a mix is `src/guest/rungs.cjs`,
-and a window is handed only the one rung that applies to it. The shell reads that module too,
+`tint` and `corners` are the app's two preferences, the only fields here that are a taste rather
+than a position. `tint` is how much of its own colour a window wears, on the tile you are in and
+on the tiles you are not. It is stored as the RUNG's name; what a name is worth in a mix is
+`src/guest/rungs.cjs`, and a window is handed only the one rung that applies to it. The shell reads that module too,
 through main: it paints a tile's ground before that tile has a window, so two layers draw one
-colour and neither may hold its own copy of the ladder.
+colour and neither may hold its own copy of the ladder. `corners` is stored the same way, as a
+shape's name, and `src/guest/corners.cjs` is the one place that says what a shape is worth: to a
+tile through its context, to the shell and the panels through main.
 
 What is derivable is not stored. A project's **name** is its folder's basename and its **hue**
 is the average of the colourful pixels in its favicon - a hash of its path when there is no
@@ -281,7 +284,9 @@ src/shell/usage.html    the usage panel: its own page in its own window, on the 
 src/shell/picker.html   the project picker: the same, one screen wide, with picker.css and
                         picker.js beside it
 src/shell/panel.css     what the four panel pages agree on: the ink, and the label above it
-src/shell/preferences.html  the two dials: the same again, one small panel
+src/shell/corners.css   the corner every page of the app's own draws, off the Corners preference
+                        main hands it
+src/shell/preferences.html  the two dials and the corners: the same again, one small panel
 src/shell/format.js     what the pages agree on: the colour ramp, a reset time, and a project's
                         mark - its favicon, or its initial on its own hue
 src/shell/preload.cjs   contextBridge: window.ct
@@ -289,7 +294,9 @@ src/shell/preload.cjs   contextBridge: window.ct
 src/guest/manifest.js   the seam list. Adding a seam means adding a line here.
 src/guest/runtime.cjs   the preload: loads seams, owns the style element, owns the context
 src/guest/rungs.cjs     what a rung's NAME is worth: the ladder, and the ground share the shell
-                        has to agree with. The one thing outside a window that main may read.
+                        has to agree with. Main may read it, and corners.cjs, and nothing else here.
+src/guest/corners.cjs   what a corner shape is worth: the switch the app's pages spend, and the
+                        tile's radius, which the card seam draws and the glow is struck around
 src/guest/shape.cjs     counting a shape in a bundle, for the patches that refuse unless it
                         appears exactly once
 src/guest/seams/*.js    one seam per file

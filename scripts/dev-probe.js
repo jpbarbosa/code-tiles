@@ -159,6 +159,15 @@ const READ = `(() => {
     // The card seam: the window's own corner. What shows in the corner it stops painting is the
     // shell's, and no page can see that, so the radius is the half a window can answer for.
     cardRadius: workbench ? getComputedStyle(workbench).borderRadius : null,
+    // The corners seam: the editor's own radius token as the preference scales it, and the shape
+    // its editor part is drawn in.
+    corners: workbench ? {
+      large: getComputedStyle(workbench).getPropertyValue('--vscode-cornerRadius-large').trim(),
+      editorPart: (() => {
+        const part = document.querySelector('.part.editor');
+        return part ? getComputedStyle(part).getPropertyValue('corner-top-left-shape') : null;
+      })(),
+    } : null,
     // The terminals seam: the panel's header taken over, and what the strip says. Armed only
     // where the editor's own <select> is, so a false here and a setting that never landed read
     // the same - which is the point.

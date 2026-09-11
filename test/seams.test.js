@@ -306,6 +306,30 @@ test('a rung that is not a rung falls back to medium rather than to nothing', as
   assert.deepEqual(groundShares({ focused: 'loud', quiet: null }), groundShares({}));
 });
 
+// The editor's own corners follow the same preference: scaled tokens and a squircle default for
+// `squircle`, and nothing at all for `round`, which is the editor as it ships.
+test('the corners seam scales the editor only when the preference is squircle', () => {
+  const corners = seams.find((seam) => seam.name === 'corners');
+  const css = corners.css({ ...contexts[0], corners: 'squircle' });
+  assert.ok(css.includes('--vscode-cornerRadius-large: 14.72px;'), css);
+  assert.ok(css.includes('corner-shape: squircle;') && css.includes('corner-shape: round;'), css);
+  assert.equal(corners.css({ ...contexts[0], corners: 'round' }), '');
+});
+
+// The tile's corner is said once, in src/guest/corners.cjs: the card seam draws it off the window's
+// context, and main hands the same values to the shell, where the glow is struck around them. Every
+// shape, and one that is not a shape, which both sides must read as the same default.
+test('the card seam draws the corner the shell is handed', () => {
+  const corners = require('../src/guest/corners.cjs');
+  const card = seams.find((seam) => seam.name === 'card');
+  for (const shape of [...corners.SHAPES, 'hexagon', undefined]) {
+    const css = card.css({ ...contexts[0], corners: shape });
+    const { squircle, tileRadius } = corners.cornerValues(shape);
+    assert.ok(css.includes(`border-radius: ${tileRadius}px;`), `${shape}: no ${tileRadius}px corner in\n${css}`);
+    assert.ok(css.includes(`corner-shape: ${squircle ? 'squircle' : 'round'};`), `${shape}:\n${css}`);
+  }
+});
+
 // A seam reaches the runtime through `api` and nothing else, and the two are in different files
 // on different module systems - so a seam calling something the preload does not expose fails
 // INSIDE a window, at the moment that seam runs, with nothing on any console anyone is reading.

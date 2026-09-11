@@ -161,7 +161,7 @@ app.whenReady().then(async () => {
   // The favicons, decoded before the first render rather than after it: a project whose hue
   // arrives late would draw once on its path's hash and again in its own colour.
   await learn(projects.sources());
-  window = createWindow();
+  window = createWindow({ cornerShape: store.state.corners });
   const tiles = new Tiles({ window, server, onFollow: (from, to) => desk.follow(from, to) });
   const preferences = new Preferences({ store, parent: window });
   const desk = new Desk({ window, projects, tiles, activity, preferences });

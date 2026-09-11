@@ -9,6 +9,16 @@ window.addEventListener('DOMContentLoaded', () => {
   document.documentElement.dataset.controls = process.platform === 'darwin' ? 'left' : 'right';
 });
 
+// The Corners preference as the page opens, from src/guest/corners.cjs by way of main's launch
+// arguments: this preload is sandboxed and cannot require it. Without them corners.css draws circles.
+const argumentOf = (name) => process.argv.find((value) => value.startsWith(name))?.slice(name.length);
+const squircle = argumentOf('--ct-squircle=');
+const tileRadius = argumentOf('--ct-tile-radius=');
+window.addEventListener('DOMContentLoaded', () => {
+  if (squircle) document.documentElement.style.setProperty('--squircle', squircle);
+  if (tileRadius) document.documentElement.style.setProperty('--tile-radius', `${tileRadius}px`);
+});
+
 // The OS's clock, which a page's own locale cannot say (src/main/clock.js). Panels only: the strip
 // shows no time and is handed none.
 const HOUR_CYCLE = '--ct-hour-cycle=';

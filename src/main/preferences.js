@@ -1,12 +1,11 @@
-import { fitPanel, panelWindow } from './panel.js';
+import { fitPanel, panelCorners, panelWindow } from './panel.js';
 import { files } from './paths.js';
-import { rungNames } from '../guest/manifest-settings.js';
+import { corners as shapes, rungNames } from '../guest/manifest-settings.js';
 
-// The app's one preference: how much of its own colour a window wears, on the tile you are in and
-// on the tiles you are not. Two dials, three rungs each, and the rungs are NAMES here - what a
-// name is worth in a mix is the guest's business, which is the same split every other thing a
-// window is told about itself is on. Read from there, so a rung this app offers is one a window
-// can actually wear.
+// The app's preferences: how much of its own colour a window wears, on the tile you are in and on
+// the tiles you are not, and the shape of every corner it draws. Both are NAMES here - what one is
+// worth is the guest's business - read from there, so a rung or a shape this app offers is one a
+// window can actually wear.
 const RUNGS = rungNames();
 const DIALS = ['focused', 'quiet'];
 const DEFAULT = 'medium';
@@ -25,6 +24,7 @@ export class Preferences {
   constructor({ store, parent }) {
     this.#store = store;
     this.#parent = parent;
+    panelCorners(this.corners);
   }
 
   // Clamped on the way out rather than on the way in: a rung that is no longer a rung, from a
@@ -36,10 +36,25 @@ export class Preferences {
       [dial, RUNGS.includes(stored[dial]) ? stored[dial] : DEFAULT]));
   }
 
-  set(dial, rung) {
-    if (!DIALS.includes(dial) || !RUNGS.includes(rung)) return this.levels;
-    this.#store.update({ tint: { ...this.levels, [dial]: rung } });
-    return this.levels;
+  // Clamped on the way out the same way, by the one module that knows the shapes.
+  get corners() {
+    return shapes.shapeOf(this.#store.state.corners);
+  }
+
+  // What the page is shown and handed back: both dials, the corners, and what those are worth to
+  // it - its own corners follow at once, while every other window hears it from the desk.
+  get state() {
+    return { ...this.levels, corners: this.corners, cornerValues: shapes.cornerValues(this.corners) };
+  }
+
+  set(dial, value) {
+    if (dial === 'corners' && shapes.SHAPES.includes(value)) {
+      this.#store.update({ corners: value });
+      panelCorners(value);
+    } else if (DIALS.includes(dial) && RUNGS.includes(value)) {
+      this.#store.update({ tint: { ...this.levels, [dial]: value } });
+    }
+    return this.state;
   }
 
   open() {
@@ -52,7 +67,7 @@ export class Preferences {
       // is the correction, not the measurement.
       useContentSize: true,
       width: WIDTH,
-      height: 331,
+      height: 455,
       title: 'Preferences',
       resizable: false,
     });

@@ -437,6 +437,11 @@ window.ct.onEvent((message) => {
   state = message.payload;
   document.documentElement.style.setProperty('--strip', `${state.strip}px`);
   if (state.ground) document.documentElement.style.setProperty('--bg', state.ground);
+  // The Corners preference, live: the launch arguments only had it for the first paint.
+  if (state.corners) {
+    document.documentElement.style.setProperty('--squircle', state.corners.squircle);
+    document.documentElement.style.setProperty('--tile-radius', `${state.corners.tileRadius}px`);
+  }
   render();
 });
 

@@ -30,7 +30,7 @@ body {
   /* The bottom corners sit on the parent window's, which macOS 27 draws as a squircle of 29.4px
      (measured off its mask) and nothing here can read. Erring large leaves a few undimmed pixels
      in a gutter corner; erring small paints 55% black onto the desktop outside the window. The
-     window's shape, so it takes no part in the switch in corners.css. */
+     window's shape, so it takes no part in the app's corner switch. */
   border-radius: 0 0 30px 30px;
   corner-shape: squircle;
 }

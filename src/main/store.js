@@ -15,7 +15,8 @@ const EMPTY = {
   // The grid's proportions, per grid SHAPE: { "2x2": { cols: [...], rows: [...] } }. Shares,
   // never pixels, so a resized window keeps them.
   sizes: {},
-  // How much of its colour a window wears, one rung per state. The only preference the app has.
+  // How much of its colour a window wears, one rung per state. `corners`, the other preference, is
+  // absent until it is chosen: src/guest/corners.cjs holds its default.
   tint: { focused: 'medium', quiet: 'medium' },
   serverPort: null,   // reused so the origin, and so the login, is stable
 };

@@ -26,11 +26,12 @@
     .dial .name { font-weight: 500; }
     .dial .why { color: var(--ink-quiet); font-size: 11px; }
 
-    /* One track holding three equal rungs, so the row reads as one control rather than as three
-       buttons that happen to be adjacent. */
+    /* One track holding its equal rungs, so the row reads as one control rather than as buttons
+       that happen to be adjacent. */
     .rungs {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
       gap: 2px;
       padding: 2px;
       border-radius: calc(7px * var(--corner-scale));
@@ -67,26 +68,32 @@
 
   <div id="dials"></div>
 
+  <h1>Corners</h1>
+  <div id="corners"></div>
+
   <footer>Every open window follows at once, with no reload. What tells two windows apart with
     both dials down is the project's icon on its badge and its name on the side bar's title row -
     neither is painted, so neither has a rung here.</footer>
 
   <script type="module">
-    // The rungs and the dial keys are the same strings here, over IPC and in the store, so a
-    // rung is spelled once for the whole app - and what one is worth in a mix is the tint seam's,
-    // which is the only place that ever turns a name into a number.
+    // The rungs and the dial keys are the same strings here, over IPC and in the store, so each is
+    // spelled once for the whole app - and what one is worth is the guest's: a rung's in the tint
+    // seam, a shape's in src/guest/corners.cjs, which main hands back as `cornerValues`.
     const RUNGS = ['subtle', 'medium', 'strong'];
+    const SHAPES = ['squircle', 'round'];
+    const FACES = { squircle: 'Smooth' };
     const DIALS = [
-      ['focused', 'The tile you are in',
-       'Its parts, its chrome, and the ground they float on.'],
-      ['quiet', 'Every other tile',
-       'Below the tile you are in is what makes focus read across the grid.'],
+      ['dials', 'focused', 'The tile you are in',
+       'Its parts, its chrome, and the ground they float on.', RUNGS, 'medium'],
+      ['dials', 'quiet', 'Every other tile',
+       'Below the tile you are in is what makes focus read across the grid.', RUNGS, 'medium'],
+      ['corners', 'corners', 'Every corner the app draws',
+       'Smooth follows the squircle macOS draws its own windows with. Round is a plain circle.', SHAPES, 'squircle'],
     ];
 
-    const dials = document.getElementById('dials');
     const inputs = {};
 
-    for (const [dial, name, why] of DIALS) {
+    for (const [group, dial, name, why, rungs] of DIALS) {
       const row = document.createElement('div');
       row.className = 'dial';
       row.innerHTML = '<span class="name"></span><span class="why"></span><div class="rungs"></div>';
@@ -94,30 +101,33 @@
       row.querySelector('.why').textContent = why;
 
       const track = row.querySelector('.rungs');
-      inputs[dial] = RUNGS.map((rung) => {
+      inputs[dial] = rungs.map((rung) => {
         const label = document.createElement('label');
         const input = document.createElement('input');
         input.type = 'radio';
         input.name = dial;
         input.value = rung;
         const face = document.createElement('span');
-        face.textContent = rung[0].toUpperCase() + rung.slice(1);
+        face.textContent = FACES[rung] || rung[0].toUpperCase() + rung.slice(1);
         label.append(input, face);
         track.append(label);
-        input.addEventListener('change', () => {
-          if (input.checked) window.ct.call('preferences:set', { dial, rung });
+        input.addEventListener('change', async () => {
+          if (input.checked) show(await window.ct.call('preferences:set', { dial, rung }));
         });
         return input;
       });
-      dials.append(row);
+      document.getElementById(group).append(row);
     }
 
-    function show(levels) {
-      for (const [dial] of DIALS) {
-        const wanted = levels?.[dial];
-        const hit = inputs[dial].find((input) => input.value === wanted) || inputs[dial][1];
+    function show(state) {
+      for (const [, dial, , , , fallback] of DIALS) {
+        const wanted = state?.[dial];
+        const hit = inputs[dial].find((input) => input.value === wanted)
+          || inputs[dial].find((input) => input.value === fallback);
         hit.checked = true;
       }
+      // This page's own corners follow at once; every other window hears it from the desk.
+      if (state?.cornerValues) document.documentElement.style.setProperty('--squircle', state.cornerValues.squircle);
       // The window is sized by what the page drew, so nothing here counts rows - and by the body,
       // since the root's scrollHeight is never less than the window: it could only grow.
       window.ct.call('preferences:height', {

@@ -45,9 +45,10 @@ yourself. **Icon** puts an image of your own, or the project's initial letter, i
 favicon, and **Color** picks one of eight hues. **Automatic**, in either, goes back to what the app
 worked out.
 
-**Settings** has one preference: how strong that colour is, on a dial for the tile you are in and
-another for the ones you are not. Turn them both down and the tiles stay apart by their icons and
-names alone.
+**Settings** has two preferences. One is how strong that colour is, on a dial for the tile you are
+in and another for the ones you are not; turn them both down and the tiles stay apart by their
+icons and names alone. The other is **Corners**: smooth, the squircle macOS draws its own windows
+with, or round.
 
 ## What your agent is doing
 

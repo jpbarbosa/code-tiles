@@ -18,6 +18,10 @@ export function groundShares(levels = {}) {
   };
 }
 
+// The Corners preference from main's side: the shapes it may hold, and what one is worth to the
+// pages main opens, whose sandboxed preload cannot require it. A tile's card seam reads the same.
+export const corners = require('./corners.cjs');
+
 // The rung names, for the one place that validates them. Spelled here so main is not a second
 // list that can fall out of step with what the seam can actually spend.
 export function rungNames() {

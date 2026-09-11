@@ -1,5 +1,6 @@
 import { BrowserWindow } from 'electron';
 
+import { corners } from '../guest/manifest-settings.js';
 import { files } from './paths.js';
 import { METRICS } from './layout.js';
 import { IS_MAC } from './platform.js';
@@ -14,7 +15,7 @@ const chrome = IS_MAC
   ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 13, y: (METRICS.strip - 14) / 2 } }
   : { titleBarStyle: 'hidden', titleBarOverlay: { color: GROUND, symbolColor: '#c9ccce', height: METRICS.strip } };
 
-export function createWindow() {
+export function createWindow({ cornerShape } = {}) {
   const window = new BrowserWindow({
     width: 1600,
     height: 1000,
@@ -27,6 +28,8 @@ export function createWindow() {
       preload: files.shellPreload,
       contextIsolation: true,
       sandbox: true,
+      // The Corners preference for the first paint; the state the desk sends keeps it live.
+      additionalArguments: corners.launchArguments(cornerShape),
     },
   });
 

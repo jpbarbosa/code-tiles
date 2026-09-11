@@ -1,5 +1,6 @@
 import { BrowserWindow, app, systemPreferences } from 'electron';
 
+import { corners } from '../guest/manifest-settings.js';
 import { hourCycleFor } from './clock.js';
 import { files } from './paths.js';
 import { IS_MAC } from './platform.js';
@@ -25,6 +26,14 @@ export function systemHourCycle() {
   });
 }
 
+// The Corners preference every panel opens with, as launch arguments so its first paint has it. A
+// window's arguments are fixed once it exists, so Preferences says here whenever the shape moves.
+let cornerArguments = corners.launchArguments();
+
+export function panelCorners(shape) {
+  cornerArguments = corners.launchArguments(shape);
+}
+
 export function panelWindow({ parent, page, ...options }) {
   const window = new BrowserWindow({
     parent,
@@ -38,7 +47,7 @@ export function panelWindow({ parent, page, ...options }) {
       preload: files.shellPreload,
       contextIsolation: true,
       sandbox: true,
-      additionalArguments: [`--ct-hour-cycle=${systemHourCycle()}`],
+      additionalArguments: [`--ct-hour-cycle=${systemHourCycle()}`, ...cornerArguments],
     },
     ...options,
   });

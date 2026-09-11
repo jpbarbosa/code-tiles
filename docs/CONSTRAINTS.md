@@ -579,25 +579,31 @@ inside the chiclet's, and a top-down camera cannot see a narrow bevel at the can
 
 **A corner is a squircle, at 1.84x the radius a circle would take.** macOS draws every window's
 corner as one: off the mask of Code Tiles' own window and of a Finder window, CSS `corner-shape:
-squircle` at 29.4px fits to 0.11pt where the best circle misses by 0.39. So `src/shell/corners.css`
-makes it the default for the shell and the panels, and is the switch: `--squircle: 0` puts the
-circles back, since every radius is written as the circle's times `--corner-scale`. The factor is
+squircle` at 29.4px fits to 0.11pt where the best circle misses by 0.39. The Corners preference
+turns it on, its names and values in `src/guest/corners.cjs`: a tile reads it off its context, the
+strip off its state and a panel off its launch arguments, and `src/shell/corners.css` spends it as
+the default shape and as `--corner-scale`, the factor every radius is written with. The factor is
 the ratio of the two shapes' diagonal insets, 0.293r against 0.159r: a squircle at 1.84r cuts in
 exactly as far as the circle it replaced, so two nested shapes whose radii both scale keep their
 gap at the diagonal - the preferences dial's track and its checked rung measure the same 2.12px
 apart there before and after. A circle or a pill says `corner-shape: round`, since a squircle at
 50% is a rounded square, and so does a shape whose 1.84x will not fit its box: the chip's Claude
-ring would need 14.7px of 24. The picker's scrim meets the window's own corner, where a 14px circle
+ring would need 14.7px of 24. A corner nested in the window's is the window's less the inset, not
+its exact offset, which for a squircle turns sharply at the diagonal and reads tighter than the
+window: the tile, 8px in, is 20.8, and the gutter widens from 8 to 9.5px at the corner for it. The
+picker's scrim meets the window's own corner, where a 14px circle
 painted up to 6.6pt of 55% black onto the desktop and a 30px squircle paints 0.08. An `outline`
 follows the shape. **[checked]** - every corner fitted by ink, hidden, at HEAD and now: a circle at
 the declared radius before and a squircle at it after, a focus ring and a hover plate included.
-With the switch at 0, every page matches HEAD to the pixel except the scrim's two corners.
+Set to round, every page matches HEAD to the pixel except the scrim's two corners.
 
 **A squircle costs nothing as paint and a mask layer as a clip.** Over composited content - a
 scroller, a `will-change` layer - `overflow: hidden` on a squircle adds a layer the size of the box
 to the compositor's tree, the mask it clips through, where the same box round takes the fast
 rounded-corner path and adds none. Nothing in the shell or the panels clips that way. The tile's
-own clip in `card` does: it holds the whole workbench, editors and terminals included.
+own clip in `card` does: it holds the whole workbench, editors and terminals included - and the
+editor's own parts do too once `corners` shapes them, which a real workbench offscreen paid for as
+39 layers against 37 round.
 **[checked]** - read out of Chromium 152's layer tree over CDP, a 600x400 box clipping a scroller
 and an animated layer: 8 layers round, 9 as a squircle, the ninth 602x402 and drawing content.
 

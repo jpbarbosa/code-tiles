@@ -229,5 +229,7 @@ function contextOf(project) {
     // Which parts the app wants every window showing. A part nobody has chosen for is null, and
     // the window is left with whatever layout it remembers.
     layout: project.layout || {},
+    // The shape of its corners, from the app's Corners preference, which the card seam draws.
+    corners: project.corners || null,
   };
 }

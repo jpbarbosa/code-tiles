@@ -418,12 +418,11 @@ body[data-sorting] .chip .close { cursor: grabbing; }
 }
 
 /* Each tile's ground, held from the first frame until its own window paints over it, so the app
-   arrives as itself rather than as an empty dark window with one lit cell. Round, like the glow
-   and the tile's own clip in card.cjs: the three are one shape. */
+   arrives as itself rather than as an empty dark window with one lit cell. The glow's corner, so
+   it stays inside the tile's own clip in card.cjs. */
 .ground {
   position: absolute;
-  border-radius: 10px;
-  corner-shape: round;
+  border-radius: calc(var(--tile-radius, 7px) + 3px * var(--corner-scale));
   pointer-events: none;
   /* No share means no tint, rather than an invalid color-mix and no ground at all. */
   background: color-mix(in oklab, var(--bg) var(--survives, 100%), oklch(0.62 0.15 var(--hue)));
@@ -431,11 +430,12 @@ body[data-sorting] .chip .close { cursor: grabbing; }
 
 /* The focus mark that lives OUTSIDE the tile. The view paints over the middle of this element,
    so only the halo in the gutter is ever seen; it is drawn at half the alpha the window's own
-   ground carries, or the light looks cut off at the tile's edge. */
+   ground carries, or the light looks cut off at the tile's edge. Its corner is the tile's, which
+   main hands this page as --tile-radius, plus the 3px it bleeds at --corner-scale: the band stays
+   even at the diagonal whichever way the Corners preference is set. */
 #glow {
   position: absolute;
-  border-radius: 10px;
-  corner-shape: round;
+  border-radius: calc(var(--tile-radius, 7px) + 3px * var(--corner-scale));
   pointer-events: none;
   transition: left 0.12s ease, top 0.12s ease, width 0.12s ease, height 0.12s ease;
   background: oklch(0.45 0.09 var(--hue));
