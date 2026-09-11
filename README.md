@@ -45,10 +45,10 @@ yourself. **Icon** puts an image of your own, or the project's initial letter, i
 favicon, and **Color** picks one of eight hues. **Automatic**, in either, goes back to what the app
 worked out.
 
-**Settings** has two preferences. One is how strong that colour is, on a dial for the tile you are
-in and another for the ones you are not; turn them both down and the tiles stay apart by their
-icons and names alone. The other is **Corners**: smooth, the squircle macOS draws its own windows
-with, or round.
+**Settings** has three preferences. One is how strong that colour is, on a dial for the tile you
+are in and another for the ones you are not; turn them both down and the tiles stay apart by their
+icons and names alone. Another is **Corners**: smooth, the squircle macOS draws its own windows
+with, or round. The third is **Sound**, the buzz described below, on or off.
 
 ## What your agent is doing
 
@@ -65,6 +65,9 @@ The same ring is on the chip in the strip, so you can see a project that is not 
 the chat tab inside the editor, where you are already looking. When the whole app is behind
 something else the taskbar picks it up: a count on the Dock on macOS and on a Unity launcher,
 and a flashing taskbar button on Windows, which has no badge to set.
+
+It is heard as well: a short buzz each time a session finishes a turn or asks you something, in
+any tile. The speaker at the right of the strip turns it off and on, as does **Settings**.
 
 This reads Claude Code's own hooks, so it works whether you use the CLI or the extension.
 

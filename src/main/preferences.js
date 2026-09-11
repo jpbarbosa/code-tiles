@@ -3,12 +3,13 @@ import { files } from './paths.js';
 import { corners as shapes, rungNames } from '../guest/manifest-settings.js';
 
 // The app's preferences: how much of its own colour a window wears, on the tile you are in and on
-// the tiles you are not, and the shape of every corner it draws. Both are NAMES here - what one is
-// worth is the guest's business - read from there, so a rung or a shape this app offers is one a
-// window can actually wear.
+// the tiles you are not, the shape of every corner it draws, and whether a Claude session waiting
+// on you is heard. The first two are NAMES here - what one is worth is the guest's business - read
+// from there, so a rung or a shape this app offers is one a window can actually wear.
 const RUNGS = rungNames();
 const DIALS = ['focused', 'quiet'];
 const DEFAULT = 'medium';
+const SOUNDS = ['on', 'off'];
 const WIDTH = 380;
 
 // A window rather than a panel in the shell page, for the reason the usage panel and the picker
@@ -41,18 +42,29 @@ export class Preferences {
     return shapes.shapeOf(this.#store.state.corners);
   }
 
+  // On unless it was turned off, so a state file from before it existed is heard.
+  get sound() {
+    return this.#store.state.sound === 'off' ? 'off' : 'on';
+  }
+
   // What the page is shown and handed back: both dials, the corners, and what those are worth to
   // it - its own corners follow at once, while every other window hears it from the desk.
   get state() {
-    return { ...this.levels, corners: this.corners, cornerValues: shapes.cornerValues(this.corners) };
+    return { ...this.levels, corners: this.corners, cornerValues: shapes.cornerValues(this.corners), sound: this.sound };
   }
 
   set(dial, value) {
     if (dial === 'corners' && shapes.SHAPES.includes(value)) {
       this.#store.update({ corners: value });
       panelCorners(value);
+    } else if (dial === 'sound' && SOUNDS.includes(value)) {
+      this.#store.update({ sound: value });
     } else if (DIALS.includes(dial) && RUNGS.includes(value)) {
       this.#store.update({ tint: { ...this.levels, [dial]: value } });
+    }
+    // The strip's speaker moves the sound too, and this window may be open when it does.
+    if (this.#window && !this.#window.isDestroyed()) {
+      this.#window.webContents.send('ct:event', { type: 'preferences', payload: this.state });
     }
     return this.state;
   }
@@ -67,7 +79,7 @@ export class Preferences {
       // is the correction, not the measurement.
       useContentSize: true,
       width: WIDTH,
-      height: 455,
+      height: 579,
       title: 'Preferences',
       resizable: false,
     });

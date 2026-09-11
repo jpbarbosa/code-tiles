@@ -155,6 +155,8 @@ app.whenReady().then(async () => {
       for (const project of projects.open()) events.note('hook', project.folder, project.claudeState);
       desk.render();
     },
+    // One sound per machine, like the hooks: a guest beside their owner would double every one.
+    onWaiting: ownsHooks ? () => desk.chime() : undefined,
   });
 
   const projects = new Projects(store, { profileFor, claudeStates: (folders) => activity.states(folders) });

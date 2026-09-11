@@ -25,6 +25,9 @@
 
 * { box-sizing: border-box; }
 
+/* The UA's own `padding: 1px 6px` centres a glyph off its plate - docs/CONSTRAINTS.md. */
+button { padding: 0; }
+
 html, body {
   margin: 0;
   height: 100%;
@@ -311,7 +314,8 @@ body[data-sorting] .chip .close { cursor: grabbing; }
   gap: 4px;
 }
 
-.part {
+.part,
+#sound {
   width: var(--control);
   height: var(--control);
   display: grid;
@@ -325,8 +329,9 @@ body[data-sorting] .chip .close { cursor: grabbing; }
   & svg { width: 16px; height: 16px; fill: currentColor; }
   &:hover { background: rgb(255 255 255 / 0.08); color: var(--ink); }
 
-  /* Each part ships as a codicon PAIR whose filled half is the state, and the editor lights no
-     plate behind them: showing is the solid glyph, hidden is the outline. */
+  /* Each ships as a codicon PAIR, one glyph per state, and the editor lights no plate behind
+     them: a part showing is the solid glyph and hidden the outline, the sound on is the speaker
+     and off the crossed one. */
   & .on { display: none; }
   &[aria-pressed="true"] .off { display: none; }
   &[aria-pressed="true"] .on { display: inline; }
@@ -337,7 +342,6 @@ body[data-sorting] .chip .close { cursor: grabbing; }
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  padding: 0;
   border: 0;
   background: transparent;
   color: var(--ink-quiet);

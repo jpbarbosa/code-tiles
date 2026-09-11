@@ -11,7 +11,7 @@ import { pythonCandidates } from '../src/main/platform.js';
 
 // A live session is one marker file, so a state is a fixture: this writes the markers a hook
 // would have written and reads back what the app would have drawn.
-function bench(markers = {}) {
+function bench(markers = {}, { onWaiting } = {}) {
   const base = fs.mkdtempSync(path.join(os.tmpdir(), 'ct-activity-'));
   const dir = path.join(base, 'activity');
   fs.mkdirSync(dir);
@@ -24,10 +24,38 @@ function bench(markers = {}) {
     dir,
     script: path.join(base, 'activity-hook.py'),
     settings: path.join(base, 'settings.json'),
+    onWaiting,
   });
   activity.start();
   return { base, dir, activity, project: path.join(base, 'project') };
 }
+
+// A marker the way the hook writes one, by a rename, and then long enough for the watcher's debounce.
+async function mark(dir, session, state, cwd) {
+  const file = path.join(dir, `${session}.json`);
+  fs.writeFileSync(`${file}.tmp`, JSON.stringify({ state, cwd, ts: Date.now() / 1000, transcript: '' }));
+  fs.renameSync(`${file}.tmp`, file);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+}
+
+test('a session turning to wait on you is heard once per wait, and nothing on disk at launch is', async (t) => {
+  const project = path.join(os.tmpdir(), 'w');
+  const heard = [];
+  const { dir, activity } = bench({ earlier: { state: 'finished', cwd: project } }, {
+    onWaiting: (marker) => heard.push(`${marker.session} ${marker.state}`),
+  });
+  t.after(() => activity.stop());
+
+  await mark(dir, 'one', 'working', project);
+  // A permission prompt: its PermissionRequest, then its Notification some seconds later.
+  await mark(dir, 'one', 'attention', project);
+  await mark(dir, 'one', 'attention', project);
+  await mark(dir, 'one', 'working', project);
+  await mark(dir, 'one', 'finished', project);
+  // Claude Code's idle Notification, a minute after the turn it is about.
+  await mark(dir, 'one', 'attention', project);
+  assert.deepEqual(heard, ['one attention', 'one finished']);
+});
 
 test('a project wears the loudest state of the sessions inside it', (t) => {
   const project = path.join(os.tmpdir(), 'x');

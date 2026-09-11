@@ -84,6 +84,7 @@ export class Desk {
       // The Corners preference as the shell spends it: the switch, and the tile's radius the glow
       // is struck around. The strip's launch arguments only had it for the first paint.
       corners: corners.cornerValues(this.#preferences?.corners),
+      sound: this.#preferences?.sound,
       strip: METRICS.strip,
       gap: METRICS.gap,
       focused,
@@ -92,6 +93,12 @@ export class Desk {
       splitters: gridSplitters({ ...shape, sizes }),
     });
     this.#dock(badgeFor(projects));
+  }
+
+  // Main has no audio of its own, so the shell plays it: the one page the app always has open.
+  chime() {
+    if (this.#preferences?.sound !== 'on' || this.#window.isDestroyed()) return;
+    this.#window.webContents.send('ct:event', { type: 'chime' });
   }
 
   // A folder that has never been here has no favicon read yet, so it draws on its path's hue and

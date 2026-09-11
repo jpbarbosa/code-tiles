@@ -17,7 +17,7 @@ export function installIpc({ desk, usage, popover, picker, preferences, events }
   // back to the tile BEFORE the command runs, so a screen this opens (the picker, the usage
   // panel) still takes it from there, and the press that dismisses that screen leaves the next
   // keystroke in an editor rather than in the shell page, where it would re-fire the button.
-  const STRIP_COMMANDS = new Set(['layout:set', 'mode:set', 'project:menu', 'project:pick', 'usage:popover']);
+  const STRIP_COMMANDS = new Set(['layout:set', 'mode:set', 'project:menu', 'project:pick', 'sound:set', 'usage:popover']);
 
   const commands = {
     'state': () => { desk.render(); usage.publish(); picker.publish(); },
@@ -36,13 +36,17 @@ export function installIpc({ desk, usage, popover, picker, preferences, events }
     'usage:disconnect': () => usage.disconnect(),
     // The preferences window, which is a window of its own for the reason the other two are. A
     // dial moved re-renders the desk, which is what carries the new rung into every open window.
-    'preferences:state': () => preferences.levels,
+    'preferences:state': () => preferences.state,
     'preferences:set': ({ dial, rung }) => {
-      const levels = preferences.set(dial, rung);
+      const state = preferences.set(dial, rung);
       desk.render();
-      return levels;
+      // Choosing it plays it once, which is silence when the choice was off.
+      if (dial === 'sound') desk.chime();
+      return state;
     },
     'preferences:height': ({ height }) => preferences.fit(height),
+    // The strip's speaker: the Sound row's own command, from where you already are.
+    'sound:set': ({ rung }) => commands['preferences:set']({ dial: 'sound', rung }),
     // The Claude Events log, which is a window of its own for the reason the other three are.
     // A window reporting what its own chat tab wears - the one half of that seam the app can see.
     'claude:icon': ({ icons }, folder) => events.icons(folder, icons),

@@ -192,11 +192,11 @@ One store, `src/main/store.js`, one file, atomic writes, a `version` field:
 ```json
 { "version": 1, "projects": [{ "id": "...", "folder": "/abs/path" }],
   "order": ["id", ...], "focusedId": "id", "mode": "grid", "serverPort": 51234,
-  "tint": { "focused": "medium", "quiet": "medium" }, "corners": "squircle" }
+  "tint": { "focused": "medium", "quiet": "medium" }, "corners": "squircle", "sound": "on" }
 ```
 
-`tint` and `corners` are the app's two preferences, the only fields here that are a taste rather
-than a position. `tint` is how much of its own colour a window wears, on the tile you are in and
+`tint`, `corners` and `sound` are the app's three preferences, the only fields here that are a
+taste rather than a position. `sound` is `on` or `off`, and absent until chosen, which is on. `tint` is how much of its own colour a window wears, on the tile you are in and
 on the tiles you are not. It is stored as the RUNG's name; what a name is worth in a mix is
 `src/guest/rungs.cjs`, and a window is handed only the one rung that applies to it. The shell reads that module too,
 through main: it paints a tile's ground before that tile has a window, so two layers draw one
@@ -288,7 +288,9 @@ src/shell/picker.html   the project picker: the same, one screen wide, with pick
 src/shell/panel.css     what the four panel pages agree on: the ink, and the label above it
 src/shell/corners.css   the corner every page of the app's own draws, off the Corners preference
                         main hands it
-src/shell/preferences.html  the two dials and the corners: the same again, one small panel
+src/shell/preferences.html  the two dials, the corners and the sound: the same again, one small
+                        panel
+src/shell/buzz.wav      the sound of a Claude session waiting on you: AwakeBar's, as WAV
 src/shell/format.js     what the pages agree on: the colour ramp, a reset time, and a project's
                         mark - its favicon, or its initial on its own hue
 src/shell/preload.cjs   contextBridge: window.ct

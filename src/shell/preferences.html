@@ -71,6 +71,9 @@
   <h1>Corners</h1>
   <div id="corners"></div>
 
+  <h1>Sound</h1>
+  <div id="sound"></div>
+
   <footer>Every open window follows at once, with no reload. What tells two windows apart with
     both dials down is the project's icon on its badge and its name on the side bar's title row -
     neither is painted, so neither has a rung here.</footer>
@@ -81,6 +84,7 @@
     // seam, a shape's in src/guest/corners.cjs, which main hands back as `cornerValues`.
     const RUNGS = ['subtle', 'medium', 'strong'];
     const SHAPES = ['squircle', 'round'];
+    const SOUNDS = ['on', 'off'];
     const FACES = { squircle: 'Smooth' };
     const DIALS = [
       ['dials', 'focused', 'The tile you are in',
@@ -89,6 +93,8 @@
        'Below the tile you are in is what makes focus read across the grid.', RUNGS, 'medium'],
       ['corners', 'corners', 'Every corner the app draws',
        'Smooth follows the squircle macOS draws its own windows with. Round is a plain circle.', SHAPES, 'squircle'],
+      ['sound', 'sound', 'When Claude is waiting on you',
+       'A short buzz each time a session finishes a turn or asks you something, in any tile.', SOUNDS, 'on'],
     ];
 
     const inputs = {};
@@ -137,6 +143,10 @@
 
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') window.close();
+    });
+
+    window.ct.onEvent((message) => {
+      if (message?.type === 'preferences') show(message.payload);
     });
 
     show(await window.ct.call('preferences:state'));

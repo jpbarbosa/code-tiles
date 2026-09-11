@@ -11,6 +11,7 @@ const emptyProjects = document.getElementById('empty-projects');
 const emptyAdd = document.getElementById('empty-add');
 const stage = document.getElementById('stage');
 const usage = document.getElementById('usage');
+const sound = document.getElementById('sound');
 const splitters = document.getElementById('splitters');
 const stripScrim = document.getElementById('strip-scrim');
 
@@ -39,6 +40,7 @@ function render() {
   for (const button of document.querySelectorAll('.part')) {
     button.setAttribute('aria-pressed', String(Boolean(state.parts?.[button.dataset.part])));
   }
+  sound.setAttribute('aria-pressed', String(state.sound === 'on'));
 }
 
 // The stage with nothing on it: the projects this app already knows, offered as tiles, and one
@@ -421,6 +423,10 @@ for (const button of document.querySelectorAll('.part')) {
   }));
 }
 
+sound.addEventListener('click', () => call('sound:set', {
+  rung: sound.getAttribute('aria-pressed') === 'true' ? 'off' : 'on',
+}));
+
 // The panel that opens under the widget is a window of its own, because one drawn in this page
 // would sit behind the tiles. Main places it; the only thing it needs from here is where.
 usage.addEventListener('click', () => {
@@ -428,8 +434,17 @@ usage.addEventListener('click', () => {
   call('usage:popover', { anchor: { right, bottom } });
 });
 
+// AwakeBar's sound/buzz.aiff at the gain it plays by default, as WAV: Chromium decodes no AIFF.
+const buzz = new Audio('buzz.wav');
+buzz.volume = 0.5;
+
 window.ct.onEvent((message) => {
   if (message?.type === 'usage') return void renderUsage(message.payload);
+  // Rewound rather than a new element per play, so two sessions landing together are one sound.
+  if (message?.type === 'chime') {
+    buzz.currentTime = 0;
+    return void buzz.play().catch((error) => console.error('[chime]', error.message));
+  }
   // The picker's window covers the stage and stops at the strip, so this row's half of its scrim
   // is drawn here.
   if (message?.type === 'picker') return void (stripScrim.hidden = !message.payload.open);

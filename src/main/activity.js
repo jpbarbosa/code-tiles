@@ -25,6 +25,7 @@ export class Activity {
   #script;
   #settings;
   #onChange;
+  #onWaiting;
   #markers = [];
   #seen = new Map();
   #interrupts = new Map();
@@ -33,11 +34,12 @@ export class Activity {
   #recheck = null;
   #signature = '';
 
-  constructor({ dir, script, settings, onChange = () => {} }) {
+  constructor({ dir, script, settings, onChange = () => {}, onWaiting = () => {} }) {
     this.#dir = dir;
     this.#script = script;
     this.#settings = settings;
     this.#onChange = onChange;
+    this.#onWaiting = onWaiting;
   }
 
   start() {
@@ -92,9 +94,20 @@ export class Activity {
     // the turn stopped. The transcript is the only trace, and re-reading it is the only way to
     // notice - so this looks again while, and only while, something says working.
     if (this.#markers.some((marker) => marker.state === 'working')) {
-      this.#recheck = setTimeout(() => { this.#read(); this.#publish(); }, RECHECK_MS);
+      this.#recheck = setTimeout(() => this.#refresh(), RECHECK_MS);
       this.#recheck.unref?.();
     }
+  }
+
+  // Every read but the one at start, which is the baseline: a marker already on disk when the app
+  // came up is not news.
+  #refresh() {
+    const was = new Map(this.#markers.map((marker) => [marker.session, marker.state]));
+    this.#read();
+    for (const marker of this.#markers) {
+      if (turnedToWait(marker.state, was.get(marker.session))) this.#onWaiting(marker);
+    }
+    this.#publish();
   }
 
   #marker(file) {
@@ -103,6 +116,7 @@ export class Activity {
     catch { return null; }
     if (!record?.state || !record.cwd) return null;
     const marker = {
+      session: path.basename(file, '.json'),
       state: record.state,
       cwd: record.cwd,
       ts: (record.ts || 0) * 1000,
@@ -150,7 +164,7 @@ export class Activity {
         clearTimeout(this.#debounce);
         // One turn writes several markers in a row, and a marker arrives as a rename over a temp
         // file, which is two events.
-        this.#debounce = setTimeout(() => { this.#read(); this.#publish(); }, 80);
+        this.#debounce = setTimeout(() => this.#refresh(), 80);
       });
     } catch (error) {
       console.error('[activity] not watching, states will not update:', error.message);
@@ -169,6 +183,15 @@ export class Activity {
 const ttl = (state) => (state === 'active' ? OPEN_MS : STALE_MS);
 
 const holds = (folder, cwd) => cwd === folder || cwd.startsWith(folder + path.sep);
+
+// On the change only: a permission prompt raises a Notification after its own PermissionRequest,
+// and that is one question. So is a finished turn raising Claude Code's idle Notification a minute
+// later, which is the same wait said again.
+const WAITING = ['finished', 'attention'];
+function turnedToWait(state, was) {
+  if (!WAITING.includes(state) || state === was) return false;
+  return !(state === 'attention' && was === 'finished');
+}
 
 function state(total, seen) {
   if (total.working) return 'working';

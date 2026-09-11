@@ -70,17 +70,27 @@ What the tree does today, what comes next, and what to check when the server is 
   bar, the panel or the secondary side bar in every open project at once. A part nobody has
   chosen for is left alone, and the buttons show the focused window's own answer, so a Cmd+B
   inside a tile moves them.
-- Project colour, one of the app's two preferences (`⌘,`): how much of its hue a window wears, on a dial
+- Project colour, one of the app's three preferences (`⌘,`): how much of its hue a window wears, on a dial
   for the tile you are in and a dial for the tiles you are not, three rungs each. A rung is a
   MULTIPLIER on every amount the tint spends - the veil over a part, the wash on a plate, the
   ground, the ink on it, the chat bubble's chroma - and the three are a ratio rather than a spread,
   so a step means the same thing wherever on the dial it is taken. A window is handed the ONE rung
   that applies to it, never the preference, so which dial it came off stays the app's business.
   Persisted, and every open window follows the moment it moves, with no reload.
-- Corners, the other preference: smooth, the squircle macOS draws its windows with, or round. Every
+- Corners, another preference: smooth, the squircle macOS draws its windows with, or round. Every
   corner the strip, the panels and the tiles draw follows it at once - a tile through its context,
   the strip through its state - and the picker's scrim traces the window's own corner either way.
   `src/guest/corners.cjs` names the two and says what each is worth.
+- Sound, the third preference, on until it is turned off: AwakeBar's buzz each time a session
+  turns to waiting on you - a turn ended, or a question. Per session and on the CHANGE, so a
+  permission prompt's Notification after its own PermissionRequest is one sound, a finished turn
+  raising Claude Code's idle Notification a minute later is none, and nothing already on disk at
+  launch plays. Main has no audio, so the shell plays it: `src/shell/buzz.wav`, AwakeBar's
+  `sound/buzz.aiff` as WAV since Chromium decodes no AIFF, at AwakeBar's default gain of 0.5. Only
+  the instance that owns the hooks plays it, since one beside it would double every sound; choosing
+  On plays it once, in either. The strip's speaker, between the usage meter and the layout control,
+  is the same preference one click away - codicon's `unmute` and `mute` - and an open Preferences
+  window follows it.
 - The usage meter: a 5-hour and a 7-day bar, live from `/api/oauth/usage` behind the app's own
   PKCE login, one poll for the account with a five minute floor and a back-off on 429. The grant
   is encrypted with `safeStorage`. Each bar carries a mark at how far its window has run, read back
