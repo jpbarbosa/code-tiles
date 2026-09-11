@@ -111,7 +111,7 @@ function renderUsage(account) {
     : 'Connect your Claude account to see usage.';
 
   // No clock of its own: the mark moves when a reading is published, every five minutes, which is
-  // about a pixel on the 5h bar and far less on the 7d.
+  // about two pixels on the 5h bar and far less on the 7d.
   usage.querySelectorAll('.bar').forEach((bar) => {
     const reading = account[bar.dataset.window];
     const utilization = reading?.utilization || 0;

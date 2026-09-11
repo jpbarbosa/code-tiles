@@ -366,11 +366,11 @@ body[data-sorting] .chip .close { cursor: grabbing; }
 
   & .bar {
     position: relative;
-    width: 64px;
+    width: 112px;
     height: 4px;
     border-radius: 2px;
     corner-shape: round;
-    background: rgb(255 255 255 / 0.14);
+    background: rgb(255 255 255 / 0.2);
   }
 
   & .fill {
@@ -394,7 +394,7 @@ body[data-sorting] .chip .close { cursor: grabbing; }
     background: var(--ink);
   }
 
-  &:hover .bar { background: rgb(255 255 255 / 0.2); }
+  &:hover .bar { background: rgb(255 255 255 / 0.26); }
 
   /* No account, no numbers: the widget becomes the connect affordance rather than two bars it
      cannot fill. There is deliberately no estimate to fall back on. */
