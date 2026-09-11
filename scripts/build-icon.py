@@ -16,6 +16,7 @@ import os
 import sys
 
 import bpy
+import numpy
 from mathutils import Vector
 
 CANVAS = 1024
@@ -31,19 +32,30 @@ ORIGIN = (CANVAS - BLOCK) // 2
 RADIUS = round(TILE * 0.143)
 HEADER_H = round(TILE * 0.231)
 PILL_H = round(TILE * 0.071)
-PILL_X = round(TILE * 0.132)
+PILL_X = round(TILE * 0.18)
 PILL_W = (round(TILE * 0.407), round(TILE * 0.571))
 PILL_Y = (round(TILE * 0.503), round(TILE * 0.657))
+# The header is a bar held off the tile's top and sides, rounded like the pills where it does not
+# follow the tile's own corner.
+HEADER_INSET = round(TILE * 0.05)
+HEADER_RADIUS = PILL_H / 2
 
 # Depth, in the same canvas pixels. The tiles are plates; the header and the pills sit proud of
 # them, which is what puts a lit rim on each and a shadow under it.
 DEPTH = round(TILE * 0.115)
-RAISE_HEADER = round(TILE * 0.030)
-RAISE_PILL = round(TILE * 0.007)
+RAISE_HEADER = round(TILE * 0.045)
+RAISE_PILL = round(TILE * 0.013)
 BEVEL = max(2.0, TILE * 0.027)
-# The header stands a few pixels proud, and the tiles' own bevel is wider than that: the same
-# radius rounds the whole step away and leaves a colour change with no shadow under it.
-HEADER_BEVEL = max(1.0, RAISE_HEADER * 0.30)
+# The header's bevel follows its own height rather than the plate's, whose radius would round a
+# step this shallow into a colour change with no shadow under it.
+HEADER_BEVEL = max(1.0, RAISE_HEADER * 0.5)
+# The header and the pills are clear glass on the tile, faintly tinted, under a hard coat. Most of
+# the sun goes through them, and they float a hair off the tile: a ray leaving a glass underside
+# that sits on the tile's top starts on a face it cannot tell from its own.
+GLASS = {"Transmission Weight": 0.85, "Roughness": 0.1, "Coat Weight": 1.0, "Coat Roughness": 0.02}
+GLASS_TINT = 0.45
+GLASS_SHADOW = 0.3
+GLASS_LIFT = 0.5
 
 # The tray the tiles sit in. It takes the system chiclet's own outline, pulled in just enough that
 # its lit rim is not clipped away by the mask.
@@ -71,13 +83,25 @@ GLOW_GAP = round(DEPTH * 0.42)
 KEY_FROM = (0.75, -0.85, -1.30)
 FILL_FROM = (-0.55, 0.5, -1.15)
 CUT_RADIUS = round(TILE * 0.055)
+# A finish over the whole render. Contrast is in linear light and pivots on the tray, so the tray
+# stays put while the tiles brighten. Vibrance is saturation that spares what is already saturated.
+CONTRAST = 1.35
+VIBRANCE = 1.3
 
+# Each tile is a hue in OKLCH degrees; lightness and saturation come from the roles below, so the
+# four match by construction rather than by eye, which is how green ends up the lightest. Then
+# which of its two lines comes first, and which side they hang from.
 TILES = [
-    ("blue",   "3F82FF", "6BA0FF", "A8C6FF"),
-    ("green",  "0FC97E", "3AEBA6", "8DF5CB"),
-    ("purple", "9333EA", "B45CF9", "D4A2FB"),
-    ("orange", "E2551C", "F5834A", "F9B48D"),
+    ("blue",   262, "short", "right"),
+    ("green",  158, "short", "left"),
+    ("purple", 302, "long",  "right"),
+    ("orange",  40, "long",  "left"),
 ]
+# Lightness, then saturation as a share of the most chroma sRGB holds at that lightness and hue.
+# One absolute chroma would grey out three tiles to fit green, which holds far less than purple.
+BODY = (0.64, 0.95)
+HEADER = (0.73, 0.9)
+PILL = (0.83, 0.9)
 
 
 def srgb_to_linear(c):
@@ -87,6 +111,26 @@ def srgb_to_linear(c):
 def hex_to_linear(value):
     r, g, b = (int(value[i:i + 2], 16) / 255 for i in (0, 2, 4))
     return (srgb_to_linear(r), srgb_to_linear(g), srgb_to_linear(b), 1.0)
+
+
+def oklch(lightness, saturation, hue):
+    """Linear sRGB at an OKLCH lightness and hue, with `saturation` of the most chroma sRGB holds
+    there."""
+    a, b = math.cos(math.radians(hue)), math.sin(math.radians(hue))
+
+    def rgb(chroma):
+        l = (lightness + (0.3963377774 * a + 0.2158037573 * b) * chroma) ** 3
+        m = (lightness - (0.1055613458 * a + 0.0638541728 * b) * chroma) ** 3
+        s = (lightness - (0.0894841775 * a + 1.2914855480 * b) * chroma) ** 3
+        return (4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+                -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+                -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s)
+
+    low, high = 0.0, 0.5
+    for _ in range(40):
+        middle = (low + high) / 2
+        low, high = (middle, high) if all(0 <= c <= 1 for c in rgb(middle)) else (low, middle)
+    return rgb(low * saturation) + (1.0,)
 
 
 def rounded_rect(x, y, w, h, radii, segments=20):
@@ -246,8 +290,29 @@ def round_corners(polygon, radius, threshold=20.0):
     return out
 
 
+def glaze(nodes, links, principled):
+    """Cycles traces no sunlight through a refracting surface, so glass shades the tile under it
+    as though it were opaque. Shadow rays see it as mostly clear instead."""
+    for socket, value in GLASS.items():
+        principled.inputs[socket].default_value = value
+    tint = principled.inputs["Base Color"].default_value
+    principled.inputs["Base Color"].default_value = [
+        1 - GLASS_TINT + GLASS_TINT * c for c in tint[:3]] + [1.0]
+    path = nodes.new("ShaderNodeLightPath")
+    through = nodes.new("ShaderNodeMath")
+    through.operation = "MULTIPLY"
+    through.inputs[1].default_value = 1 - GLASS_SHADOW
+    clear = nodes.new("ShaderNodeBsdfTransparent")
+    mix = nodes.new("ShaderNodeMixShader")
+    links.new(path.outputs["Is Shadow Ray"], through.inputs[0])
+    links.new(through.outputs["Value"], mix.inputs["Fac"])
+    links.new(principled.outputs["BSDF"], mix.inputs[1])
+    links.new(clear.outputs["BSDF"], mix.inputs[2])
+    links.new(mix.outputs["Shader"], nodes["Material Output"].inputs["Surface"])
+
+
 def slab(name, outline, colour, top, thickness, collection, bevel_radius=None, emission=0.0,
-         roughness=None, specular=None):
+         roughness=None, specular=None, glass=False):
     """A rounded-rect plate with real thickness, shaded as though its top rim were rounded."""
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata([(x, y, top) for x, y in outline], [], [list(range(len(outline)))])
@@ -258,7 +323,7 @@ def slab(name, outline, colour, top, thickness, collection, bevel_radius=None, e
     if emission:
         nodes.clear()
         shader = nodes.new("ShaderNodeEmission")
-        shader.inputs["Color"].default_value = hex_to_linear(colour)
+        shader.inputs["Color"].default_value = colour
         shader.inputs["Strength"].default_value = emission
         links.new(shader.outputs["Emission"], nodes.new("ShaderNodeOutputMaterial").inputs["Surface"])
         mesh.materials.append(material)
@@ -268,7 +333,7 @@ def slab(name, outline, colour, top, thickness, collection, bevel_radius=None, e
         collection.objects.link(obj)
         return obj
     principled = nodes["Principled BSDF"]
-    principled.inputs["Base Color"].default_value = hex_to_linear(colour)
+    principled.inputs["Base Color"].default_value = colour
     principled.inputs["Roughness"].default_value = ROUGHNESS if roughness is None else roughness
     principled.inputs["Specular IOR Level"].default_value = SPECULAR if specular is None else specular
     # The rim highlight comes from the shader rounding the normals, not from bevel geometry: a
@@ -277,6 +342,8 @@ def slab(name, outline, colour, top, thickness, collection, bevel_radius=None, e
     bevel.inputs["Radius"].default_value = BEVEL if bevel_radius is None else bevel_radius
     bevel.samples = 6
     links.new(bevel.outputs["Normal"], principled.inputs["Normal"])
+    if glass:
+        glaze(nodes, links, principled)
     mesh.materials.append(material)
 
     obj = bpy.data.objects.new(name, mesh)
@@ -298,33 +365,42 @@ def build(silhouette):
     scene.collection.children.link(tiles)
 
     if silhouette:
-        slab("base", silhouette, BASE_COLOUR, -DEPTH - GLOW_GAP, BASE_DEPTH, tiles, BASE_BEVEL,
+        slab("base", silhouette, hex_to_linear(BASE_COLOUR), -DEPTH - GLOW_GAP, BASE_DEPTH, tiles,
+             BASE_BEVEL,
              roughness=BASE_ROUGHNESS, specular=BASE_SPECULAR)
 
     # The tiles are the tray's own outline quartered, not rounded rectangles laid on top of it:
     # each keeps the chiclet's corner on its outer side and takes a small fillet facing the centre.
     plate = inset_polygon(silhouette, (CANVAS - BLOCK) / 2) if silhouette else None
 
-    for index, (name, body, header, pill) in enumerate(TILES):
+    for index, (name, hue, first, side) in enumerate(TILES):
+        body, header, pill = (oklch(*role, hue) for role in (BODY, HEADER, PILL))
         x = ORIGIN + (index % 2) * (TILE + GAP)
         y = ORIGIN + (index // 2) * (TILE + GAP)
         sx, sy = (1 if index % 2 == 0 else -1), (-1 if index // 2 == 0 else 1)
 
         if plate:
-            quadrant = clip(plate, inner_corner(-sx * GAP / 2, -sy * GAP / 2, sx, sy, RADIUS))
+            cut = clip(plate, inner_corner(-sx * GAP / 2, -sy * GAP / 2, sx, sy, RADIUS))
         else:
-            quadrant = rounded_rect(x, y, TILE, TILE, (RADIUS,) * 4)
-        quadrant = round_corners(quadrant, CUT_RADIUS)
+            cut = rounded_rect(x, y, TILE, TILE, (RADIUS,) * 4)
+        quadrant = round_corners(cut, CUT_RADIUS)
         slab(f"{name}-body", quadrant, body, 0, DEPTH, tiles)
 
-        # The header is a band across the top of the tile, so it inherits the tile's own top edge
-        # rather than a rounded rectangle's.
-        band = clip(quadrant, [(0.0, -1.0, -(CANVAS / 2 - y - HEADER_H))])
-        slab(f"{name}-header", band, header, RAISE_HEADER, RAISE_HEADER, tiles, HEADER_BEVEL)
+        # The header is the tile's own outline pulled in, so its outer corner follows the tile's.
+        # The cut corners are rounded afresh for it: the tile's, pulled in, come out the margin
+        # tighter, and fold over once the margin passes their radius.
+        bar = inset_polygon(round_corners(cut, HEADER_RADIUS + HEADER_INSET), HEADER_INSET)
+        bar = clip(bar, [(0.0, -1.0, -(CANVAS / 2 - y - HEADER_H))])
+        bar = round_corners(bar, HEADER_RADIUS)
+        slab(f"{name}-header", bar, header, RAISE_HEADER, RAISE_HEADER - GLASS_LIFT, tiles,
+             HEADER_BEVEL, glass=True)
 
-        for slot, (width, top) in enumerate(zip(PILL_W, PILL_Y)):
-            outline = rounded_rect(x + PILL_X, y + top, width, PILL_H, (PILL_H / 2,) * 4)
-            slab(f"{name}-pill{slot}", outline, pill, RAISE_PILL, RAISE_PILL, tiles)
+        widths = sorted(PILL_W, reverse=first == "long")
+        for slot, (width, top) in enumerate(zip(widths, PILL_Y)):
+            left = x + PILL_X if side == "left" else x + TILE - PILL_X - width
+            outline = rounded_rect(left, y + top, width, PILL_H, (PILL_H / 2,) * 4)
+            slab(f"{name}-pill{slot}", outline, pill, RAISE_PILL, RAISE_PILL - GLASS_LIFT, tiles,
+                 glass=True)
 
         # The halo fills the gap the tile stands off the tray by, on the tile's own outline, so its
         # light leaves SIDEWAYS and falls off with distance. Anything overhanging the tray instead
@@ -394,10 +470,34 @@ def read_silhouette(path):
     return points
 
 
+def grade(path):
+    """Contrast in linear light, where it is an exposure every channel shares. On the encoded values
+    it pushed each channel below the pivot to black, and a green with no red left reads as neon."""
+    image = bpy.data.images.load(path)
+    pixels = numpy.empty(image.size[0] * image.size[1] * 4, dtype=numpy.float32)
+    image.pixels.foreach_get(pixels)
+    rgb = pixels.reshape(-1, 4)[:, :3]
+    weights = numpy.array([0.2126, 0.7152, 0.0722], dtype=numpy.float32)
+
+    linear = numpy.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+    tray = weights @ hex_to_linear(BASE_COLOUR)[:3]
+    linear = numpy.clip(tray + (linear - tray) * CONTRAST, 0.0, 1.0)
+    rgb[:] = numpy.where(linear <= 0.0031308, linear * 12.92, 1.055 * linear ** (1 / 2.4) - 0.055)
+
+    high, low = rgb.max(axis=1, keepdims=True), rgb.min(axis=1, keepdims=True)
+    boost = 1 + (VIBRANCE - 1) * (1 - (high - low) / numpy.maximum(high, 1e-6))
+    luma = (rgb @ weights)[:, None]
+    rgb[:] = luma + (rgb - luma) * boost
+    image.pixels.foreach_set(numpy.clip(pixels, 0.0, 1.0))
+    image.save()
+
+
 def render_icon(out_dir):
     os.makedirs(out_dir, exist_ok=True)
-    bpy.context.scene.render.filepath = os.path.join(out_dir, "tiles.png")
+    path = os.path.join(out_dir, "tiles.png")
+    bpy.context.scene.render.filepath = path
     bpy.ops.render.render(write_still=True)
+    grade(path)
     print("wrote tiles.png")
 
 

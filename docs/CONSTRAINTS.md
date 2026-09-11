@@ -577,6 +577,17 @@ sheen is the only form left, which is how a bespoke icon comes out looking like 
 `scripts/build-icon.py` gives the tiles real thickness, a shader-rounded rim and contact shadows in
 the gaps, and leaves out only the chiclet.
 
+**Glass lights a layer from the top, so the bottom of the icon lands darker than its top.** ictool's
+Default rendition shades every layer whose `glass` is on, which is the default, with a ramp down the
+whole canvas: on the tiles, OKLab lightness fell 0.01 to 0.05 across the top row and 0.11 to 0.18
+across the bottom, so four tiles of one lightness came out as two pairs a row apart. `specular`,
+`shadow`, `lighting` and `--light-angle` leave it in place; `"glass": false` on the layer is the only
+switch, and it takes the thin glint along the chiclet's rim with it, leaving the tray's own lit rim
+as the one edge. The tiles layer has it off: the palette in `scripts/build-icon.py` is balanced by
+construction, and stays balanced only if nothing relights it. Measure at the size the pipeline
+exports - at 512 `specular` darkened every tile by a further 0.17, at 824 it changed nothing.
+**[checked]**
+
 **The tray under the tiles takes the chiclet's own outline, traced rather than guessed.** Apple's
 corner is a continuous squircle: measured on a 1024 render it runs 317px along each edge while the
 radius a circle would imply swings between 67 and 102, so no rounded rectangle matches it.

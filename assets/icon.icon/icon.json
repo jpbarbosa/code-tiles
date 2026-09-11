@@ -7,7 +7,7 @@
   },
   "groups" : [
     {
-      "layers" : [ { "image-name" : "tiles.png", "name" : "tiles" } ],
+      "layers" : [ { "glass" : false, "image-name" : "tiles.png", "name" : "tiles" } ],
       "shadow" : { "kind" : "neutral", "opacity" : 0.35 },
       "specular" : true
     }
