@@ -76,8 +76,8 @@ const SHAPES = {
 };
 
 // The shape above is arithmetic, so it can be RUN - which is the only way to see that the two
-// chrome patches answer the same question at both doors. What a bar with five pinned views draws
-// after each of them, at a height where all five would fit.
+// chrome patches answer the same question at both doors. What a bar with seven pinned views draws
+// after each of them, at a height where all seven would fit.
 function drawn(markers, activeId) {
   let source = BAR;
   for (const { patch } of declaredPatches(seams)) {
@@ -86,6 +86,7 @@ function drawn(markers, activeId) {
   const ids = [
     'workbench.view.explorer', 'workbench.view.search', 'workbench.view.scm',
     'workbench.view.extensions', 'workbench.view.debug',
+    'workbench.view.extension.claude-sessions-sidebar', 'workbench.view.extension.gitlens',
   ];
   const activeItem = activeId ? { id: activeId, pinned: true } : undefined;
   const bar = new (new Function('Widget', `return ${source}`)(class {}))();
@@ -98,18 +99,21 @@ function drawn(markers, activeId) {
   });
 }
 
-const LIVED_IN = ['workbench.view.explorer', 'workbench.view.search', 'workbench.view.scm'];
+const LIVED_IN = [
+  'workbench.view.explorer', 'workbench.view.search', 'workbench.view.scm',
+  'workbench.view.extension.claude-sessions-sidebar',
+];
 
 test('the bar draws the views a project is worked in, and no others', () => {
   const { toShow, total } = drawn(['ct:bar-views', 'ct:bar-active'], 'workbench.view.explorer');
   assert.deepEqual(toShow, LIVED_IN);
   // The count the overflow is decided by is left whole, or there is no Additional Views button
-  // for the two it dropped to appear under.
-  assert.equal(total, 5);
+  // for the three it dropped to appear under.
+  assert.equal(total, 7);
 });
 
 test('a view in the overflow stays there while it is the one you are in', () => {
-  for (const id of ['workbench.view.extensions', 'workbench.view.debug']) {
+  for (const id of ['workbench.view.extensions', 'workbench.view.debug', 'workbench.view.extension.gitlens']) {
     assert.deepEqual(drawn(['ct:bar-views', 'ct:bar-active'], id).toShow, LIVED_IN);
   }
 });

@@ -42,6 +42,9 @@ const KEPT = [
   'workbench.view.explorer',
   'workbench.view.search',
   'workbench.view.scm',
+  // Claude's sessions list, its one bar container on a host with a secondary side bar; the other,
+  // `claude-sidebar`, is declared for hosts without one. [claude-code 2.1.269]
+  'workbench.view.extension.claude-sessions-sidebar',
 ];
 
 // The one question both patches ask, written into the bundle at each of the two places the bar

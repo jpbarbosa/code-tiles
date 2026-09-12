@@ -116,7 +116,7 @@ It is stock VS Code, with a short list of changes that only make sense in a grid
 
 - **No title bar or status bar.** The strip already says which project this is, and the status bar
   carries per-file detail you would not read from a tile you are glancing at.
-- **The activity bar keeps four views** - files, search, source control, extensions. The others
+- **The activity bar keeps four views** - files, search, source control, Claude's sessions. The others
   move into its own overflow menu rather than disappearing. A tile is narrow.
 - **The window wears the project's colour**, more of it when focused, less when not.
 - **The branch moved under the file tree**, since the status bar that used to carry it is gone.

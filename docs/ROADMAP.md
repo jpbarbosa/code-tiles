@@ -166,7 +166,8 @@ What the tree does today, what comes next, and what to check when the server is 
   `webview-clip` (an editor webview - the Claude panel - clipped by its part's inner edge like the
   rest of the part, where the editor clipped it to the part's outer box and it covered the border),
   `chrome` (title bar, status bar and the chat panel gone through the editor's own settings,
-  no dead band; and the activity bar down to the three views a project is worked in, the rest moved
+  no dead band; and the activity bar down to the four views a project is worked in - files, search,
+  source control and Claude's sessions - the rest moved
   into the editor's own Additional Views overflow by a patch that filters the list the bar is about
   to show while leaving the count it compares that list against whole - which is the state a bar
   with too little room is already in, so the overflow is the editor's from there on; and a second
