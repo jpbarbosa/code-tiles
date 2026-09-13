@@ -47,6 +47,41 @@ export function patchExtensions(dir) {
   return done;
 }
 
+// Which declared patches the copy the server LOADS does not carry, read off disk rather than off a
+// patcher's report: the app at start, its watcher and `npm run patch-vscode` can all write here,
+// and the extension host runs whatever the last of them left. The manifest names that copy; the
+// folders beside it are versions the server has already marked obsolete.
+export function missingPatches(dir) {
+  const missing = [];
+  for (const patches of bundles(declaredExtensions(seams))) {
+    const { id, file } = patches[0].extension;
+    const entry = manifest(dir).find((one) => typeof one?.relativeLocation === 'string'
+      && id.test(one.relativeLocation));
+    const source = entry && read(path.join(dir, entry.relativeLocation, file));
+    // Not installed, or not in place yet: there is no copy for a patch to be missing from.
+    if (!source) continue;
+    for (const { name, extension } of patches) {
+      if (extension.stamp.test(source)) continue;
+      missing.push({
+        seam: name,
+        extension: entry.identifier?.id ?? entry.relativeLocation,
+        version: entry.version,
+        degrades: extension.degrades,
+      });
+    }
+  }
+  return missing;
+}
+
+function manifest(dir) {
+  try {
+    const entries = JSON.parse(read(path.join(dir, 'extensions.json')) ?? '[]');
+    return Array.isArray(entries) ? entries : [];
+  } catch {
+    return [];
+  }
+}
+
 export function declaredExtensions(list) {
   return list.filter((seam) => seam.extension).map((seam) => ({ name: seam.name, extension: seam.extension }));
 }
@@ -150,9 +185,11 @@ function read(file) {
 }
 
 // Through a temp file in the same directory: a window that loads a half-written extension.js gets
-// no extension at all, and the rename is the only way to be sure it never sees one.
+// no extension at all, and the rename is the only way to be sure it never sees one. Named per
+// process, since two patchers can answer one manifest write and a shared name lets one of them
+// rename the other's half-written file into place.
 function write(file, body) {
-  const temporary = `${file}.ct-tmp`;
+  const temporary = `${file}.${process.pid}.ct-tmp`;
   fs.writeFileSync(temporary, body);
   fs.renameSync(temporary, file);
 }

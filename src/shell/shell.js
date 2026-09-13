@@ -12,6 +12,7 @@ const emptyAdd = document.getElementById('empty-add');
 const stage = document.getElementById('stage');
 const usage = document.getElementById('usage');
 const sound = document.getElementById('sound');
+const patches = document.getElementById('patches');
 const splitters = document.getElementById('splitters');
 const stripScrim = document.getElementById('strip-scrim');
 
@@ -124,6 +125,17 @@ function renderUsage(account) {
     mark.hidden = elapsed === null;
     mark.style.setProperty('--at', elapsed ?? 0);
   });
+}
+
+// Most often an extension that updated itself and moved an anchor. Nothing to press: the tooltip
+// says what the window does instead, and the suite holds every anchor to this machine's bundle.
+function renderPatches(missing = []) {
+  patches.hidden = missing.length === 0;
+  const lines = missing.map(({ seam, extension, version, degrades }) =>
+    `${extension} ${version} is running without ${seam}: ${degrades}.`);
+  const label = [...lines, 'npm test checks every anchor against this bundle.'].join('\n');
+  patches.title = label;
+  patches.setAttribute('aria-label', label);
 }
 
 function renderChips(open) {
@@ -440,6 +452,7 @@ buzz.volume = 0.5;
 
 window.ct.onEvent((message) => {
   if (message?.type === 'usage') return void renderUsage(message.payload);
+  if (message?.type === 'patches') return void renderPatches(message.payload);
   // Rewound rather than a new element per play, so two sessions landing together are one sound.
   if (message?.type === 'chime') {
     buzz.currentTime = 0;

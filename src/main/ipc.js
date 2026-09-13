@@ -6,7 +6,7 @@ import { homeRow, pickerRows } from './picker-rows.js';
 // a row here, never a channel, and the shell never talks to a guest directly. The table is
 // returned as well as installed: a menu item and the button that does the same thing are one
 // behaviour, and the menu is just another caller.
-export function installIpc({ desk, usage, popover, picker, preferences, events }) {
+export function installIpc({ desk, usage, popover, picker, preferences, events, patches }) {
   const projects = desk.projects;
   const rows = (query) => pickerRows(projects.all(), { query });
   // The folder dialog, from the picker's last row or in place of a picker with nothing in it.
@@ -20,7 +20,7 @@ export function installIpc({ desk, usage, popover, picker, preferences, events }
   const STRIP_COMMANDS = new Set(['layout:set', 'mode:set', 'project:menu', 'project:pick', 'sound:set', 'usage:popover']);
 
   const commands = {
-    'state': () => { desk.render(); usage.publish(); picker.publish(); },
+    'state': () => { desk.render(); usage.publish(); picker.publish(); patches.publish(); },
     'ground': ({ ground }) => desk.setGround(ground),
     // A window saying it was clicked into. Its own focus is already there.
     'focus': (_payload, folder) => desk.adoptFocus(folder),

@@ -7,6 +7,7 @@ import { killStragglers } from './coalition.js';
 import { CodeServer } from './server.js';
 import { Desk } from './desk.js';
 import { Extensions } from './extensions.js';
+import { ExtensionPatches } from './patches.js';
 import { ProfileMirror } from './profiles.js';
 import { Projects } from './projects.js';
 import { learn } from './icon.js';
@@ -23,7 +24,6 @@ import { installMenu } from './menu.js';
 import { readDesktop } from './desktop.js';
 import { seedProfileRegistry } from './registry.js';
 import { PARTITION, claudePaths, desktopPaths, resolveCodeServer, userPaths } from './paths.js';
-import { patchExtensions } from '../guest/disk/extension.js';
 import { patchServer, serverRoot } from '../guest/disk/patch.js';
 import { placeBuiltins } from '../guest/disk/builtin.js';
 import { writeKeybindings } from '../guest/disk/keybindings.js';
@@ -34,6 +34,7 @@ if (!app.requestSingleInstanceLock()) app.quit();
 
 let server = null;
 let mirror = null;
+let patches = null;
 let usage = null;
 let activity = null;
 let window = null;
@@ -102,9 +103,17 @@ app.whenReady().then(async () => {
   }
   // The same door, on an extension's own bundle rather than the server's: what an extension does
   // inside a window and offers no way into. Applied here because the extension host reads these
-  // files as a window loads, and nothing re-reads them until one does.
-  const rewritten = patchExtensions(paths.extensions);
-  if (rewritten.length) console.log(`[extension] ${rewritten.join(', ')}`);
+  // files as a window loads, and again whenever an extension updates itself while the app runs.
+  // What the running copy still lacks is the strip's to show.
+  patches = new ExtensionPatches({
+    dir: paths.extensions,
+    send: (missing) => {
+      if (!window || window.isDestroyed()) return;
+      window.webContents.send('ct:event', { type: 'patches', payload: missing });
+    },
+  });
+  patches.apply();
+  patches.watch();
 
   // And an extension of the app's own, among the server's built-ins: every profile has it, and
   // nothing that installs, prunes or mirrors the shared directory ever sees it.
@@ -189,6 +198,7 @@ app.whenReady().then(async () => {
     popover: new UsagePopover({ parent: window }),
     picker: new Picker({ parent: window }),
     events,
+    patches,
   });
   installMenu({ desk, preferences, pick: commands['project:pick'], events });
 
@@ -216,7 +226,7 @@ app.whenReady().then(async () => {
 app.on('window-all-closed', () => {});
 
 app.on('before-quit', () => {
-  usage?.stop(); activity?.stop(); mirror?.stop(); server?.stop();
+  usage?.stop(); activity?.stop(); mirror?.stop(); patches?.stop(); server?.stop();
   killStragglers();
 });
 process.on('exit', () => server?.stop());

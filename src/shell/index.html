@@ -20,6 +20,12 @@
     <button id="add" title="Open a project" aria-haspopup="dialog" aria-label="Open a project">+</button>
 
     <div id="right">
+      <!-- A patch the app keeps on an extension's bundle, missing from the copy the server runs.
+           The glyph is codicon's warning, outline and mark. -->
+      <span id="patches" role="img" hidden>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M7.56 1h.88l6.54 12.26-.44.74H1.44L1 13.26 7.56 1zM8 2.28L2.28 13H13.7L8 2.28zM8.625 12v-1h-1.25v1h1.25zm-1.25-2V6h1.25v4h-1.25z"/></svg>
+      </span>
+
       <button id="usage" data-connected="false" aria-label="Claude usage">
         <span class="offer">Connect Claude</span>
         <span class="bars">

@@ -338,6 +338,20 @@ body[data-sorting] .chip .close { cursor: grabbing; }
   &[aria-pressed="true"] { color: var(--ink); }
 }
 
+/* The app still works, one of its edits inside the editor is off: the ramp's warning colour, not
+   its red. Out of the drag region, which takes the hover a tooltip needs. */
+#patches {
+  width: var(--control);
+  height: var(--control);
+  display: grid;
+  place-items: center;
+  color: var(--warn);
+  -webkit-app-region: no-drag;
+
+  &[hidden] { display: none; }
+  & svg { width: 16px; height: 16px; fill: currentColor; }
+}
+
 #usage {
   flex: 0 0 auto;
   display: flex;

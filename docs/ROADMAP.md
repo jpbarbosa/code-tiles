@@ -234,10 +234,10 @@ What the tree does today, what comes next, and what to check when the server is 
   its hover pill and the accent an active view wears, and needs no slot cut for it; the restore
   half is `screen-normal`, since `panel-restore` has no icon registered in this build and paints
   nothing),
-  `chat-column` (a Claude session opening in the group you are already in rather than in a locked
-  column of its own - one edit to the extension's own fallback, which is what its command reads
-  before it runs `workbench.action.lockEditorGroup`; an explicit column and an existing Claude
-  group are both left as they were),
+  `chat-column` (a Claude session opening in the first group rather than in a locked column of
+  its own - two edits on names minification keeps, the `findUnusedColumn` call and the
+  `startedInNewColumn` its callers read before running `workbench.action.lockEditorGroup`, applied
+  both or neither; an explicit column and an existing Claude group are both left as they were),
   `chat-calm` (the Claude panel with less to look at, said inside its own page: a tool's output
   without the plate 2.1.267 put under it, by redefining the extension's own variable on the
   element; its announcement cards hidden by test id, since a dismissal holds for one item of a
@@ -409,10 +409,14 @@ share the file, so they are spent in ONE pass over one pristine source: patched 
 from the backup, each would start over and only the last edit would survive. A seam whose shape
 has moved is skipped by name and the other still lands.
 
-Nothing has to be done by hand, and nothing is silent about failing: a shape that moved is one
-`[extension]` line at startup naming what it could not match and what it degrades to. Each is
-required to hit exactly ONCE, so a bundle that grew a second copy is refused rather than guessed
-at. The pristine bundle sits beside it as `extension.js.ct-orig`; delete both that and the
+Nothing has to be done by hand. The app patches at start and again on every write to the server's
+`extensions.json` (`src/main/patches.js`), which the server makes only once a new version's folder
+is in place - it extracts into a hidden `.<uuid>` folder and renames that. A shape that moved is an
+`[extension]` line naming what it could not match and what it degrades to, and a warning mark in
+the strip for as long as the copy the server loads lacks the patch: a refusal nobody reads is a
+silent one. The mark is read off that bundle rather than off a patcher's report, so it is right
+whoever patched last. Each is required to hit exactly ONCE, so a bundle that grew a second copy is
+refused rather than guessed at. The pristine bundle sits beside it as `extension.js.ct-orig`; delete both that and the
 patched file to make the app's own installer fetch a clean one.
 
 **Anchor on names the minifier cannot touch.** 2.1.261 replaced the if/else chain that picked a
@@ -442,6 +446,7 @@ against the fixtures, and skips where there is none.
 patch-vscode` spends the seams on `~/.vscode/extensions` instead of the app's copy - the same
 patchers, so there is one bundle shape to keep alive rather than two - and the
 `io.jp7.claude-vscode-patch` LaunchAgent runs it on every write to an `extensions.json`, which VS
-Code rewrites on each install and update and the patchers never touch. It is pointed at the app's
-extensions directory as well: the app patches on start, but restarting it costs every live session,
-so a running build wants the same trigger.
+Code rewrites on each install and update and the patchers never touch. Point it at
+`~/.vscode/extensions` alone: the app keeps its own directory, and a second writer there spends the
+SOURCE tree's seams on the installed build's folder, so whenever the two differ each undoes the
+other.

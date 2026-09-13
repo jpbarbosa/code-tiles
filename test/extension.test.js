@@ -5,7 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 
-import { declaredExtensions, patchExtensions } from '../src/guest/disk/extension.js';
+import { declaredExtensions, missingPatches, patchExtensions } from '../src/guest/disk/extension.js';
+import { ExtensionPatches } from '../src/main/patches.js';
 
 const require = createRequire(import.meta.url);
 const seams = require('../src/guest/manifest.cjs');
@@ -42,11 +43,13 @@ const STATE_DECOY = STATE.replace('if(Q){let{anchor:X}',
 const STRINGS = 'var states$=["idle","running","waiting_input"],'
   + 'names$={pending:"claude-logo-pending.svg",done:"claude-logo-done.svg",plain:"claude-logo.svg"};';
 
-// `W` is startedInNewColumn and is declared !1 here, which is what makes dropping its assignment
-// enough: the caller reads it and locks the group only when it is true.
+// `W` is startedInNewColumn, and the caller locks the group the panel lands in whenever it is true.
 const COLUMN = 'createPanel($,J,Q){let W=!1,K;if(Q!==void 0)K=Q;'
   + 'else{K=O4.ViewColumn.Beside;let V=ih$();if(V)K=V.viewColumn;else K=this.findUnusedColumn(),W=!0}'
   + 'let U=O4.window.createWebviewPanel("claudeVSCodePanel","Claude Code",K,{});return{startedInNewColumn:W}}';
+
+// The same flag as 2.1.269 spells it: derived from the column rather than a literal.
+const COLUMN_DERIVED = COLUMN.replace('W=!0}', 'W=K!==O4.ViewColumn.Beside}');
 
 const BUNDLE = `${STRINGS}class T{${ICON_TABLE}${STATE}${COLUMN}}\n`;
 
@@ -80,19 +83,127 @@ test('two seams on one bundle are spent in one pass and both edits survive', () 
   assert.deepEqual(patchExtensions(dir), ['chat-icon + chat-column in anthropic.claude-code-9.9.9-darwin-arm64']);
   const patched = read(file);
   assert.match(patched, /__CT_CHAT_ICON_2__/);
-  assert.match(patched, /__CT_CHAT_COLUMN_1__/);
+  assert.match(patched, /__CT_CHAT_COLUMN_2__/);
   assert.equal(read(`${file}.ct-orig`), BUNDLE, 'one pristine copy, not one per seam');
 });
 
-test('the column fallback becomes the main group and stops asking for the lock', () => {
-  const { dir, file } = tree();
+// The column seam's contract, RUN against a fake API rather than read out of the patched text, so
+// a later anchor is free to spell its edit however it likes.
+function openPanel(source, { column, claudeGroup } = {}) {
+  const opened = [];
+  const O4 = {
+    ViewColumn: { Beside: -2, One: 1 },
+    window: { createWebviewPanel: (type, title, at) => { opened.push(at); return {}; } },
+  };
+  const T = new Function('O4', 'ih$', `${source}\nreturn T;`)(O4, () => claudeGroup);
+  const panel = Object.assign(Object.create(T.prototype), { findUnusedColumn: () => 2 });
+  const { startedInNewColumn } = panel.createPanel(undefined, undefined, column);
+  return { column: opened[0], locks: startedInNewColumn };
+}
+
+const columnSeam = declaredExtensions(seams).find((entry) => entry.name === 'chat-column').extension;
+
+// Both spellings of the flag are held, for the reason the icon's are: pinning one is what 2.1.269
+// broke.
+test('a session opens in the first group, unlocked, however the flag is spelled', () => {
+  assert.deepEqual(openPanel(`class T{${COLUMN}}`), { column: 2, locks: true },
+    'the fixture no longer models the split it exists to stop');
+  for (const [label, spelling] of [['literal flag', COLUMN], ['derived flag', COLUMN_DERIVED]]) {
+    const { source, refused } = columnSeam.apply(`class T{${spelling}}`);
+    assert.ok(!refused, `${label}: ${refused}`);
+    assert.deepEqual(openPanel(source), { column: 1, locks: false }, `${label}: a new session`);
+    assert.deepEqual(openPanel(source, { column: 3 }), { column: 3, locks: false },
+      `${label}: an explicit column is no longer honoured`);
+    assert.deepEqual(openPanel(source, { claudeGroup: { viewColumn: 2 } }), { column: 2, locks: false },
+      `${label}: an existing Claude group is no longer reused`);
+  }
+});
+
+// Moving the column without clearing the flag would lock the group your code is in.
+test('the column never moves without the lock flag, nor the flag clears without the column', () => {
+  const moved = {
+    'flag moved': COLUMN.replace('return{startedInNewColumn:W}', 'return{panel:U,startedInNewColumn:W}'),
+    'pick moved': COLUMN.replace('this.findUnusedColumn()', 'this.pickColumn()'),
+  };
+  for (const [label, spelling] of Object.entries(moved)) {
+    assert.ok(columnSeam.apply(`class T{${spelling}}`).refused, label);
+  }
+});
+
+// The server's manifest, naming the one folder it loads for the extension.
+function manifest(dir, folder, version) {
+  const file = path.join(dir, 'extensions.json');
+  fs.writeFileSync(`${file}.tmp`, JSON.stringify([{
+    identifier: { id: 'anthropic.claude-code' }, version, relativeLocation: folder,
+  }]));
+  fs.renameSync(`${file}.tmp`, file);
+}
+
+// An update the way the server lands one: the new folder in place, then the manifest naming it.
+function update(dir, version, bundle = BUNDLE) {
+  const folder = `anthropic.claude-code-${version}-darwin-arm64`;
+  fs.mkdirSync(path.join(dir, folder, 'resources'), { recursive: true });
+  fs.writeFileSync(path.join(dir, folder, 'extension.js'), bundle);
+  manifest(dir, folder, version);
+  return path.join(dir, folder, 'extension.js');
+}
+
+const MOVED_COLUMN = BUNDLE.replace('this.findUnusedColumn()', 'this.pickColumn()');
+
+test('what the loaded copy lacks is read off the disk, from the folder the manifest names', () => {
+  const { dir } = tree();
+  assert.deepEqual(missingPatches(dir), [], 'a folder no manifest names is not the copy the server runs');
+  update(dir, '9.9.10');
+  assert.deepEqual(missingPatches(dir).map((entry) => entry.seam), ['chat-icon', 'chat-column']);
   patchExtensions(dir);
-  const patched = read(file);
-  assert.match(patched, /else K=O4\.ViewColumn\.One/, 'the fallback is not the main group');
-  assert.doesNotMatch(patched, /this\.findUnusedColumn\(\),W=!0/, 'the lock flag is still set');
-  assert.match(patched, /let W=!1,K;/, 'the flag lost the declaration that leaves it false');
-  assert.match(patched, /if\(V\)K=V\.viewColumn/, 'an existing Claude group is no longer reused');
-  assert.match(patched, /if\(Q!==void 0\)K=Q;/, 'an explicit column is no longer honoured');
+  assert.deepEqual(missingPatches(dir), []);
+});
+
+test('a patch that refused is reported by name, against the version the server runs', () => {
+  const { dir } = tree();
+  update(dir, '9.9.10', MOVED_COLUMN);
+  patchExtensions(dir);
+  assert.deepEqual(missingPatches(dir), [{
+    seam: 'chat-column',
+    extension: 'anthropic.claude-code',
+    version: '9.9.10',
+    degrades: columnSeam.degrades,
+  }]);
+});
+
+test('an obsolete folder beside the loaded one is not what the strip reports', () => {
+  const { dir } = tree(MOVED_COLUMN);
+  update(dir, '9.9.10');
+  patchExtensions(dir);
+  assert.deepEqual(missingPatches(dir), []);
+});
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 600));
+
+// Only the watcher can have patched the new folder: it did not exist when the pass at start ran.
+test('an update that lands while the app runs is patched, and the strip is told', async (t) => {
+  const { dir } = tree();
+  const published = [];
+  const patches = new ExtensionPatches({ dir, send: (missing) => published.push(missing) });
+  t.after(() => patches.stop());
+  patches.apply();
+  patches.watch();
+
+  const before = published.length;
+  const file = update(dir, '9.9.10');
+  await settle();
+  assert.match(read(file), /__CT_CHAT_ICON_2__/, 'the new version was left stock');
+  assert.match(read(file), /__CT_CHAT_COLUMN_2__/, 'the new version was left stock');
+  assert.ok(published.length > before, 'the strip was not told');
+  assert.deepEqual(published.at(-1), []);
+
+  const passes = published.length;
+  await settle();
+  assert.equal(published.length, passes, 'the pass answered its own writes into the version folder');
+
+  update(dir, '9.9.11', MOVED_COLUMN);
+  await settle();
+  assert.deepEqual(published.at(-1).map((entry) => entry.seam), ['chat-column']);
 });
 
 // The bump that broke this seam was a refactor of the code AROUND the anchor, not of the anchor
@@ -146,7 +257,7 @@ test('one seam whose shape has moved does not take the other down', () => {
   assert.deepEqual(patchExtensions(dir), ['chat-icon in anthropic.claude-code-9.9.9-darwin-arm64']);
   const patched = read(file);
   assert.match(patched, /__CT_CHAT_ICON_2__/, 'the seam that still matches was skipped too');
-  assert.doesNotMatch(patched, /__CT_CHAT_COLUMN_1__/);
+  assert.doesNotMatch(patched, /__CT_CHAT_COLUMN_2__/);
 });
 
 test('a patch lands once, keeps the original beside it, and is idempotent', () => {

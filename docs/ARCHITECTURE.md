@@ -81,7 +81,9 @@ export default {
 - **`extension`** is that door on an EXTENSION's bundle, applied by `src/guest/disk/extension.js`
   in the same moment and on the same terms, plus one: an extension replaces itself, so the
   pristine bundle is kept beside it and every patch is applied to that. A shape that stops
-  matching restores the stock file rather than leaving an edit nobody can reason about.
+  matching restores the stock file rather than leaving an edit nobody can reason about. It
+  replaces itself while the app runs too, so `src/main/patches.js` applies them again on every
+  write to the server's manifest, and the strip marks any the running copy lacks.
 - **`builtin`** is an extension of the app's OWN, for a thing the extension API can do and the web
   build simply lacks - Reveal in Finder is one. `src/guest/disk/builtin.js` places the folder among
   the server's built-ins in the same moment, which puts it in every profile with no entry in any
@@ -238,6 +240,7 @@ Two channels, not twenty.
   account's meter, which is on its own type because a reading every five minutes must not
   re-place the views, and `picker` is whether that screen is up, which the shell needs because
   the screen is a window that stops at the strip and the strip's half of its scrim is drawn here.
+  `patches` is which of the app's extension patches the copy the server loads is missing.
 
 A new feature adds a command to the table or a type to the event union. It does not add a
 channel, and the shell never talks to a guest directly.
@@ -269,6 +272,7 @@ src/main/clock.js       the clock the OS shows, which a panel's own locale canno
 src/main/json.js        reading a file the app does not own, and replacing one it does
 src/main/desktop.js     your VS Code install, read-only: profiles, associations, extension ids
 src/main/extensions.js  the one shared extensions directory: install, prune
+src/main/patches.js     the patches on an extension's bundle, kept across its own updates
 src/main/profiles.js    the profile mirror on the server's disk, and keeping it alive
 src/main/registry.js    seeding the profile registry into the tiles' partition
 src/main/store.js       persistence
