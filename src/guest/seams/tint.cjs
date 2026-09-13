@@ -175,6 +175,7 @@ ${tokens(context)}
      at all. Read on the parent, spent on the child, is the whole of it. */
   --ct-source-sidebar: var(--vscode-sideBar-background);
   --ct-source-editor: var(--vscode-editor-background);
+  --ct-source-editorGroup-empty: var(--vscode-editorGroup-emptyBackground);
   --ct-source-panel: var(--vscode-panel-background);
   /* A widget floats over a tinted window, so it wears the same veil. Its SURFACE only: half of
      the theme's backgrounds are translucent highlights, and a veil under one paints a line. */
@@ -195,6 +196,7 @@ ${tokens(context)}
   & > * {
     --vscode-sideBar-background: ${veiled('--ct-source-sidebar')};
     --vscode-editor-background: ${veiled('--ct-source-editor')};
+    --vscode-editorGroup-emptyBackground: ${veiled('--ct-source-editorGroup-empty')};
     --vscode-panel-background: ${veiled('--ct-source-panel')};
     ${WIDGETS.map((widget) => `--vscode-${widget}-background: ${veiled(`--ct-source-${widget}`)};`).join('\n    ')}
 
@@ -222,6 +224,12 @@ ${tokens(context)}
   & .part.editor > .content,
   & .part.editor .editor-container {
     background-color: var(--vscode-editor-background) !important;
+  }
+  /* An EMPTY group writes a second literal inline over that, editorGroup.emptyBackground, in a
+     theme that names one (Monokai Pro does, Dark 2026 does not). Where none is named this
+     computes to transparent, as the editor leaves it, and the tinted content shows through. */
+  & .part.editor > .content .editor-group-container.empty {
+    background-color: var(--vscode-editorGroup-emptyBackground) !important;
   }
 
   /* The terminal takes no variable at all: xterm resolves its colours in JS at construction and

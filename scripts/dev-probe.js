@@ -287,6 +287,14 @@ const READ = `(() => {
       const name = [...part.classList].filter((className) => className !== 'part').join('.') || 'part';
       return [name, [getComputedStyle(part).backgroundColor, part.style.backgroundColor || null]];
     })),
+    // An empty editor group paints a literal of its own over the editor's, in a theme that names
+    // editorGroup.emptyBackground. Equal is the tint not reaching it; null is no empty group, or
+    // a theme that names none.
+    emptyGroupBackground: (() => {
+      const group = document.querySelector('.part.editor .editor-group-container.empty');
+      return group && group.style.backgroundColor
+        ? [getComputedStyle(group).backgroundColor, group.style.backgroundColor] : null;
+    })(),
     // The welcome seam: the page's own two columns, Start and Recent, with no walkthrough list
     // under one and no ad above the other. Null in a window whose welcome tab is closed.
     welcome: (() => {

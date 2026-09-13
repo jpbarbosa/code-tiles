@@ -283,7 +283,9 @@ the panel - is painted `var(--vscode-sideBar-background) !important` by the edit
 tinting a part is that variable rewritten and no selector at all, and every pane header, section
 header and list row inside follows because they read the same names. Three things are outside it.
 The editor part, whose `.content` and `.editor-container` carry an inline literal written from JS
-that only `!important` outranks. The activity bar, which is SHELL rather than a card: it wears
+that only `!important` outranks - and an EMPTY group writes a second one over both, the theme's
+`editorGroup.emptyBackground`, in a theme that names one: Monokai Pro does, Dark 2026 does not.
+The activity bar, which is SHELL rather than a card: it wears
 `--modern-ui-shell-background`, and a theme with an `activityBar.background` of its own makes it
 opaque and drops it out of that ground, leaving a black column beside tinted parts - restore it by
 painting the ground, never by tinting the part, because the veil is 7% of a hue and invisible over
