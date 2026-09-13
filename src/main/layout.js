@@ -16,12 +16,33 @@ export function gridShape(count, mode = 'grid') {
   return { cols, rows: Math.ceil(count / cols) };
 }
 
-// What proportions are remembered against. The shape rather than the count, so the 2x2 you
-// dragged is the 2x2 you get back - and a stack of two is not the 2x2 either, which is why the
-// maximized shapes are named apart.
-export function shapeKey(count, mode = 'grid') {
+// What proportions are remembered against, axis by axis. The shape rather than the count, so the
+// 2x2 you dragged is the 2x2 you get back, and the maximized shapes are named apart from it. Their
+// rows change with the stack's height and their columns do not: a column split per height would
+// move the wide column every time a stacked tile closed.
+export function shapeKeys(count, mode = 'grid') {
   const { cols, rows } = gridShape(count, mode);
-  return maximized(count, mode) ? `master${rows}` : `${cols}x${rows}`;
+  if (maximized(count, mode)) return { cols: 'master', rows: `master${rows}` };
+  const key = `${cols}x${rows}`;
+  return { cols: key, rows: key };
+}
+
+// A file written before the maximized columns shared one split holds one per stack height. The
+// one for the tiles open now becomes the shared split, and the rest go. Handed back untouched when
+// there is nothing to move, so the caller can tell whether to write.
+export function migrateSizes(sizes, count) {
+  const stale = Object.keys(sizes).filter((key) => /^master\d+$/.test(key) && sizes[key]?.cols);
+  if (!stale.length) return sizes;
+  const out = { ...sizes };
+  const kept = sizes[`master${count - 1}`]?.cols;
+  if (kept && !out.master) out.master = { cols: kept };
+  for (const key of stale) {
+    const rest = { ...out[key] };
+    delete rest.cols;
+    if (Object.keys(rest).length) out[key] = rest;
+    else delete out[key];
+  }
+  return out;
 }
 
 // One project is the whole area whatever the mode says, so there is no master and no stack.

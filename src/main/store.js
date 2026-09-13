@@ -12,8 +12,8 @@ const EMPTY = {
   // Which project holds the master column, by folder, or null for the even grid. Not the focus:
   // clicking into a stacked tile moves that and leaves this alone.
   maximized: null,
-  // The grid's proportions, per grid SHAPE: { "2x2": { cols: [...], rows: [...] } }. Shares,
-  // never pixels, so a resized window keeps them.
+  // Shares, never pixels, so a resized window keeps them - each axis under its `shapeKeys` key:
+  // { "2x2": { cols, rows }, "master": { cols }, "master3": { rows } }.
   sizes: {},
   // How much of its colour a window wears, one rung per state. `corners` and `sound`, the other two
   // preferences, are absent until chosen: src/guest/corners.cjs holds one default and

@@ -27,7 +27,8 @@ What the tree does today, what comes next, and what to check when the server is 
   the two questions - where you are, what is wide - are answered separately. `⌘\`` is the one
   command that answers both, because walking the order into a tile 30% wide is walking into a
   project you cannot work in. Its column and its stack rows are dragged, evened and remembered
-  like any grid's, under a shape key of their own.
+  like any grid's: the rows per stack height, and the column once for every height, so closing or
+  opening a stacked project never moves the wide one.
 - Zoom, as one app: `⌘+`, `⌘-` and `⌘0` move every tile together and a project opened
   afterwards comes up at the same size, as does the next launch - the partition persists it by
   host. The shell is a different origin and stays where it is.

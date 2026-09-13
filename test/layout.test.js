@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { gridResize, gridShape, gridSplitters, rectAt, shapeKey, tileRects, METRICS } from '../src/main/layout.js';
+import {
+  gridResize, gridShape, gridSplitters, migrateSizes, rectAt, shapeKeys, tileRects, METRICS,
+} from '../src/main/layout.js';
 
 const window = { width: 1600, height: 1000 };
 
@@ -63,9 +65,9 @@ test('shares set the columns, and the gaps stay equal', () => {
 });
 
 test('a shape remembers the grid, not the count: three and four share it', () => {
-  assert.equal(shapeKey(3), shapeKey(4));
-  assert.notEqual(shapeKey(4), shapeKey(5));
-  assert.equal(shapeKey(1), '1x1');
+  assert.deepEqual(shapeKeys(3), shapeKeys(4));
+  assert.notDeepEqual(shapeKeys(4), shapeKeys(5));
+  assert.deepEqual(shapeKeys(1), { cols: '1x1', rows: '1x1' });
 });
 
 test('a stretched last tile has no gutter over it', () => {
@@ -166,13 +168,51 @@ test('the focus does not move the master column: only the master index places it
 });
 
 test('a maximized shape is remembered apart from the even grid it came from', () => {
-  assert.equal(shapeKey(4, 'master'), 'master3');
-  assert.notEqual(shapeKey(4, 'master'), shapeKey(4));
-  assert.equal(shapeKey(3, 'master'), shapeKey(3, 'master'));
-  assert.notEqual(shapeKey(3, 'master'), shapeKey(4, 'master'));
+  assert.deepEqual(shapeKeys(4, 'master'), { cols: 'master', rows: 'master3' });
+  assert.notEqual(shapeKeys(4, 'master').cols, shapeKeys(4).cols);
+  assert.notEqual(shapeKeys(4, 'master').rows, shapeKeys(4).rows);
   // Nothing to maximize, nothing to name apart.
-  assert.equal(shapeKey(1, 'master'), '1x1');
+  assert.deepEqual(shapeKeys(1, 'master'), shapeKeys(1));
   assert.deepEqual(gridShape(4, 'master'), { cols: 2, rows: 3 });
+});
+
+// Three stacked rows and two are different tracks, but the master's column and the stack's are the
+// same two columns at any height.
+test('closing a stacked tile leaves the maximized column where it was dragged', () => {
+  const heights = [2, 3, 4, 5, 6, 7].map((count) => shapeKeys(count, 'master'));
+  assert.equal(new Set(heights.map((keys) => keys.cols)).size, 1);
+  assert.equal(new Set(heights.map((keys) => keys.rows)).size, heights.length);
+
+  const four = { ...window, count: 4, mode: 'master', masterIndex: 0 };
+  const { cols } = gridResize({ ...four, axis: 'cols', index: 1, position: 900 });
+  const [before] = tileRects({ ...four, sizes: { cols } });
+  const [after] = tileRects({ ...four, count: 3, sizes: { cols } });
+  assert.equal(after.width, before.width);
+});
+
+test('a split per stack height from an older file becomes the one split, for the tiles open now', () => {
+  const even = { cols: [0.4, 0.6], rows: [0.5, 0.5] };
+  const old = {
+    '2x2': even,
+    master1: { cols: [0.45, 0.55] },
+    master3: { cols: [0.6, 0.4], rows: [0.3, 0.3, 0.4] },
+    master4: { cols: [0.58, 0.42] },
+  };
+  const migrated = migrateSizes(old, 5);
+  assert.deepEqual(migrated, {
+    '2x2': even,
+    master: { cols: [0.58, 0.42] },
+    master3: { rows: [0.3, 0.3, 0.4] },
+  });
+  // Nothing saved for this many open: the master's own default, and the stale splits still go.
+  assert.deepEqual(migrateSizes(old, 3), { '2x2': even, master3: { rows: [0.3, 0.3, 0.4] } });
+  // A split already shared is not overwritten by a stale one.
+  assert.deepEqual(
+    migrateSizes({ master: { cols: [0.7, 0.3] }, master2: { cols: [0.5, 0.5] } }, 3),
+    { master: { cols: [0.7, 0.3] } },
+  );
+  // Nothing to move is the same object back, so nothing is written.
+  assert.equal(migrateSizes(migrated, 2), migrated);
 });
 
 test('the master runs down every row seam, so those handles stop at the stack', () => {

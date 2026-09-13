@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Menu, app, dialog, nativeImage, screen } from 'electron';
 
-import { METRICS, gridResize, gridSplitters, rectAt, shapeKey, tileRects } from './layout.js';
+import { METRICS, gridResize, gridSplitters, migrateSizes, rectAt, shapeKeys, tileRects } from './layout.js';
 import { SWATCH, appearanceMenu, swatchBitmap } from './appearance.js';
 import { badgeFor } from './dock.js';
 import { corners, groundShares } from '../guest/manifest-settings.js';
@@ -44,6 +44,9 @@ export class Desk {
     this.#tiles = tiles;
     this.#activity = activity;
     this.#preferences = preferences;
+    const saved = projects.sizes;
+    const sizes = migrateSizes(saved, projects.open().length);
+    if (sizes !== saved) projects.sizes = sizes;
   }
 
   get projects() {
@@ -453,16 +456,23 @@ export class Desk {
   }
 
   #sizes(count) {
-    return this.#projects.sizes[shapeKey(count, this.#shape(count))] || {};
+    const all = this.#projects.sizes;
+    return Object.fromEntries(Object.entries(shapeKeys(count, this.#shape(count)))
+      .filter(([axis, key]) => all[key]?.[axis])
+      .map(([axis, key]) => [axis, all[key][axis]]));
   }
 
   // Against the grid's shape, so closing one of four projects lands back on the proportions the
-  // 2x2 already had. A shape back at equal shares keeps no entry at all.
+  // 2x2 already had. An axis back at its shape's own split keeps no entry at all.
   #remember(count, sizes) {
-    const key = shapeKey(count, this.#shape(count));
     const all = { ...this.#projects.sizes };
-    if (Object.keys(sizes).length) all[key] = sizes;
-    else delete all[key];
+    for (const [axis, key] of Object.entries(shapeKeys(count, this.#shape(count)))) {
+      const entry = { ...all[key] };
+      if (sizes[axis]) entry[axis] = sizes[axis];
+      else delete entry[axis];
+      if (Object.keys(entry).length) all[key] = entry;
+      else delete all[key];
+    }
     this.#projects.sizes = all;
   }
 
