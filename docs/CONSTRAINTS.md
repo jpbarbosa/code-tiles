@@ -237,6 +237,14 @@ title bar to raise it from. The `trust` seam is why every tile has its extension
 is opened before the real one exists - so an unsubscribed app ends during its own startup, with
 no error anywhere. **[checked]**
 
+**A process that detaches from a tile holds the Dock after the app is gone.** `ssh -f`, `op
+daemon`, a server a Claude session backgrounded: each leaves the server's tree while the app runs,
+so no walk at quit meets it, but it stays in the app's coalition - and LaunchServices keeps the
+bundle's record, `exited-with-subordinates`, while any member lives. The Dock reads "Running in
+Background" and spends the next click reaping that record instead of launching. Every later launch
+inherits those coalitions, so one orphan dims every quit after it; `lsappinfo list` names them as
+`relatedCoalitionPIDs`. `coalition.js` kills what the coalition holds outside the app's tree. **[checked]**
+
 **A hidden status bar keeps its entries alive.** `workbench.statusBar.visible: false` leaves the
 part in the grid at 0x0 with its items still rendered and still updated by their extensions, and
 a `click()` on one still runs its command - `status.scm.0` opened Checkout Branch/Tag from a part

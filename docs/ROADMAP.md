@@ -6,7 +6,8 @@ What the tree does today, what comes next, and what to check when the server is 
 ## Standing today
 
 - One shared code-server, started on launch, killed with the app, orphan reaped on the next
-  start from a pidfile whose command line is checked before anything is signalled.
+  start from a pidfile whose command line is checked before anything is signalled. Quitting also
+  kills what detached from a tile, found in the app's coalition, so the Dock lets go at once.
 - One `WebContentsView` per project on one partition, placed by main from pure geometry.
 - Grid and single view, focus, open, close, project order, all persisted.
 - A tile is a WINDOW, so it can re-point itself: File > Open Folder inside one, or a row of its

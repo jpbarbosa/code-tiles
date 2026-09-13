@@ -3,6 +3,7 @@ import { app, dialog, nativeTheme, session } from 'electron';
 
 import { Activity } from './activity.js';
 import { hooksWriteInto } from './activity-hooks.js';
+import { killStragglers } from './coalition.js';
 import { CodeServer } from './server.js';
 import { Desk } from './desk.js';
 import { Extensions } from './extensions.js';
@@ -214,5 +215,8 @@ app.whenReady().then(async () => {
 // window that matters quits on its own `closed`.
 app.on('window-all-closed', () => {});
 
-app.on('before-quit', () => { usage?.stop(); activity?.stop(); mirror?.stop(); server?.stop(); });
+app.on('before-quit', () => {
+  usage?.stop(); activity?.stop(); mirror?.stop(); server?.stop();
+  killStragglers();
+});
 process.on('exit', () => server?.stop());

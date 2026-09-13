@@ -247,6 +247,7 @@ channel, and the shell never talks to a guest directly.
 ```
 src/main/index.js       lifecycle, wiring
 src/main/server.js      code-server child: port, spawn, health, pidfile, orphan sweep
+src/main/coalition.js   what had already left that tree by quit, found in the app's coalition
 src/main/window.js      the BrowserWindow and the shell page
 src/main/tiles.js       WebContentsView per project: create, place, focus, destroy
 src/main/layout.js      pure geometry, and which tile a point is in
