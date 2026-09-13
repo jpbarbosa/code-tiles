@@ -228,10 +228,12 @@ What the tree does today, what comes next, and what to check when the server is 
   an item in a part's toolbar: a tile with Claude's chat beside the code is two editor groups, and
   a close in each group's actions would be two ways to close one project, neither of them about
   the tile - with the room for it taken out of the editor's title row rather than laid over it),
-  `maximize` (the app's one item in the activity bar's own list, first, under the badge - built
-  from the classes the editor builds its items with, so it takes the bar's size, its hover pill
-  and the accent an active view wears, and needs no slot cut for it; the restore half is
-  `screen-normal`, since `panel-restore` has no icon registered in this build and paints nothing),
+  `maximize` (the app's one item in the activity bar, under the badge and above the editor's own
+  list rather than in it, since the bar places and removes its items by counting that list's
+  children - built from the classes the editor builds its items with, so it takes the bar's size,
+  its hover pill and the accent an active view wears, and needs no slot cut for it; the restore
+  half is `screen-normal`, since `panel-restore` has no icon registered in this build and paints
+  nothing),
   `chat-column` (a Claude session opening in the group you are already in rather than in a locked
   column of its own - one edit to the extension's own fallback, which is what its command reads
   before it runs `workbench.action.lockEditorGroup`; an explicit column and an existing Claude

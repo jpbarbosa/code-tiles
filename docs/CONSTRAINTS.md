@@ -311,6 +311,16 @@ rule at (0,7,0): the editor's own checked and hover rules sit at (0,9,0), and ou
 takes the theme's colour off the view you are in. `activityBar.inactiveForeground` still reaches
 the menubar's glyph as a variable, since that one is CSS. **[checked]**
 
+**The editor's action bars place and remove items by COUNTING the list's children.** `ActionBar`
+inserts before `actionsList.children[n]`, removes `childNodes[n]` and measures `children.item(n)`,
+while its own bookkeeping holds only the items it made - so one child of ours in that list moves
+every later arrival up a slot and makes a removal take its neighbour too. The activity bar showed
+both: Claude's sessions, arriving once its extension started, drawn before Source Control, and
+Search gone for good after a short window pulled two items. An addition goes BESIDE the list, in
+the same `.monaco-action-bar`, where the editor's rules still reach it - all but the gap written
+as `.action-item + .action-item`, which the first view then misses, so the addition carries it.
+**[checked]**
+
 **The workbench says which parts it is showing, on itself.** `nosidebar`, `nopanel` and
 `noauxiliarybar` are classes on the workbench container, so a seam reads the layout from one
 attribute and observes all three with one `MutationObserver` on `class`. There is nothing to

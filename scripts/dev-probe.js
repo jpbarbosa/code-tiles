@@ -86,15 +86,16 @@ const READ = `(() => {
           .filter((name) => name.startsWith('ct-ring')),
       };
     })(),
-    // The maximize seam: the item this app adds to the activity bar's own list. Read the way the
-    // bar reads it - a row in the list, first - plus the glyph the app's state asked for.
+    // The maximize seam: the item this app adds to the activity bar, above the editor's own list
+    // and never in it, plus the glyph the app's state asked for.
     maximize: (() => {
       const item = document.querySelector('.part.activitybar .composite-bar .ct-maximize');
       if (!item) return null;
       const label = item.querySelector('.action-label');
       const box = item.getBoundingClientRect();
       return {
-        first: item.parentElement.firstElementChild === item,
+        aboveList: !item.closest('.actions-container')
+          && item.nextElementSibling?.classList.contains('actions-container') === true,
         glyph: [...label.classList].find((name) => name.startsWith('codicon-')) || null,
         checked: item.classList.contains('checked'),
         title: label.title,

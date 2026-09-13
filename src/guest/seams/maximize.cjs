@@ -4,14 +4,6 @@
 // beside it. On the project that already holds the column, the same item hands the even grid
 // back.
 //
-// It is an ITEM in the activity bar's own list, first, under the badge - built from the classes
-// the editor builds its own with, so the bar sizes it and the design paints its hover pill and,
-// on `checked`, the accent an active view wears. The previous implementation floated a host
-// button over a slot CSS cut into the bar, which cost a measurement across the boundary. The
-// cost of this side is that the composite bar sizes itself from its own model rather than from
-// its children, so a window short enough to run out of room has one item's worth less than the
-// editor believes. [code-server 4.135.0]
-//
 // The press sends what it will DO rather than a toggle for main to work out, so this window's own
 // state is the only copy of it. Clicking into a window claims the FOCUS and nothing else: the
 // column moves from here and from nowhere else. The item is there only while the window is one of
@@ -31,16 +23,30 @@ module.exports = {
   name: 'maximize',
 
   css: () => `
-.monaco-workbench .part.activitybar .${ITEM} .action-label {
-  /* Every view icon is handed its resting colour inline, from the theme; this one is not, so it
-     says the same thing here. Hover and checked stay the editor's own rules. */
-  color: var(--vscode-activityBar-inactiveForeground, var(--vscode-foreground));
+.monaco-workbench .part.activitybar .${ITEM} {
+  /* The editor's gap is a margin on each item that FOLLOWS one, and the first view no longer
+     follows this: the same gap, from this side, in the layout that has one. */
+  .floating-panels & {
+    margin-bottom: var(--activity-bar-action-gap, 0px);
+  }
+
+  & .action-label {
+    /* Every view icon is handed its resting colour inline, from the theme; this one is not, so it
+       says the same thing here. Hover and checked stay the editor's own rules. */
+    color: var(--vscode-activityBar-inactiveForeground, var(--vscode-foreground));
+  }
 }
 `,
 
   init(api) {
     api.whenWorkbench((workbench) => {
-      api.whenPresent(workbench, '.part.activitybar .composite-bar .actions-container', (list) => {
+      // Beside the editor's list, never in it: the bar places and removes its items by counting
+      // the list's children, so a child of ours there moves every later arrival up a slot and
+      // makes a removal take its neighbour too. Above it, in the same bar, the editor's rules
+      // still size it and paint its hover pill and, on `checked`, an active view's accent. What
+      // that costs is room: the bar counts only its own items, so a short window has one item's
+      // worth less than the editor believes. [code-server 4.135.0]
+      api.whenPresent(workbench, '.part.activitybar .composite-bar .monaco-action-bar', (bar) => {
         let item = null;
 
         const render = () => {
@@ -52,7 +58,7 @@ module.exports = {
           const state = api.context.maximized;
 
           if (!item) {
-            item = build(list.ownerDocument, () => api.send('project:maximize', {
+            item = build(bar.ownerDocument, () => api.send('project:maximize', {
               maximized: !api.context.maximized,
             }));
           }
@@ -64,13 +70,9 @@ module.exports = {
           label.classList.toggle(LABELS.off.icon, icon === LABELS.off.icon);
           label.setAttribute('aria-label', text);
           label.title = text;
-          if (list.firstElementChild !== item) list.prepend(item);
+          if (bar.firstElementChild !== item) bar.prepend(item);
         };
 
-        // The bar rebuilds its list whenever a view is added, removed or dragged, and a rebuild
-        // clears every child: the item is put back rather than held on to. Re-inserting is itself
-        // a mutation, which the next pass answers with nothing, since by then it is first.
-        new MutationObserver(render).observe(list, { childList: true });
         api.onContext(render);
         render();
       });
@@ -79,11 +81,8 @@ module.exports = {
 };
 
 function build(document, press) {
-  const item = document.createElement('li');
+  const item = document.createElement('div');
   item.className = `action-item icon ${ITEM}`;
-  // The list is a tablist and this is not a tab: the anchor carries the role, the row carries
-  // none, so nothing here claims to be a view you can switch to.
-  item.setAttribute('role', 'presentation');
 
   const label = document.createElement('a');
   label.className = 'action-label codicon';
