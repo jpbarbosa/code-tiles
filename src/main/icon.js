@@ -36,8 +36,8 @@ export const CHOSEN_LIMIT = 4 * 1024 * 1024;
 export const IMAGE_TYPES = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico'];
 
 // What each folder's search found and each chosen file held, and what a renderer made of each FILE,
-// so a project whose image changes is decoded again and nothing else is. Once per file per run: a
-// favicon added to a project shows up the next start, the bargain the extension mirror makes.
+// so a project whose image changes is decoded again and nothing else is. A folder is searched at
+// start and again whenever its project is opened, which is when a favicon added since shows up.
 const found = new Map();
 const chosen = new Map();
 const decoded = new Map();
@@ -92,6 +92,16 @@ export async function learn(projects) {
 export function forget(file) {
   chosen.delete(file);
   decoded.delete(file);
+}
+
+// A folder searched again, which opening its project does, so a favicon added or edited since the
+// app started shows up without a restart. What a renderer made of the old file goes only when its
+// bytes changed: dropped on every open, a known favicon would draw on its path's hue first.
+export function reread(folder) {
+  const before = found.get(folder);
+  const after = search(folder);
+  found.set(folder, after);
+  if (before && before.url !== after?.url) decoded.delete(before.file);
 }
 
 // The image you chose while it is still there to read, and the folder's own favicon otherwise.

@@ -224,10 +224,11 @@ each half is that way round. Those bytes are decoded in an offscreen renderer
 (`src/main/sampler.js`) because Chromium is the only decoder in the process that reads a true ICO
 or an SVG, and because a canvas weights a colour by the area it covers. That makes the reading
 asynchronous, so `learn` fills a cache that `iconFor` and `hueFor` read synchronously: awaited
-before the first render, and awaited again when a project is added, which draws once on the
-path's hue and once more in the project's own. The same pass cuts a mark to the square its ink
-fills: most favicons keep a margin inside their canvas, which every box they are drawn in would
-show as a smaller mark.
+before the first render, and run again when a project is opened. Opening searches the folder anew,
+so a favicon added or edited while the app runs shows up then: a new one draws once on the path's
+hue and once more in the project's own, an unchanged one keeps what the decoder made of it. The
+same pass cuts a mark to the square its ink fills: most favicons keep a margin inside their canvas,
+which every box they are drawn in would show as a smaller mark.
 
 ## IPC
 

@@ -7,7 +7,7 @@ import { SWATCH, appearanceMenu, swatchBitmap } from './appearance.js';
 import { badgeFor } from './dock.js';
 import { corners, groundShares } from '../guest/manifest-settings.js';
 import { hueFor } from './hue.js';
-import { CHOSEN_LIMIT, IMAGE_TYPES, forget, learn } from './icon.js';
+import { CHOSEN_LIMIT, IMAGE_TYPES, forget, learn, reread } from './icon.js';
 import { IS_WINDOWS } from './platform.js';
 
 // The parts the strip's layout control flips, and what a window shows before anyone has chosen:
@@ -249,6 +249,7 @@ export class Desk {
   // it arrives focused, and focus alone would hand you the project you just asked for 30% wide.
   open(folder) {
     const added = this.#projects.add(folder);
+    reread(added);
     if (this.#shape(this.#projects.open().length) === 'master') this.#projects.maximized = added;
     this.render();
     this.#learn();
@@ -265,6 +266,7 @@ export class Desk {
       // says so again as it boots, and holding the old answer would put it on the buttons the day
       // that folder is opened again.
       this.#parts.delete(from);
+      reread(folder);
       this.render();
       this.#learn();
       return;

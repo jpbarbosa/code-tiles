@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { forget, iconFor } from '../src/main/icon.js';
+import { forget, iconFor, reread } from '../src/main/icon.js';
 
 const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex');
 const JPEG = Buffer.from('ffd8ffe000104a464946', 'hex');
@@ -70,6 +70,19 @@ test('an icon too big for a command line is no icon until something shrinks it',
   // Read all the same, because a hue is a number whatever it was sampled from. What it cannot do
   // is ride `additionalArguments` unre-encoded, and nothing has re-encoded it here.
   assert.equal(iconFor(folderWith({ 'favicon.png': Buffer.alloc(200 * 1024) })), null);
+});
+
+test('a folder is searched once a run, and again when its project is opened', () => {
+  const folder = folderWith({ 'index.html': '' });
+  assert.equal(iconFor(folder), null);
+  fs.writeFileSync(path.join(folder, 'favicon.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
+  assert.equal(iconFor(folder), null, 'held for the run');
+  reread(folder);
+  const added = iconFor(folder);
+  assert.ok(added.startsWith('data:image/svg+xml;base64,'), 'a favicon added since');
+  fs.writeFileSync(path.join(folder, 'favicon.svg'), '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"/>');
+  reread(folder);
+  assert.notEqual(iconFor(folder), added, 'a favicon edited since');
 });
 
 // An image chosen from the project's menu, which is read from wherever it is rather than searched
