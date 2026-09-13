@@ -226,19 +226,21 @@ const READ = `(() => {
       };
       return walk(document);
     })(),
-    // The chat-calm seam, read in the Claude page itself: what a tool's output is painted with and
-    // how loud the Learn button is at rest. A page with no sheet in it is the gate missing it; the
-    // two readings are null while no tool has run or onboarding is off.
+    // The chat-calm seam, read in the Claude page itself: what a tool's output is painted with,
+    // whether onboarding is drawn anywhere, and how each notice displays. A page with no sheet in it
+    // is the gate missing it; the output reading is null while no tool has run.
     chatCalm: (() => {
       const walk = (doc) => {
         if (doc.querySelector('link[href*="anthropic.claude-code-"]')) {
           const view = doc.defaultView;
           const output = doc.querySelector('[class*="toolResult_"]');
-          const learn = doc.querySelector('[aria-label="Learn Claude Code"]');
           return {
             sheet: Boolean(doc.getElementById('code-tiles-chat-calm')),
             output: output ? view.getComputedStyle(output).backgroundColor : null,
-            learn: learn ? view.getComputedStyle(learn).opacity : null,
+            onboarding: Boolean(doc.querySelector(
+              '[aria-label="Learn Claude Code"], [class*="milestoneList_"]')),
+            notices: [...doc.querySelectorAll('[data-testid$="-notice"]')]
+              .map((notice) => notice.dataset.testid + ' ' + view.getComputedStyle(notice).display),
           };
         }
         let frames;

@@ -388,6 +388,14 @@ test('the chat-calm sheet lands in the Claude page once, and in no other webview
   assert.ok(output, "no rule for a tool's output");
   assert.match(output[1], /--app-code-background: transparent/);
   assert.doesNotMatch(output[1], /background-color/, 'the extension paints it, not us');
-  assert.match(plain, /\[aria-label="Learn Claude Code"\]:not\(:hover, :focus\) \{/,
-    'the Learn button has to be dimmed at rest only');
+
+  const notices = plain.match(/((?:\[data-testid="[\w-]+"\],?\s*)+)\{([\s\S]*?)\n\}/);
+  assert.ok(notices, 'no rule for the notices');
+  for (const id of ['startup-announcement-notice', 'fable5-launch-notice']) {
+    assert.ok(notices[1].includes(`[data-testid="${id}"]`), `${id} is not hidden`);
+  }
+  assert.match(notices[2], /display: none/);
+  // Onboarding is the extension's own setting, which removes the Learn button with the checklist.
+  assert.equal(seam.defaults['claudeCode.hideOnboarding'], true);
+  assert.doesNotMatch(plain, /Learn Claude Code/, 'a rule for a button the setting removes');
 });

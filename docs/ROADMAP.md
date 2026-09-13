@@ -240,8 +240,8 @@ What the tree does today, what comes next, and what to check when the server is 
   group are both left as they were),
   `chat-calm` (the Claude panel with less to look at, said inside its own page: a tool's output
   without the plate 2.1.267 put under it, by redefining the extension's own variable on the
-  element, and the Learn Claude Code button at a fifth of its strength until you point at it or it
-  has focus - dimmed at rest only, so the extension's own hover and press are untouched),
+  element; its announcement cards hidden by test id, since a dismissal holds for one item of a
+  feed; and onboarding off through the extension's own `claudeCode.hideOnboarding`, a default),
   `branch` (the branch and its sync as two pills at the bottom of the side bar, mirrored from the
   status bar entries that hiding the bar leaves alive, so a click still checks out or syncs - in
   a footer the side bar is taught to give REAL room to rather than an overlay over the tree),
