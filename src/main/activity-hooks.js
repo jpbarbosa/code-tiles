@@ -165,23 +165,20 @@ if mode == "end":
         pass
     sys.exit(0)
 
-# The folder the session STARTED in, not the one a Bash \`cd\` left it in: the first cwd recorded
-# for a session is the one that says which project it belongs to.
-cwd = event.get("cwd") or ""
-try:
-    with open(marker) as f:
-        cwd = json.load(f).get("cwd") or cwd
-except Exception:
-    pass
+# The folder the session STARTED in, which Claude Code hands every hook as CLAUDE_PROJECT_DIR.
+# Not the event's cwd, which a Bash \`cd\` moves, nor the last marker's: hooks of one session run
+# at once, and one that reads a marker mid-write would re-seed it from wherever the session stood.
+cwd = os.environ.get("CLAUDE_PROJECT_DIR") or event.get("cwd") or ""
 
 record = {"state": mode, "cwd": cwd, "ts": time.time(),
           "transcript": event.get("transcript_path") or ""}
 try:
     os.makedirs(DIR, exist_ok=True)
-    temporary = marker + ".tmp"
+    # A rename of a file of this hook's own, so a reader never sees half a record: with one shared
+    # temp name, a second hook truncates it after the first wrote it, and the first renames it in.
+    temporary = f"{marker}.{os.getpid()}.tmp"
     with open(temporary, "w") as f:
         json.dump(record, f)
-    # A rename, so a reader woken by the write never sees half a record.
     os.replace(temporary, marker)
 except Exception:
     pass

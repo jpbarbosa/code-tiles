@@ -191,12 +191,12 @@ test('the hook script pins a session to the folder it started in', (t) => {
   const { base, dir, activity, project } = bench();
   t.after(() => activity.stop());
   const script = path.join(base, 'activity-hook.py');
-  const fire = (mode, event) => execFileSync(python, [script, mode], { input: JSON.stringify(event) });
+  const env = { ...process.env, CLAUDE_PROJECT_DIR: project };
+  const fire = (mode, event) => execFileSync(python, [script, mode], { input: JSON.stringify(event), env });
 
-  fire('active', { session_id: 'one', cwd: project, transcript_path: '/nowhere.jsonl' });
-  // A Bash `cd` moves a session's cwd for the rest of its life; the project it belongs to does
-  // not move with it.
-  fire('working', { session_id: 'one', cwd: '/somewhere/else' });
+  // A cwd a Bash `cd` moved, and no marker left to say where the session began: neither decides
+  // the project it belongs to.
+  fire('working', { session_id: 'one', cwd: '/somewhere/else', transcript_path: '/nowhere.jsonl' });
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'one.json'), 'utf8')).cwd, project);
 
   fire('end', { session_id: 'one', cwd: project });
