@@ -1,3 +1,5 @@
+<img src="favicon.png" alt="" width="128">
+
 # Code Tiles
 
 Several VS Code projects open at once, as live tiles in one window.
@@ -14,8 +16,9 @@ Runs on macOS, Windows and Linux.
 ## The window
 
 A strip across the top, and the rest is the grid. The strip holds one chip per open project, a
-button to open another, the layout buttons and a usage meter; it is also the window's title bar,
-so your OS draws its own window controls into it.
+button to open another, a usage meter and the layout buttons - grid or one project, and the side
+bar, panel and secondary side bar in every project at once. It is also the window's title bar, so
+your OS draws its own window controls into it.
 
 Tiles are laid out as near square as the count allows. Four projects make two rows of two, nine
 make three of three; where a row would come up short the last tile stretches to fill it, so you
@@ -23,9 +26,10 @@ never look at a gap. Drag the space between two tiles to give one more room than
 double-click that space to even it up again, and the sizes stick - resize the window, close a
 project and reopen it, quit and come back, and the grid is how you left it.
 
-**Maximize** gives one project about seven tenths of the width and stacks the rest down the side,
-still live, so you can work in one and watch the others. It stays where you put it: clicking into
-a stacked tile moves the focus there without moving the big one.
+**Maximize**, the button under a tile's project icon, gives that project about seven tenths of the
+width and stacks the rest down the side, still live, so you can work in one and watch the others.
+It stays where you put it: clicking into a stacked tile moves the focus there without moving the
+big one.
 
 ## Focus, and a colour per project
 
@@ -42,13 +46,13 @@ tab - which is what stops you typing into the wrong project.
 
 Right-click a project's icon - at the top of its tile, or on its chip in the strip - to choose for
 yourself. **Icon** puts an image of your own, or the project's initial letter, in place of the
-favicon, and **Color** picks one of eight hues. **Automatic**, in either, goes back to what the app
-worked out.
+favicon, and an image of your own sets the colour the way a favicon does. **Color** picks one of
+eight hues. **Automatic**, in either, goes back to what the app worked out.
 
-**Settings** has three preferences. One is how strong that colour is, on a dial for the tile you
-are in and another for the ones you are not; turn them both down and the tiles stay apart by their
-icons and names alone. Another is **Corners**: smooth, the squircle macOS draws its own windows
-with, or round. The third is **Sound**, the buzz described below, on or off.
+**Preferences** has three options. **Project colour** is how strong that colour is, on a dial for
+the tile you are in and another for the ones you are not; turn them both down and the tiles stay
+apart by their icons and names alone. **Corners** is smooth, the squircle macOS draws its own
+windows with, or round. **Sound** is the buzz described below, on or off.
 
 ## What your agent is doing
 
@@ -67,9 +71,14 @@ something else the taskbar picks it up: a count on the Dock on macOS and on a Un
 and a flashing taskbar button on Windows, which has no badge to set.
 
 It is heard as well: a short buzz each time a session finishes a turn or asks you something, in
-any tile. The speaker at the right of the strip turns it off and on, as does **Settings**.
+any tile. The speaker at the right of the strip turns it off and on, as does **Preferences**.
 
 This reads Claude Code's own hooks, so it works whether you use the CLI or the extension.
+
+The meter in the strip is your Claude subscription's usage: a bar for the 5-hour limit and one for
+the week, each marked at how far through its window you are, so a fill past the mark is the cap
+arriving before the reset. Click it for exact numbers, reset times and usage per model. Until you
+connect it reads **Connect Claude**, and the click signs you in.
 
 ## Opening and closing projects
 
@@ -105,7 +114,7 @@ swap places. Escape cancels either.
 | Close the focused project | `⌃⌘W` | `Ctrl+Alt+W` |
 | Even the tiles out again | `⌃⌘0` | `Ctrl+Alt+0` |
 | Zoom every tile together | `⌘+` `⌘-` `⌘0` | `Ctrl+=` `Ctrl+-` `Ctrl+0` |
-| Settings | `⌘,` | `Ctrl+,` |
+| Preferences | `⌘,` | `Ctrl+,` |
 
 The app deliberately sits one modifier above the editor's own, so nothing it binds shadows a
 shortcut you press inside a tile.
@@ -125,6 +134,11 @@ It is stock VS Code, with a short list of changes that only make sense in a grid
   costs width in every tile at once.
 - **Maximize Panel and the Run button are hidden**, being two buttons a tile cannot honour. Their
   commands and keyboard shortcuts still work.
+
+Claude Code's extension gets three fixes: a new session opens as a tab rather than in a locked
+column split off to the right, a chat link to an image, sound or video opens it, and the onboarding
+checklist and announcements are gone. If an extension update moves what a fix hooks into, a warning
+mark in the strip names the one that stopped applying.
 
 Your setup comes with you: every profile in your desktop VS Code is copied over - settings,
 keybindings and extensions - and each project opens on the profile your desktop already uses for
@@ -155,7 +169,7 @@ them for `argon2` as well, which publishes no arm64 build.
 | `npm run package` | build an app for this machine's platform |
 | `npm run package:mac` / `:win` / `:linux` | build for one specific platform |
 | `npm run install-app` | macOS only: package, sign, and install into `/Applications` |
-| `npm run patch-vscode` | apply this app's editor tweaks to your own desktop VS Code |
+| `npm run patch-vscode` | apply the Claude extension fixes to your own desktop VS Code |
 
 Packaging for a platform other than your own works, but the code-server in `vendor/` is a native
 build for the machine you fetched it on, so it is left out of a cross-built app and that app looks
