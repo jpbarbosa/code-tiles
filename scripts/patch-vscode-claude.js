@@ -1,15 +1,10 @@
 #!/usr/bin/env node
 
-// The seams that rewrite an extension's own bundle - `chat-icon` and `chat-column` - applied to a
-// VS Code this app does not own: your desktop install. The app spends them on its own server every
-// time it starts; desktop VS Code has no such hook, and both edits live INSIDE the versioned
-// extension folder, so its self-update lands a fresh unpatched copy and reverts them silently.
+// Every seam that rewrites an extension's own bundle, spent on a VS Code this app does not own -
+// your desktop install, whose self-update lands a fresh unpatched copy - by the same patchers the
+// app runs at start, so one bundle shape is kept alive. Idempotent; a refusal is a stderr line.
 //
-// The same patchers either way, which is the whole point of the script existing rather than a
-// second set of anchors: one bundle shape to keep alive against a minifier. Idempotent, so
-// re-running it costs nothing, and every refusal is a line on stderr naming what it degrades to.
-//
-//   npm run patch-vscode                    ~/.vscode/extensions
+//   npm run patch-vscode                   ~/.vscode/extensions
 //   npm run patch-vscode -- <dir> [<dir>…]  Insiders, a portable install, this app's own
 
 import fs from 'node:fs';

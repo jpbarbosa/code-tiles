@@ -239,6 +239,11 @@ What the tree does today, what comes next, and what to check when the server is 
   its own - two edits on names minification keeps, the `findUnusedColumn` call and the
   `startedInNewColumn` its callers read before running `workbench.action.lockEditorGroup`, applied
   both or neither; an explicit column and an existing Claude group are both left as they were),
+  `chat-links` (a file link in the Claude chat opening whatever the file is: the extension sends
+  every one - a markdown link, a tool row's file name, an @-mention - to `showTextDocument`, which
+  rejects an image, a sound or a video with nothing hung on the rejection, so the click did nothing
+  and said nothing. What the text editor refuses now goes to `vscode.open`, which lands it in the
+  image, audio or video preview VS Code already has),
   `chat-calm` (the Claude panel with less to look at, said inside its own page: a tool's output
   without the plate 2.1.267 put under it, by redefining the extension's own variable on the
   element; its announcement cards hidden by test id, since a dismissal holds for one item of a
@@ -404,11 +409,11 @@ and only `requestAnimationFrame` stops outright there.
 
 ## When the Claude Code extension updates
 
-It updates itself, into a fresh versioned directory, so both patches on it - `chat-icon` and
-`chat-column` - are gone and the next start applies them again to a bundle nobody has read. They
-share the file, so they are spent in ONE pass over one pristine source: patched a seam at a time
-from the backup, each would start over and only the last edit would survive. A seam whose shape
-has moved is skipped by name and the other still lands.
+It updates itself, into a fresh versioned directory, so every patch on it - `chat-icon`,
+`chat-column` and `chat-links` - is gone and the next start applies them again to a bundle nobody
+has read. They share the file, so they are spent in ONE pass over one pristine source: patched a
+seam at a time from the backup, each would start over and only the last edit would survive. A seam
+whose shape has moved is skipped by name and the others still land.
 
 Nothing has to be done by hand. The app patches at start and again on every write to the server's
 `extensions.json` (`src/main/patches.js`), which the server makes only once a new version's folder
@@ -443,7 +448,7 @@ where it should spin, which is worse than stock but not broken - so a patch that
 place is a test that runs the anchors against the bundle THIS MACHINE has, rather than only
 against the fixtures, and skips where there is none.
 
-**Your own VS Code needs the same two patches, and has no boot hook to apply them.** `npm run
+**Your own VS Code needs the same patches, and has no boot hook to apply them.** `npm run
 patch-vscode` spends the seams on `~/.vscode/extensions` instead of the app's copy - the same
 patchers, so there is one bundle shape to keep alive rather than two - and the
 `io.jp7.claude-vscode-patch` LaunchAgent runs it on every write to an `extensions.json`, which VS

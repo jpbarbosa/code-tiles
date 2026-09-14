@@ -51,7 +51,13 @@ const COLUMN = 'createPanel($,J,Q){let W=!1,K;if(Q!==void 0)K=Q;'
 // The same flag as 2.1.269 spells it: derived from the column rather than a literal.
 const COLUMN_DERIVED = COLUMN.replace('W=!0}', 'W=K!==O4.ViewColumn.Beside}');
 
-const BUNDLE = `${STRINGS}class T{${ICON_TABLE}${STATE}${COLUMN}}\n`;
+// `openFile` as the extension spells it - the file opened as TEXT, then a location sought in it -
+// except that this one RETURNS the chain, so a test can see how it ends. The extension drops it,
+// which is why a failed open says nothing.
+const OPEN = 'openFile($,Q){let z=E$.Uri.file($);return E$.window.showTextDocument(z).then((W)=>{'
+  + 'if(Q?.searchText){W.revealRange(Q.searchText)}else if(Q){W.selection=Q}})}';
+
+const BUNDLE = `${STRINGS}class T{${ICON_TABLE}${STATE}${COLUMN}${OPEN}}\n`;
 
 function tree(bundle = BUNDLE) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ct-extension-'));
@@ -65,7 +71,7 @@ const read = (file) => fs.readFileSync(file, 'utf8');
 
 test('every extension patch declares what the mechanism needs of it', () => {
   const declared = declaredExtensions(seams);
-  assert.deepEqual(declared.map((entry) => entry.name), ['chat-icon', 'chat-column']);
+  assert.deepEqual(declared.map((entry) => entry.name), ['chat-icon', 'chat-column', 'chat-links']);
   for (const { name, extension } of declared) {
     for (const key of ['id', 'file', 'marker', 'stamp', 'degrades', 'apply']) {
       assert.ok(extension[key], `${name}: an extension patch without ${key}`);
@@ -75,15 +81,17 @@ test('every extension patch declares what the mechanism needs of it', () => {
   assert.ok(Object.keys(icon.resources).length, 'a patch that points at no resources');
 });
 
-// Two seams, one file. Patched a seam at a time from the backup, each would start over from the
-// pristine source and only the last edit would survive - which is silent, because both passes
-// report success.
-test('two seams on one bundle are spent in one pass and both edits survive', () => {
+// Several seams, one file. Patched a seam at a time from the backup, each would start over from the
+// pristine source and only the last edit would survive - which is silent, because every pass
+// reports success.
+test('the seams on one bundle are spent in one pass and every edit survives', () => {
   const { dir, file } = tree();
-  assert.deepEqual(patchExtensions(dir), ['chat-icon + chat-column in anthropic.claude-code-9.9.9-darwin-arm64']);
+  assert.deepEqual(patchExtensions(dir),
+    ['chat-icon + chat-column + chat-links in anthropic.claude-code-9.9.9-darwin-arm64']);
   const patched = read(file);
   assert.match(patched, /__CT_CHAT_ICON_2__/);
   assert.match(patched, /__CT_CHAT_COLUMN_2__/);
+  assert.match(patched, /__CT_CHAT_LINKS_1__/);
   assert.equal(read(`${file}.ct-orig`), BUNDLE, 'one pristine copy, not one per seam');
 });
 
@@ -130,6 +138,51 @@ test('the column never moves without the lock flag, nor the flag clears without 
   }
 });
 
+// The link seam's contract, RUN against a fake API whose text editor refuses a binary file the way
+// the real one does, with the message the extension host logs.
+async function click(source, file, { binary = false, location } = {}) {
+  const calls = [];
+  const E$ = {
+    Uri: { file: (at) => at },
+    window: {
+      showTextDocument: async (at) => {
+        if (binary) throw new Error(`cannot open ${at}. Detail: File seems to be binary and cannot be opened as text`);
+        calls.push(['text', at]);
+        return { revealRange: (range) => calls.push(['reveal', range]) };
+      },
+    },
+    commands: { executeCommand: async (command, at) => { calls.push([command, at]); } },
+  };
+  const T = new Function('E$', `${source}\nreturn T;`)(E$);
+  await Object.create(T.prototype).openFile(file, location);
+  return calls;
+}
+
+const linksSeam = declaredExtensions(seams).find((entry) => entry.name === 'chat-links').extension;
+
+test('a chat link the text editor refuses opens in the editor VS Code picks for it', async () => {
+  const stock = `class T{${OPEN}}`;
+  await assert.rejects(click(stock, '/work/shot.png', { binary: true }), /binary/,
+    'the fixture no longer models the link that does nothing');
+  const { source, refused } = linksSeam.apply(stock);
+  assert.ok(!refused, refused);
+  assert.deepEqual(await click(source, '/work/shot.png', { binary: true }), [['vscode.open', '/work/shot.png']]);
+  assert.deepEqual(await click(source, '/work/shot.png', { binary: true, location: { searchText: 'x' } }),
+    [['vscode.open', '/work/shot.png']], 'a location in a file with no text threw');
+  assert.deepEqual(await click(source, '/work/notes.md', { location: { searchText: 'x' } }),
+    [['text', '/work/notes.md'], ['reveal', 'x']], 'a text file no longer opens as text, at its location');
+});
+
+// The bundle opens documents as text in other places too; this one is found by the location it goes
+// on to seek, so another text open is neither rewritten nor mistaken for it.
+test('the chat open is told from every other text open by the location it seeks', () => {
+  const other = 'openConfig(){E$.window.showTextDocument(z).then((W)=>{W.show()})}';
+  const { source, refused } = linksSeam.apply(`class T{${other}${OPEN}}`);
+  assert.ok(!refused, refused);
+  assert.ok(source.includes(other), 'another text open was rewritten');
+  assert.ok(linksSeam.apply(`class T{${other}}`).refused, 'a bundle without the chat open was patched');
+});
+
 // The server's manifest, naming the one folder it loads for the extension.
 function manifest(dir, folder, version) {
   const file = path.join(dir, 'extensions.json');
@@ -154,7 +207,7 @@ test('what the loaded copy lacks is read off the disk, from the folder the manif
   const { dir } = tree();
   assert.deepEqual(missingPatches(dir), [], 'a folder no manifest names is not the copy the server runs');
   update(dir, '9.9.10');
-  assert.deepEqual(missingPatches(dir).map((entry) => entry.seam), ['chat-icon', 'chat-column']);
+  assert.deepEqual(missingPatches(dir).map((entry) => entry.seam), ['chat-icon', 'chat-column', 'chat-links']);
   patchExtensions(dir);
   assert.deepEqual(missingPatches(dir), []);
 });
@@ -210,7 +263,7 @@ test('an update that lands while the app runs is patched, and the strip is told'
 // itself. Holding both spellings is what stops the next one costing an evening.
 test('the icon anchor holds a family of spellings, not the one that shipped last', () => {
   for (const [label, icon] of [['lookup table', ICON_TABLE], ['if/else chain', ICON_CHAIN]]) {
-    const { dir, file } = tree(`${STRINGS}class T{${icon}${STATE}${COLUMN}}\n`);
+    const { dir, file } = tree(`${STRINGS}class T{${icon}${STATE}${COLUMN}${OPEN}}\n`);
     assert.equal(patchExtensions(dir).length, 1, label);
     const patched = read(file);
     assert.match(patched, /__CT_CHAT_ICON_2__/, label);
@@ -252,9 +305,9 @@ test('a string the seam reads that has moved is reported, not silently obeyed', 
   assert.match(gone.notes.join(' '), /state union has moved/);
 });
 
-test('one seam whose shape has moved does not take the other down', () => {
+test('one seam whose shape has moved does not take the others down', () => {
   const { dir, file } = tree(BUNDLE.replace('K=this.findUnusedColumn(),W=!0', 'K=this.pickColumn(),W=!0'));
-  assert.deepEqual(patchExtensions(dir), ['chat-icon in anthropic.claude-code-9.9.9-darwin-arm64']);
+  assert.deepEqual(patchExtensions(dir), ['chat-icon + chat-links in anthropic.claude-code-9.9.9-darwin-arm64']);
   const patched = read(file);
   assert.match(patched, /__CT_CHAT_ICON_2__/, 'the seam that still matches was skipped too');
   assert.doesNotMatch(patched, /__CT_CHAT_COLUMN_2__/);
@@ -281,7 +334,8 @@ test('a shape that has moved restores the stock bundle rather than leaving an ol
   // The next version of the extension, patched by the version of this patcher that is now gone.
   const moved = BUNDLE
     .replace('this.panelTab.iconPath=', 'this.panelTab.icon=')
-    .replace('K=this.findUnusedColumn(),W=!0', 'K=this.pickColumn(),W=!0');
+    .replace('K=this.findUnusedColumn(),W=!0', 'K=this.pickColumn(),W=!0')
+    .replace('showTextDocument(z).then(', 'showTextDocument(z,{}).then(');
   fs.writeFileSync(`${file}.ct-orig`, moved);
 
   assert.deepEqual(patchExtensions(dir), []);
