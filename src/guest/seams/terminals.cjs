@@ -81,7 +81,11 @@ module.exports = {
 
     &.is-active {
       color: var(--vscode-tab-activeForeground, var(--vscode-foreground));
-      &::before { background: var(--modern-ui-tab-active-background, var(--vscode-tab-activeBackground)); }
+      /* The tint's tab before the editor's own variable, which also paints the view switcher and
+         the branch pills: those stay at a plate's wash, and a tab is louder. */
+      &::before {
+        background: var(--ct-tab, var(--modern-ui-tab-active-background, var(--vscode-tab-activeBackground)));
+      }
     }
   }
 

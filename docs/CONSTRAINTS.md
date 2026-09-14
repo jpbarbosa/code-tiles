@@ -464,6 +464,15 @@ attachment pill mixes 85% of it, and a `background-color` of ours would have lef
 behind the block they sit in.
 **[checked]**
 
+**A theme's modern tab can be SEE-THROUGH, and a chroma set on a see-through colour barely reaches
+the screen.** Monokai Pro sets no `modernTab.activeBackground`, so the editor falls back to
+`list.inactiveSelectionBackground`, a 5% grey, and writes it as `rgba(186, 182, 192, 0.05)` - an
+opaque theme colour arrives as hex, a translucent one as `rgba()`. A relative colour keeps the alpha,
+so `oklch(from X l C h)` on it paints a fraction of `C` over the row: C 0.016 measured for 0.055.
+CSS can read the colour but not its alpha, so the `tint` seam's `init` flattens it onto the surface
+under the tab on every sweep, and an opaque theme's tab is used as it is. Check a colour on the theme
+the tiles run: every project profile here is Monokai, a scratch window's default is Dark 2026. **[checked]**
+
 **The editor's own frame moves between versions.** The inset it floats its parts in was 4px on
 every side in one release and flush left and top with 8px on the right in the next. Nothing
 here may depend on that number: the app's gutter is its own, and the `frame` seam is the only

@@ -3,16 +3,20 @@
 const { groundShare, rungOf, stateOf, survives } = require('../rungs.cjs');
 
 const STYLE_ID = 'code-tiles-tint';
+const TAB_BASES_ID = 'code-tiles-tint-tab-bases';
 
 // The project's share of each mix at `strong`, the rung of 1. The ground's own share is not here:
 // the shell paints a tile's ground before that tile has a window, so it lives in `rungs.cjs`
 // where both sides read it.
 const SHARE = {
   veil: 7,     // over the whole of a part
-  wash: 26,    // on a plate: the side bar's title row, the menubar, an active tab
+  wash: 26,    // on a plate: the side bar's title row, the menubar, the branch pills, a tab
 };
 // A mark ON that ground is a colour rather than a mix, so its own dial is chroma.
 const INK = { focused: 0.05, quiet: 0.025 };
+// An active tab is a plate told apart by colour alone, so its dial is chroma too: turning it up
+// never lifts the tab off the row the other plates sit in.
+const TAB = { chroma: 0.1 };
 // Your own turn in the chat is a BLOCK in the reading column, so what makes it a bubble is its
 // distance from the page rather than its colour: the step is held while the dial moves the
 // chroma. TOWARD THE TEXT rather than up, so one number lifts it on a dark theme and drops it on
@@ -151,6 +155,61 @@ function turnCss(context, page) {
 `;
 }
 
+// Where an active tab is painted: its theme colour, and the surface under it - the editor's tab
+// row is transparent over the editor, and the panel's title paints nothing of its own.
+const TAB_BASES = {
+  '--ct-editor-tab-base': ['--vscode-modernEditorTab-activeBackground', '--vscode-editor-background'],
+  '--ct-panel-tab-base': ['--vscode-modernTab-activeBackground', '--vscode-panel-background'],
+};
+
+// A theme colour as [r, g, b, alpha]. The editor writes an opaque one as hex and a translucent one
+// as rgba() - Monokai's tab arrives as rgba(186, 182, 192, 0.05) - so both are read; anything else
+// is null, and stays as the theme wrote it.
+function channels(value) {
+  const text = String(value).trim();
+  const hex = /^#([0-9a-f]{6})([0-9a-f]{2})?$/i.exec(text);
+  if (hex) {
+    const [r, g, b, a] = (hex[1] + (hex[2] || 'ff')).match(/../g).map((pair) => parseInt(pair, 16));
+    return [r, g, b, a / 255];
+  }
+  const rgb = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+)(%?))?\s*\)$/i.exec(text);
+  if (!rgb) return null;
+  const alpha = rgb[4] === undefined ? 1 : Number(rgb[4]) / (rgb[5] ? 100 : 1);
+  return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3]), alpha];
+}
+
+// A see-through colour over an opaque surface, as the one opaque colour the eye gets, blended as
+// the browser blends it. Null where there is nothing to flatten: an opaque colour stays the theme's.
+function flatten(colour, surface) {
+  const top = channels(colour);
+  const under = channels(surface);
+  if (!top || !under || top[3] >= 1 || under[3] < 1) return null;
+  const mixed = [0, 1, 2].map((i) => Math.round(top[i] * top[3] + under[i] * (1 - top[3])));
+  return `#${mixed.map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+}
+
+// Said on every sweep, because a theme change announces nothing a seam can hear, and written only
+// when it has changed. A sheet of its own rather than a line in the seams' one: that is rendered
+// from the context alone, and this is read out of the theme.
+function writeTabBases(document) {
+  const workbench = document.querySelector('.monaco-workbench');
+  if (!workbench || !document.head) return;
+  const theme = document.defaultView.getComputedStyle(workbench);
+  const lines = Object.entries(TAB_BASES).flatMap(([name, [colour, surface]]) => {
+    const flat = flatten(theme.getPropertyValue(colour), theme.getPropertyValue(surface));
+    return flat ? [`  ${name}: ${flat};`] : [];
+  });
+  const css = lines.length ? `.monaco-workbench {\n${lines.join('\n')}\n}\n` : '';
+  let element = document.getElementById(TAB_BASES_ID);
+  if (!element && !css) return;
+  if (!element) {
+    element = document.createElement('style');
+    element.id = TAB_BASES_ID;
+    document.head.appendChild(element);
+  }
+  if (element.textContent !== css) element.textContent = css;
+}
+
 // The project's colour, worn by the parts, by the ground they float on - louder on the tile you
 // are in than on the ones you are not, which is what makes focus read across a grid - and by your
 // own turns in its chat.
@@ -261,17 +320,22 @@ ${tokens(context)}
     background-color: var(--modern-ui-shell-background) !important;
   }
 
-  /* The active tab wears the hue too, wherever there is one: a file, a Claude session, the view
-     switcher's own active item, and the terminal tabs the terminals seam mirrors. All of them
-     read these two variables and nothing else, so this is the one place it is said - and the
-     unfocused-group variants derive from the first, so they follow with nothing added here.
-     The hover washes are left alone: they are the theme's translucent white over whatever is
-     under them, which is now a tinted tab. */
+  /* The active tab is a plate's lightness at a chroma of its own, so it says where you are by
+     colour alone: a file, a Claude session, the terminal strip's tab through --ct-tab. Its plate
+     is the theme's tab colour flattened onto its surface where that colour is see-through (init,
+     below): a translucent pill shows only its alpha's share of a chroma. The view switcher and
+     the branch pills keep the theme's own, the unfocused-group variants follow the editor's, and
+     the hover washes stay the theme's translucent white over whatever is under them. */
   &.modern-ui-tabs {
-    --modern-ui-editor-tab-active-background:
-      color-mix(in oklab, var(--vscode-modernEditorTab-activeBackground) var(--ct-wash), var(--ct-brand));
+    --ct-tab-chroma: ${chroma(TAB.chroma, rungOf(context))};
+    --modern-ui-editor-tab-active-background: oklch(from color-mix(in oklab,
+      var(--ct-editor-tab-base, var(--vscode-modernEditorTab-activeBackground)) var(--ct-wash),
+      var(--ct-brand)) l var(--ct-tab-chroma) ${context.hue});
     --modern-ui-tab-active-background:
       color-mix(in oklab, var(--vscode-modernTab-activeBackground) var(--ct-wash), var(--ct-brand));
+    --ct-tab: oklch(from color-mix(in oklab,
+      var(--ct-panel-tab-base, var(--vscode-modernTab-activeBackground)) var(--ct-wash),
+      var(--ct-brand)) l var(--ct-tab-chroma) ${context.hue});
   }
 
   & .part.sidebar .composite.title {
@@ -306,6 +370,8 @@ ${tokens(context)}
   // content document has a head, and it clears the INLINE properties there and nothing else.
   init(api) {
     api.eachDocument((document) => {
+      // The top document is the one holding the workbench, and so the theme a tab is flattened from.
+      if (document.defaultView && !document.defaultView.frameElement) return void writeTabBases(document);
       const root = document.documentElement;
       if (!root) return;
       const surface = surfaceFor(document);

@@ -199,10 +199,12 @@ const READ = `(() => {
       return fill ? getComputedStyle(fill).backgroundColor : null;
     })(),
     shellGround: workbench ? getComputedStyle(workbench).getPropertyValue('--modern-ui-shell-background').trim() : null,
-    // The tint's own dial, read where it is spent rather than off the context that set it. The
-    // middle rung is 93% / 74% / 0.05 on a focused window, which is also where a window that was
-    // told nothing at all lands.
-    tintRung: workbench ? ['--ct-veil', '--ct-wash', '--ct-ink-chroma']
+    // The tint's dial, read where it is spent. The middle rung, which a window told nothing lands
+    // on, is 96.15% / 85.7% / 0.0275 / 0.055 on a focused window.
+    tintRung: workbench ? ['--ct-veil', '--ct-wash', '--ct-ink-chroma', '--ct-tab-chroma']
+      .map((name) => getComputedStyle(workbench).getPropertyValue(name).trim()) : null,
+    // What a see-through theme tab was flattened to; empty on a theme whose tab is opaque.
+    tabBases: workbench ? ['--ct-editor-tab-base', '--ct-panel-tab-base']
       .map((name) => getComputedStyle(workbench).getPropertyValue(name).trim()) : null,
     // Your own turns in the chat, which are the one surface a mix cannot lift: read as the
     // variable the extension's own rule paints the bubble with, against the page in the same

@@ -145,13 +145,19 @@ test('a tint rung scales every amount the seam spends, and the middle one is the
       wash: Number(css.match(/--ct-wash: ([\d.]+)%/)[1]),
       veil: Number(css.match(/--ct-veil: ([\d.]+)%/)[1]),
       ink: Number(css.match(/--ct-ink-chroma: ([\d.]+)/)[1]),
+      tab: Number(css.match(/--ct-tab-chroma: ([\d.]+)/)[1]),
     };
   };
 
-  const medium = { ground: 79.1, wash: 85.7, veil: 96.15, ink: 0.0275 };
+  const medium = { ground: 79.1, wash: 85.7, veil: 96.15, ink: 0.0275, tab: 0.055 };
   assert.deepEqual(amounts({ tint: 'medium' }), medium);
   assert.deepEqual(amounts({ tint: 'nonsense' }), medium, 'an unknown rung is the middle one');
   assert.deepEqual(amounts({ tint: undefined }), medium, 'and so is a window told nothing');
+  // An active tab is a plate's lightness at a chroma of its own, and the view switcher and the
+  // branch pills, which share the editor's own tab variable, stay the plate itself.
+  const css = tint.css(contexts[0]);
+  assert.match(css, /--modern-ui-editor-tab-active-background: oklch\(from color-mix\([^;]*--ct-wash[^;]*--ct-tab-chroma/);
+  assert.match(css, /--modern-ui-tab-active-background:\s*color-mix\([^;]*var\(--ct-wash\)/);
   // A quiet tile is quieter at every rung, which is the whole reason focus reads across a grid.
   assert.ok(amounts({ tint: 'medium', focused: false }).ground > medium.ground);
 
@@ -160,7 +166,9 @@ test('a tint rung scales every amount the seam spends, and the middle one is the
     for (const key of ['ground', 'wash', 'veil']) {
       assert.equal(moved[key] < medium[key], louder, `${rung} moved ${key} the wrong way`);
     }
-    assert.equal(moved.ink > medium.ink, louder, `${rung} moved the ink the wrong way`);
+    for (const key of ['ink', 'tab']) {
+      assert.equal(moved[key] > medium[key], louder, `${rung} moved the ${key} the wrong way`);
+    }
   }
 });
 
@@ -213,6 +221,64 @@ function webviewSheet(seam, context, raws) {
   assert.equal(element.parentElement, root, 'the sheet has to land on the root, not in <head>');
   return element.textContent;
 }
+
+// The top document, as the tint seam reads it: the theme's own values on the workbench, and the
+// sheet the seam writes after each visit. One visit per theme, in order, so a theme change is a
+// second visit to the same document.
+function tabBaseSheets(...themes) {
+  const seam = seams.find((candidate) => candidate.name === 'tint');
+  const element = { id: '', textContent: '' };
+  let theme = {};
+  let appended = false;
+  const document = {
+    defaultView: {
+      frameElement: null,
+      getComputedStyle: () => ({ getPropertyValue: (name) => theme[name] || '' }),
+    },
+    head: { appendChild: () => { appended = true; } },
+    querySelector: (selector) => (selector === '.monaco-workbench' ? {} : null),
+    getElementById: () => (appended ? element : null),
+    createElement: () => element,
+  };
+  const sheets = [];
+  seam.init({
+    context: contexts[0],
+    eachDocument: (visit) => themes.forEach((next) => {
+      theme = next;
+      visit(document);
+      sheets.push(element.textContent);
+    }),
+  });
+  return sheets;
+}
+
+// As a live Monokai Pro window holds them: the editor writes a translucent colour as rgba().
+const MONOKAI_TABS = {
+  '--vscode-modernEditorTab-activeBackground': 'rgba(186, 182, 192, 0.05)',
+  '--vscode-modernTab-activeBackground': 'rgba(186, 182, 192, 0.05)',
+  '--vscode-editor-background': '#222222',
+  '--vscode-panel-background': '#2c2c2c',
+};
+
+// Monokai Pro leaves the modern tab unset, so the editor falls back to a 5% grey, and a chroma set
+// on that grey barely reaches the screen. The seam hands the tab that grey flattened onto the
+// surface under it instead - and leaves an opaque theme's own colour alone.
+test('a see-through tab is flattened onto its surface, and an opaque one is left as it is', () => {
+  const opaque = {
+    ...MONOKAI_TABS,
+    '--vscode-modernEditorTab-activeBackground': '#2c2d2e',
+    '--vscode-modernTab-activeBackground': '#2c2d2e',
+  };
+  const [flattened, cleared] = tabBaseSheets(MONOKAI_TABS, opaque);
+  assert.match(flattened, /--ct-editor-tab-base: #2a292a;/);
+  assert.match(flattened, /--ct-panel-tab-base: #333333;/);
+  assert.equal(cleared, '', 'a theme whose tab is opaque takes the flattening away again');
+  const [spelled] = tabBaseSheets({ ...MONOKAI_TABS, '--vscode-modernEditorTab-activeBackground': '#bab6c00c' });
+  assert.match(spelled, /--ct-editor-tab-base: #292929;/, 'and hex with an alpha pair is read too');
+  const css = seams.find((seam) => seam.name === 'tint').css(contexts[0]);
+  assert.match(css, /var\(--ct-editor-tab-base, var\(--vscode-modernEditorTab-activeBackground\)\)/);
+  assert.match(css, /var\(--ct-panel-tab-base, var\(--vscode-modernTab-activeBackground\)\)/);
+});
 
 // The chat tab's icon as the workbench actually spells it: the tab carries the panel's view type
 // on `data-resource-name`, and the icon is an inline background-image pointing at a remote
