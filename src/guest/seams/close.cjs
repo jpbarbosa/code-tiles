@@ -14,11 +14,11 @@
 // duplicate worth having: in the grid there are no chips, so this is the only one there is. The
 // tile's other gesture - dragging it among the others - is on the badge, in `identity`.
 const BUTTON = 'ct-close';
-// A plate the size of a chip in the strip, so the app's marks are one size wherever they are, and
-// far enough off the corner that the card's own radius has room to curve past it.
-const SIZE = 28;
-const GLYPH = 22;
-const INSET = 7;
+// The size of the editor's own action buttons, and far enough off the corner that the card's own
+// radius has room to curve past it.
+const SIZE = 22;
+const GLYPH = 16;
+const INSET = 10;
 
 module.exports = {
   name: 'close',
@@ -51,30 +51,24 @@ module.exports = {
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: var(--vscode-cornerRadius-large, 8px);
-  /* A plate, the way the branch pills and the side bar's title row are plates: the surface under
-     it, lifted by the project's own hue. That surface is the editor's, since this corner is the
-     editor's - and it arrives here already tinted, because this button is a child of the
-     workbench like every part is. Without the tint seam the mix has nothing to move toward and
-     the plate is the surface itself, which is the right way for it to disappear. */
-  background-color: color-mix(in oklab,
-    var(--vscode-editor-background) var(--ct-wash, 74%),
-    var(--ct-brand, var(--vscode-editor-background)));
-  /* The ink the activity bar's icons and the side bar's title row wear, so the app's marks in a
-     window read as one hand. The theme's own icon colour is what a window without the tint gets. */
-  color: var(--ct-ink, var(--vscode-icon-foreground));
+  border-radius: var(--vscode-cornerRadius-small, 4px);
+  /* Red, where every other mark the app puts in a window wears the project's hue: the panel has a
+     close of its own in the same column, and this one closes the whole project. The theme's red,
+     mixed into the surface under it at rest and on its own under the hand. */
+  --ct-close-red: var(--vscode-charts-red, #f14c4c);
+  background-color: color-mix(in oklab, var(--vscode-editor-background) 78%, var(--ct-close-red));
+  color: color-mix(in oklab, var(--ct-close-red) 85%, var(--vscode-foreground));
   font-size: ${GLYPH}px;
-  opacity: 0.65;
   cursor: default;
   /* Nothing in the workbench sets a z-index on a part, so one is enough to sit over them all -
      and a dialog, a context menu or Quick Open carries its own thousands and still wins. */
   z-index: 1;
-}
 
-.monaco-workbench .${BUTTON}:hover,
-.monaco-workbench .${BUTTON}:focus-visible {
-  opacity: 1;
-  filter: brightness(1.18);
+  &:hover,
+  &:focus-visible {
+    background-color: var(--ct-close-red);
+    color: #fff;
+  }
 }
 `,
 

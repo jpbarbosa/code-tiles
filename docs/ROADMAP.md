@@ -47,7 +47,7 @@ What the tree does today, what comes next, and what to check when the server is 
   is the editor's menu button, so a press is HELD rather than taken: `preventDefault` on the
   pointerdown suppresses the mousedown the menu opens on, and a release that never moved gives
   that press back. `Esc` puts back the order the press began with, in either view.
-- A close × on every tile, in its top right corner on a plate of the project's own hue: the chips
+- A close × on every tile, in its top right corner on a plate of the theme's red: the chips
   are single view's, so the grid had `⌃⌘W` and nothing else.
 - The empty stage offers what it already knows: up to eight projects as tiles, four to a row, in
   the app's one project order. Clicking them ticks them and the button under them counts what is
@@ -228,8 +228,8 @@ What the tree does today, what comes next, and what to check when the server is 
   `init` half reports the icon the tab ended up with, which is the only way to watch that patch
   work rather than land),
   `close` (the × that closes this project, in the corner the window keeps for itself, on a plate
-  of the project's own hue - the one the branch pills and the side bar's title row already wear,
-  so the app's marks in a window read as one hand. One button belonging to the WINDOW rather than
+  of the theme's red, where the app's other marks wear the project's hue: the panel's close is in
+  the same column, and this one closes the project. One button belonging to the WINDOW rather than
   an item in a part's toolbar: a tile with Claude's chat beside the code is two editor groups, and
   a close in each group's actions would be two ways to close one project, neither of them about
   the tile - with the room for it taken out of the editor's title row rather than laid over it),

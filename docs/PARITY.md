@@ -31,7 +31,7 @@ rebuilt, with the reason in the last section.
 | Gutter drag to resize, double-click to even | yes | yes | shares in both, persisted in both. New here: the key is the grid SHAPE rather than the track count, so the 2x2 you dragged with four projects is the one three of them fall back to; the geometry is a pure function with tests; and `⌃⌘0` evens both axes at once |
 | Zoom every tile together, `⌘+` / `⌘-` / `⌘0` | no | yes | the old `⌘+` landed on the focused guest alone, which is what `--gpx` and the dpr ratio existed to chase |
 | Focus glow in the gutter, tinted ground inside the tile | yes | yes | |
-| A close affordance on a tile in the grid | yes | yes | the app's own `×` in the window's top right corner, on a plate of the project's hue, drawn by a seam and given room by the editor's title row - the old one was a host button floated over a slot the guest cut for it, sized from a height measured in the window |
+| A close affordance on a tile in the grid | yes | yes | the app's own `×` in the window's top right corner, on a plate of the theme's red, drawn by a seam and given room by the editor's title row - the old one was a host button floated over a slot the guest cut for it, sized from a height measured in the window |
 | Empty state | yes | yes | |
 
 ## Projects: opening, closing, ordering
