@@ -81,7 +81,11 @@ module.exports = {
 
     &.is-active {
       color: var(--vscode-tab-activeForeground, var(--vscode-foreground));
-      &::before { background: var(--modern-ui-tab-active-background, var(--vscode-tab-activeBackground)); }
+      /* The halo the tint seam puts round an active editor tab, and none without that seam. */
+      &::before {
+        background: var(--modern-ui-tab-active-background, var(--vscode-tab-activeBackground));
+        box-shadow: var(--ct-tab-glow, none);
+      }
     }
   }
 

@@ -78,9 +78,10 @@ What the tree does today, what comes next, and what to check when the server is 
 - Project colour, one of the app's three preferences (`⌘,`): how much of its hue a window wears, on a dial
   for the tile you are in and a dial for the tiles you are not, three rungs each. A rung is a
   MULTIPLIER on every amount the tint spends - the veil over a part, the wash on a plate, the
-  ground, the ink on it, the chat bubble's chroma - and the three are a ratio rather than a spread,
-  so a step means the same thing wherever on the dial it is taken. A window is handed the ONE rung
-  that applies to it, never the preference, so which dial it came off stays the app's business.
+  ground, the ink on it, the halo round an active tab, the chat bubble's chroma - and the three
+  are a ratio rather than a spread, so a step means the same thing wherever on the dial it is
+  taken. A window is handed the ONE rung that applies to it, never the preference, so which dial
+  it came off stays the app's business.
   Persisted, and every open window follows the moment it moves, with no reload.
 - Corners, another preference: smooth, the squircle macOS draws its windows with, or round. Every
   corner the strip, the panels and the tiles draw follows it at once - a tile through its context,
@@ -190,7 +191,8 @@ What the tree does today, what comes next, and what to check when the server is 
   Claude Code - is simply absent),
   `ground` (the theme's shell colour reported back so the app's ground matches it),
   `tint` (the project's hue mixed into the parts' own surfaces and their chrome, into every
-  active tab, into every plate that floats above a part rather than sitting inside one - the
+  active tab, glowing round the one in the group you are in and the terminal strip's, into every
+  plate that floats above a part rather than sitting inside one - the
   palette and every quick pick, find, hover, suggest, the code-action list, menus and toasts,
   named one by one because the theme names them one by one, and surfaces only, since half of
   the theme's backgrounds are translucent highlights and a veil under one paints a line where

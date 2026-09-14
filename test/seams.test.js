@@ -131,10 +131,10 @@ test('the badge offers a grab only where there is something to rearrange', () =>
 });
 
 // The tint dial. Its whole contract is that a rung is a MULTIPLIER on what the seam already
-// spends, so one name moves the veil, the wash, the ground and the ink together and a rung means
-// the same thing on either dial. The other half is that a window is handed ONE rung - which of
-// the two dials it came off is the app's business - so a rung nobody set, and a rung that is no
-// longer a rung, both land on the middle one, which is what a window with nothing set wears.
+// spends, so one name moves the veil, the wash, the ground, the ink and the halo together and a
+// rung means the same thing on either dial. The other half is that a window is handed ONE rung -
+// which of the two dials it came off is the app's business - so a rung nobody set, and a rung that
+// is no longer a rung, both land on the middle one, which is what a window with nothing set wears.
 test('a tint rung scales every amount the seam spends, and the middle one is the default', () => {
   const tint = seams.find((seam) => seam.name === 'tint');
   const amounts = (context) => {
@@ -145,23 +145,45 @@ test('a tint rung scales every amount the seam spends, and the middle one is the
       wash: Number(css.match(/--ct-wash: ([\d.]+)%/)[1]),
       veil: Number(css.match(/--ct-veil: ([\d.]+)%/)[1]),
       ink: Number(css.match(/--ct-ink-chroma: ([\d.]+)/)[1]),
+      glow: Number(css.match(/--ct-tab-glow: [^;]*\/ ([\d.]+)\)/)[1]),
     };
   };
 
-  const medium = { ground: 79.1, wash: 85.7, veil: 96.15, ink: 0.0275 };
+  const medium = { ground: 79.1, wash: 85.7, veil: 96.15, ink: 0.0275, glow: 0.55 };
   assert.deepEqual(amounts({ tint: 'medium' }), medium);
   assert.deepEqual(amounts({ tint: 'nonsense' }), medium, 'an unknown rung is the middle one');
   assert.deepEqual(amounts({ tint: undefined }), medium, 'and so is a window told nothing');
   // A quiet tile is quieter at every rung, which is the whole reason focus reads across a grid.
-  assert.ok(amounts({ tint: 'medium', focused: false }).ground > medium.ground);
+  const quiet = amounts({ tint: 'medium', focused: false });
+  assert.ok(quiet.ground > medium.ground);
+  assert.ok(quiet.glow < medium.glow, 'and so is the halo round its active tab');
 
   for (const [rung, louder] of [['subtle', false], ['strong', true]]) {
     const moved = amounts({ tint: rung });
     for (const key of ['ground', 'wash', 'veil']) {
       assert.equal(moved[key] < medium[key], louder, `${rung} moved ${key} the wrong way`);
     }
-    assert.equal(moved.ink > medium.ink, louder, `${rung} moved the ink the wrong way`);
+    for (const key of ['ink', 'glow']) {
+      assert.equal(moved[key] > medium[key], louder, `${rung} moved the ${key} the wrong way`);
+    }
   }
+});
+
+// The halo is the tint seam's and the terminal strip's pill is another seam's, so one variable
+// name is all that ties them: renamed on either side, the strip stops glowing and nothing says so.
+// An editor tab wears it on its fill's pseudo-element, which leaves the fill's shadows the editor's.
+test('an active tab and the terminal strip wear the one halo, and the editor keeps its shadows', () => {
+  const tint = seams.find((seam) => seam.name === 'tint').css(contexts[0]);
+  const terminals = seams.find((seam) => seam.name === 'terminals').css(contexts[0]);
+
+  assert.match(tint, /--ct-tab-glow: 0 0 \d+px\s/);
+  assert.match(tint, /\.tab\.active > \.tab-fill::after \{[^}]*box-shadow: var\(--ct-tab-glow\);/);
+  assert.doesNotMatch(tint, /\.tab-fill \{[^}]*box-shadow/, 'the fill\'s own list is the editor\'s');
+  assert.match(terminals, /&::before \{[^}]*box-shadow: var\(--ct-tab-glow, none\);/);
+  // At the brand's own chroma the halo met the fill it rings in the same colour, and read as its edge.
+  const chromaOf = (pattern) => Number(tint.match(pattern)[1]);
+  assert.ok(chromaOf(/--ct-tab-glow: [^;]*oklch\(from var\(--ct-brand\) [\d.]+ ([\d.]+) h/)
+    > chromaOf(/--ct-brand: oklch\([\d.]+ ([\d.]+)/), 'the halo is more saturated than the wash');
 });
 
 // The one surface in a window that a mix cannot reach. The theme ships the chat's user turn at

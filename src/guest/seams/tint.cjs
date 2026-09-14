@@ -13,13 +13,15 @@ const SHARE = {
 };
 // A mark ON that ground is a colour rather than a mix, so its own dial is chroma.
 const INK = { focused: 0.05, quiet: 0.025 };
+// The active tab's halo is light rather than a mix, so its dial is the halo's alpha.
+const GLOW = { focused: 1, quiet: 0.5 };
 // Your own turn in the chat is a BLOCK in the reading column, so what makes it a bubble is its
 // distance from the page rather than its colour: the step is held while the dial moves the
 // chroma. TOWARD THE TEXT rather than up, so one number lifts it on a dark theme and drops it on
 // a light one.
 const TURN = { step: 10, chroma: 0.028 };
 
-const chroma = (amount, rung) => Math.round(amount * rung * 10000) / 10000;
+const scaled = (amount, rung) => Math.round(amount * rung * 10000) / 10000;
 
 // The tokens, said once and spent in two sheets: a frame shares no cascade with the document
 // holding it, so the workbench's block and a webview's own each have to declare them.
@@ -32,6 +34,16 @@ const tokens = (context) => `  --ct-brand: oklch(0.62 0.15 ${context.hue});
   --ct-veil: ${survives(SHARE.veil, rungOf(context))};`;
 
 const veiled = (source) => `color-mix(in oklab, var(${source}) var(--ct-veil), var(--ct-brand))`;
+
+// The active tab's halo. The tab row clips 4px above and below a pill and 2px beside the first, so
+// the blur is 3px: 8px left a line under the tab. Its chroma is set past the gamut, landing on the
+// most saturated colour the screen has for the hue, and the 1px layer lifts the rim off the tab's
+// own wash, which a 3px blur alone met at a quarter of its alpha and in the same colour.
+function halo(context) {
+  const alpha = scaled(GLOW[stateOf(context)], rungOf(context));
+  const colour = `oklch(from var(--ct-brand) 0.72 0.3 h / ${alpha})`;
+  return `0 0 1px ${colour}, 0 0 3px ${colour}`;
+}
 
 // Which of the theme's surfaces a webview is drawn over, named by the part it covers.
 const SURFACES = {
@@ -143,7 +155,7 @@ function turnCss(context, page) {
   const step = `color-mix(in oklab, ${page} ${100 - TURN.step}%, var(--vscode-foreground, #fff))`;
   return `
 [class*="userMessage_"] {
-  --app-input-background: oklch(from ${step} l ${chroma(TURN.chroma, rungOf(context))} ${context.hue});
+  --app-input-background: oklch(from ${step} l ${scaled(TURN.chroma, rungOf(context))} ${context.hue});
   /* The hairline was the whole separation; on a painted bubble it reads as a second surface. On
      the element rather than on --app-input-border, which the pills inside it also read. */
   border-color: transparent;
@@ -189,9 +201,12 @@ ${tokens(context)}
      too, and the hue arrives at a chroma low enough to read as a wash.
      A quiet tile wears the same mark at half the chroma: the ground under it is already the
      quieter one, so the tie is the only thing left to say more softly. */
-  --ct-ink-chroma: ${chroma(INK[stateOf(context)], rungOf(context))};
+  --ct-ink-chroma: ${scaled(INK[stateOf(context)], rungOf(context))};
   --ct-ink: oklch(from color-mix(in oklab, var(--ct-source-icon) 80%, var(--modern-ui-shell-background))
     l var(--ct-ink-chroma) ${context.hue});
+
+  /* The halo round the active tab, which the terminal strip's pill wears too. */
+  --ct-tab-glow: ${halo(context)};
 
   & > * {
     --vscode-sideBar-background: ${veiled('--ct-source-sidebar')};
@@ -272,6 +287,18 @@ ${tokens(context)}
       color-mix(in oklab, var(--vscode-modernEditorTab-activeBackground) var(--ct-wash), var(--ct-brand));
     --modern-ui-tab-active-background:
       color-mix(in oklab, var(--vscode-modernTab-activeBackground) var(--ct-wash), var(--ct-brand));
+
+    /* The one in the group you are in wears the halo; another group's active tab stays a plate.
+       On a pseudo-element, since the fill's own box-shadow list is the editor's - its border line,
+       and the pinned tabs' last one - and struck round the fill's border box, where the pill is. */
+    & .part.editor .editor-group-container.active .tabs-container > .tab.active > .tab-fill::after {
+      content: "";
+      position: absolute;
+      inset: calc(-1 * var(--vscode-strokeThickness)) 0;
+      border-radius: inherit;
+      box-shadow: var(--ct-tab-glow);
+      pointer-events: none;
+    }
   }
 
   & .part.sidebar .composite.title {

@@ -198,6 +198,15 @@ const READ = `(() => {
       const fill = document.querySelector('.part.editor .tabs-container > .tab.active > .tab-fill');
       return fill ? getComputedStyle(fill).backgroundColor : null;
     })(),
+    // The halo round the active tab, read where it paints: the pseudo-element on an editor tab's
+    // fill, and the terminal strip's pill. `none` is the tint seam's variable not reaching it.
+    activeTabGlow: [
+      ['.part.editor .editor-group-container.active .tabs-container > .tab.active > .tab-fill', '::after'],
+      ['.ct-terminals-tab.is-active', '::before'],
+    ].map(([selector, pseudo]) => {
+      const el = document.querySelector(selector);
+      return el ? getComputedStyle(el, pseudo).boxShadow : null;
+    }),
     shellGround: workbench ? getComputedStyle(workbench).getPropertyValue('--modern-ui-shell-background').trim() : null,
     // The tint's own dial, read where it is spent rather than off the context that set it. The
     // middle rung is 93% / 74% / 0.05 on a focused window, which is also where a window that was

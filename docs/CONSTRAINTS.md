@@ -304,6 +304,14 @@ pixel brighter than a 7% hue over a near-black byte-identical. Rewriting one of 
 has to CAPTURE it on an ancestor first: a custom property cannot reference itself on one element,
 that is a cycle, and it computes to nothing. **[checked]**
 
+**A modern tab row CLIPS, 4px outside its pills and 2px at its start.** An editor tab is a 24px fill
+in a 32px row whose `.tabs-container` is `overflow: hidden`, and the first fill sits 2px in from that
+edge; the terminal strip is built to the same numbers. Anything drawn round a pill is cut there in a
+straight line. The active tab's halo is a 3px blur for it, where 8px left a line under the tab; even
+so, beside the first tab it steps 12/255 off the bare row on a teal project and 18 on a red one, and
+the 2px that steps 3 reads as an outline rather than a glow. **[checked]** - by ink, on Monokai Pro
+at 2x, in hidden windows.
+
 **An activity bar icon is written INLINE on its label from JS**, by `CompositeBarActionViewItem`,
 so no variable reaches the resting ones - only `!important` does. A codicon paints with `color`;
 an extension's own icon is a mask and paints with `background-color`, so both are needed. Keep the
