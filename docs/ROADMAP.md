@@ -69,9 +69,12 @@ What the tree does today, what comes next, and what to check when the server is 
   is a taste rather than a fact: it wins over the derivation until Automatic takes it back off the
   entry, and it stays with the FOLDER when a tile re-points to another.
 - The layout control: the editor's own three title bar buttons, in the strip, flipping the side
-  bar, the panel or the secondary side bar in every open project at once. A part nobody has
-  chosen for is left alone, and the buttons show the focused window's own answer, so a Cmd+B
-  inside a tile moves them.
+  bar, the panel or the secondary side bar in every open project at once. Showing a part also
+  hands it back its own size in every window that was open for the press - the editor's
+  double-click on its sash - while a Cmd+B inside a tile, and a window opened or reloaded since,
+  keep the size they remember. A part nobody has chosen for is left alone, and the buttons show
+  the focused window's own answer, so a Cmd+B inside a tile moves them; every press reaches every
+  window, even one asking for the state the press before it did.
 - Project colour, one of the app's three preferences (`⌘,`): how much of its hue a window wears, on a dial
   for the tile you are in and a dial for the tiles you are not, three rungs each. A rung is a
   MULTIPLIER on every amount the tint spends - the veil over a part, the wash on a plate, the
@@ -256,7 +259,8 @@ What the tree does today, what comes next, and what to check when the server is 
   editor puts there once its own tab list is off - which is the setting that also gives the
   panel's width back; a right-click on the header still opens the editor's own view menu),
   `layout` (the three parts the strip's layout control flips, through the editor's own
-  keybindings, acting on a change of instruction rather than on every render),
+  keybindings, acting on a new press rather than on every render, and a part it shows sized
+  back through the editor's own sash reset),
   `focus` (a press inside a window claims focus for its project, since a view paints above the
   shell's page and the shell never sees that press - registered on every document the runtime's
   sweep reaches, because a press in the Claude panel lands two frames down in a webview),

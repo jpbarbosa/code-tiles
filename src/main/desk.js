@@ -162,10 +162,13 @@ export class Desk {
     this.render();
   }
 
-  // The layout control: one part, every window, whether it is on screen or not.
+  // The layout control: one part, every window, whether it is on screen or not. Each press is
+  // stamped with when it was made, which makes a second press of the same state news to a window
+  // toggled by hand since, and lets a window tell a press it was open for - one that resets the
+  // part's size - from one older than itself.
   setLayout(part, visible) {
     if (!LAYOUT_PARTS.includes(part)) return;
-    this.#layout = { ...this.#layout, [part]: Boolean(visible) };
+    this.#layout = { ...this.#layout, [part]: { visible: Boolean(visible), at: Date.now() } };
     this.render();
   }
 
@@ -179,7 +182,7 @@ export class Desk {
   #shownParts(focused) {
     const reported = this.#parts.get(focused);
     return Object.fromEntries(LAYOUT_PARTS.map((part) =>
-      [part, reported?.[part] ?? this.#layout[part] ?? LAYOUT_DEFAULTS[part]]));
+      [part, reported?.[part] ?? this.#layout[part]?.visible ?? LAYOUT_DEFAULTS[part]]));
   }
 
   focus(folder) {

@@ -226,8 +226,8 @@ function contextOf(project) {
     // Whether it is the one holding the master cell. Says nothing while it is not tiled.
     maximized: Boolean(project.maximized),
     claudeState: project.claudeState || 'idle',
-    // Which parts the app wants every window showing. A part nobody has chosen for is null, and
-    // the window is left with whatever layout it remembers.
+    // Which parts the app wants every window showing, as the strip's last press on each: whether,
+    // and when. A part nobody has pressed for is null, and the window keeps the layout it remembers.
     layout: project.layout || {},
     // The shape of its corners, from the app's Corners preference, which the card seam draws.
     corners: project.corners || null,

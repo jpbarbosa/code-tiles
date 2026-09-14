@@ -365,6 +365,19 @@ expando defined on the event afterwards lands on the isolated world's own wrappe
 one the page sees. Cmd+B, Cmd+J and Alt+Cmd+B were driven this way against code-server 4.135.0,
 each flipping its part. **[checked]**
 
+**A double-click on a sash is the editor's size reset, and it resets to a PREFERRED size.** The
+grid hands the view before the sash its `preferredWidth` or `preferredHeight`, the view after it
+when that one has none, and splits the row evenly when neither has: the side bars prefer their
+content's width with a 300px floor, the panel 40% of the window's height. That is not what a
+workspace with nothing stored opens at - `min(300, width / 4)` and a third of the height - and
+nothing reaches those. It is no use on a hidden part - the split view ignores it outright while the
+side bar, which snaps, is hidden - so a part is shown first and sized once its class says it is
+showing. A split view keeps its sashes in the order they were CREATED and its views in index order,
+and moving a view parts the two, so a part's sash is found by where it sits. A `dblclick` dispatched
+on it from the preload's isolated world is enough. **[checked]** - in a hidden 1000x800 window on
+4.135.0: a side bar dragged to 460, hidden and shown came back at 300 where the stock toggle
+restored the drag, and the panel at 320 where it restored 417.
+
 **Injected CSS lands before the workbench's own styles.** `webContents.insertCSS` cannot be
 made to land after them, which is what forced `!important` on every rule in the previous
 tree. A `<style>` element the runtime appends to `<head>` and keeps last does not have that
