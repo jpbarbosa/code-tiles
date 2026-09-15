@@ -53,11 +53,12 @@ module.exports = {
   border: 0;
   border-radius: var(--vscode-cornerRadius-small, 4px);
   /* Red, where every other mark the app puts in a window wears the project's hue: the panel has a
-     close of its own in the same column, and this one closes the whole project. The theme's red,
-     mixed into the surface under it at rest and on its own under the hand. */
+     close of its own in the same column, and this one closes the whole project. At rest the red is
+     sunk into the surface under it, plate and glyph both, and the hand or keyboard focus brings it
+     out whole. */
   --ct-close-red: var(--vscode-charts-red, #f14c4c);
-  background-color: color-mix(in oklab, var(--vscode-editor-background) 78%, var(--ct-close-red));
-  color: color-mix(in oklab, var(--ct-close-red) 85%, var(--vscode-foreground));
+  background-color: color-mix(in oklab, var(--vscode-editor-background) 88%, var(--ct-close-red));
+  color: color-mix(in oklab, var(--ct-close-red) 60%, var(--vscode-editor-background));
   font-size: ${GLYPH}px;
   cursor: default;
   /* Nothing in the workbench sets a z-index on a part, so one is enough to sit over them all -
