@@ -98,9 +98,9 @@ app.whenReady().then(async () => {
   extensions.prune(desktop.wantedIds);
   extensions.graft(desktop.builds);
 
-  // Seams go in before the server reads them, over the desktop's own settings rather than this
-  // file's last copy: it is where every profile window reads an application-scoped setting.
-  writeSettings(paths.settings, desktop.defaultSettings);
+  // Seams go in over the desktop's settings file, where profile windows read application-scoped
+  // ones, else over this file's last copy: with no desktop at all, every tile saves into it.
+  writeSettings(paths.settings, desktop.defaultSettings ?? paths.settings);
   // The same idea for the chords the app needs back: a tile on no mirrored profile reads this one.
   writeKeybindings(paths.keybindings, MOD_KEY);
   // The rarer half of the same idea: what a seam needs the server's own bundle to do. Before the
