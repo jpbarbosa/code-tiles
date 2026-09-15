@@ -199,7 +199,7 @@ const READ = `(() => {
       return fill ? getComputedStyle(fill).backgroundColor : null;
     })(),
     // The halo round the active tab, read where it paints: the pseudo-element on an editor tab's
-    // fill, and the terminal strip's pill. `none` is the tint seam's variable not reaching it.
+    // fill, and the terminal strip's pill. "none" is the tint seam's variable not reaching it.
     activeTabGlow: [
       ['.part.editor .editor-group-container.active .tabs-container > .tab.active > .tab-fill', '::after'],
       ['.ct-terminals-tab.is-active', '::before'],
