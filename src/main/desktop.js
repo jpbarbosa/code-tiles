@@ -25,7 +25,10 @@ export function readDesktop({ user, extensions }) {
   // No VS Code of your own to mirror: every tile runs on the default profile, which is exactly
   // what this app did before profiles existed.
   if (!fs.existsSync(user)) {
-    return { profiles: [], wantedIds: new Set(), builds: new Map(), profileFor: () => null };
+    return {
+      profiles: [], defaultSettings: null, wantedIds: new Set(), builds: new Map(),
+      profileFor: () => null,
+    };
   }
 
   const state = readJson(path.join(user, 'globalStorage', 'storage.json'), {});
@@ -50,6 +53,10 @@ export function readDesktop({ user, extensions }) {
 
   return {
     profiles,
+    // The desktop's own settings.json, where VS Code keeps application-scoped settings: a profile
+    // window reads those from the default profile's file and ignores them in its own.
+    defaultSettings: profiles
+      .find((profile) => profile.location === DEFAULT_MIRROR.location).sources.settings,
     // Every extension id any mirrored profile asks for: what the shared dir has to hold, and
     // the only honest answer to "is this one still wanted".
     wantedIds: new Set(profiles.flatMap((profile) => [...profile.extensionIds])),

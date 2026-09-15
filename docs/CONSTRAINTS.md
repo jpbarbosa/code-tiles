@@ -193,6 +193,12 @@ So anything the app needs true in a window has to be written into every profile 
 just into the server's own settings file, and every fallback a profile declares has to be
 resolved into a real file before the window asks. **[checked]**
 
+**Except an application-scoped setting, which a profile reads ONLY from the default profile.** The
+workbench parses the default profile's file for those (registered keys only) and drops them from a
+profile's own, so the server's own `settings.json` is built over the desktop's default settings as
+well - where desktop VS Code keeps them too. `extensions.supportAgentsWindow` sat in every mirrored
+profile while Monokai Pro went on asking for it in every window. **[checked]**
+
 **A real `settings.json` is JSONC, and failing to read one is silent and total.** Comments and a
 trailing comma before the last brace are both legal and both make `JSON.parse` throw; the throw
 becomes an empty object, and the window comes up with none of your settings rather than with an

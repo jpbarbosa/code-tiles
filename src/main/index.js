@@ -85,10 +85,9 @@ app.whenReady().then(async () => {
   extensions.prune(desktop.wantedIds);
   extensions.graft(desktop.builds);
 
-  // Seam settings go in before the server reads them, so the first window a tile ever shows is
-  // already the shape the product wants. Written every start: the manifest is the source. The
-  // mirror writes the same seams into each profile, which does not inherit this file.
-  writeSettings(paths.settings);
+  // Seams go in before the server reads them, over the desktop's own settings rather than this
+  // file's last copy: it is where every profile window reads an application-scoped setting.
+  writeSettings(paths.settings, desktop.defaultSettings);
   // The same idea for the chords the app needs back: a tile on no mirrored profile reads this one.
   writeKeybindings(paths.keybindings, MOD_KEY);
   // The rarer half of the same idea: what a seam needs the server's own bundle to do. Before the

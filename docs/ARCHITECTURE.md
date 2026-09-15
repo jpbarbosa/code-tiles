@@ -66,7 +66,8 @@ export default {
 - **`settings`** is the first thing to reach for. If the editor already has a switch for what
   you want, take the switch: it reflows the layout properly and it survives version bumps.
   Seams collect their settings in the manifest and `src/guest/disk/settings.js` merges them
-  into the server's `settings.json` once, before it starts.
+  into the server's `settings.json` once, before it starts, over the desktop's own default
+  settings: that file is the only place a profile window reads an application-scoped setting.
 - **`defaults`** is the same list on the other side of your own file: `defaults`, then your
   settings, then `settings`. A seam repairing a web-only default says it here, and your desktop
   keeps the preference. Anything the app's own shape depends on stays in `settings`.

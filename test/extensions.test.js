@@ -105,6 +105,21 @@ test('readDesktop indexes builds a profile installed, not just the root manifest
   assert.equal(builds.has('esbenp.prettier-vscode'), true);
 });
 
+// A profile window reads application-scoped settings from the default profile's file alone, so
+// the desktop's own settings.json is what the server's own settings are built over.
+test('readDesktop names the desktop settings file application-scoped settings live in', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ct-default-settings-'));
+  const user = path.join(root, 'User');
+  fs.mkdirSync(path.join(user, 'globalStorage'), { recursive: true });
+  fs.writeFileSync(path.join(user, 'globalStorage', 'storage.json'), '{}');
+  const extensions = path.join(root, '.vscode/extensions/extensions.json');
+
+  assert.equal(readDesktop({ user, extensions }).defaultSettings, null, 'no file, nothing to build over');
+  fs.writeFileSync(path.join(user, 'settings.json'), '{}');
+  assert.equal(readDesktop({ user, extensions }).defaultSettings, path.join(user, 'settings.json'));
+  assert.equal(readDesktop({ user: path.join(root, 'absent'), extensions }).defaultSettings, null);
+});
+
 // The manifest is data. A path in it that climbs out of the extensions directory is a read
 // somewhere else, which is the same argument prune makes about a delete.
 test('an escaping relativeLocation indexes nothing and grafts nothing', () => {
