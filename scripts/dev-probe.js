@@ -262,6 +262,27 @@ const READ = `(() => {
       };
       return walk(document);
     })(),
+    // The chat-marks seam, read in the Claude page: its sheet, and whether the input it pastes an
+    // edit back into still answers to its label. It opens no preview and pastes nothing, since an
+    // attachment would land in a real draft.
+    chatMarks: (() => {
+      const walk = (doc) => {
+        if (doc.querySelector('link[href*="anthropic.claude-code-"]')) {
+          return {
+            sheet: Boolean(doc.getElementById('code-tiles-chat-marks')),
+            input: Boolean(doc.querySelector('[aria-label="Message input"]')),
+          };
+        }
+        let frames;
+        try { frames = doc.querySelectorAll('iframe'); } catch { return null; }
+        for (const frame of frames) {
+          try { if (frame.contentDocument) { const hit = walk(frame.contentDocument); if (hit) return hit; } }
+          catch { /* cross-origin */ }
+        }
+        return null;
+      };
+      return walk(document);
+    })(),
     // The activity bar's icons, which are written inline from JS and so are read off the label
     // rather than off a variable. On the focused window every unchecked one carries the hue; the
     // checked one is the theme's, and a column of identical colours means the tie was lost.

@@ -373,6 +373,22 @@ expando defined on the event afterwards lands on the isolated world's own wrappe
 one the page sees. Cmd+B, Cmd+J and Alt+Cmd+B were driven this way against code-server 4.135.0,
 each flipping its part. **[checked]**
 
+**A synthetic `paste` reaches a webview page's own handler from the preload's isolated world, file
+and all.** The file rides in `clipboardData`, a member of `ClipboardEvent`'s init, so it is the
+page's to read rather than an expando on our wrapper: a `DataTransfer` holding a `File`, dispatched
+on the Claude composer's input, was taken by its React `onPaste` exactly as a real paste of an image
+is - the handler cancelled the event and the pill came up with the image's size. Constructors from
+the page's window and from the preload's own both worked. It is the only way into that composer's
+state from outside the page, and it is how `chat-marks` hands an edited image back. **[checked]** -
+claude-code 2.1.271 on code-server 4.135.0, in a hidden window.
+
+**A key stopped inside a webview never reaches the workbench.** The editor's wrapper forwards a
+webview's keys from a listener on the page's WINDOW, in the bubble phase, so `stopPropagation` on
+any element below it keeps a key out of the editor's keybindings entirely. That is what lets the
+`chat-marks` editor take ⌘Z for its own undo without also undoing in the file behind the panel.
+**[checked]** - a bubble listener on that same window counted zero keys for ⌘Z and for Escape
+stopped at the editor, read off `pre/index.html` in 4.135.0 for where the forwarder sits.
+
 **A double-click on a sash is the editor's size reset, and it resets to a PREFERRED size.** The
 grid hands the view before the sash its `preferredWidth` or `preferredHeight`, the view after it
 when that one has none, and splits the row evenly when neither has: the side bars prefer their

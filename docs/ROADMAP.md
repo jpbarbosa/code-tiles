@@ -253,6 +253,17 @@ What the tree does today, what comes next, and what to check when the server is 
   without the plate 2.1.267 put under it, by redefining the extension's own variable on the
   element; its announcement cards hidden by test id, since a dismissal holds for one item of a
   feed; and onboarding off through the extension's own `claudeCode.hideOnboarding`, a default),
+  `chat-marks` (arrow, box and circle drawn on an image attached to the Claude chat, and a crop,
+  from a pencil beside its preview's ×, so a screenshot can point at what the message is about:
+  outlines in six highlighter colours a model names one way each, magenta first since these screens
+  already carry red, picked from one button that wears the current colour, at a stroke scaled to the
+  image that is sent, since a big screenshot is shrunk before the model sees it. A crop zooms the
+  view to itself and is undone like a mark, and the bar wraps by group on a narrow panel. The
+  edited PNG goes back through the composer's own paste handler - the only way into its state from
+  outside the page - so it replaces the original at the END of the row. Only a pill still in the
+  composer is offered the edit, never a sent image, and the strings it finds the page by are held
+  to the installed bundle by a test, since a seam that patches nothing has no refusal to print.
+  Your own VS Code has none of it: `patch-vscode` carries bundle patches only),
   `branch` (the branch and its sync as two pills at the bottom of the side bar, mirrored from the
   status bar entries that hiding the bar leaves alive, so a click still checks out or syncs - in
   a footer the side bar is taught to give REAL room to rather than an overlay over the tree),

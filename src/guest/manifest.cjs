@@ -21,6 +21,7 @@ module.exports = [
   require('./seams/chat-column.cjs'),
   require('./seams/chat-links.cjs'),
   require('./seams/chat-calm.cjs'),
+  require('./seams/chat-marks.cjs'),
   require('./seams/branch.cjs'),
   require('./seams/maximize.cjs'),
   require('./seams/close.cjs'),

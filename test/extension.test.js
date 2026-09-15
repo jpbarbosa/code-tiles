@@ -400,6 +400,35 @@ test('every anchor still matches the bundle this machine has, where it has one',
   }
 });
 
+// chat-marks patches nothing - it works in the Claude page's own DOM - so an update that renames
+// what it looks for there refuses nothing and prints nothing: the Edit button just stops appearing.
+// These are the strings its selectors stand on, held to the page bundle this machine has.
+const CHAT_MARKS_ANCHORS = [
+  /"aria-label":"Message input"/,
+  /title:"Remove attachment"/,
+  /title:"Close preview \(Esc\)"/,
+  /previewOverlay:"previewOverlay_\w+"/,
+  /previewContainer:"previewContainer_\w+"/,
+  /previewImage:"previewImage_\w+"/,
+  /attachedFilesContainer:"attachedFilesContainer_\w+"/,
+  /clipboardData\?\.items/,
+];
+
+test('what chat-marks finds in the Claude page is still in the bundle this machine has', (t) => {
+  const pages = [];
+  for (const dir of INSTALLED) {
+    let names;
+    try { names = fs.readdirSync(dir); } catch { continue; }
+    for (const folder of names.filter((name) => /^anthropic\.claude-code-/.test(name))) {
+      try { pages.push([folder, fs.readFileSync(path.join(dir, folder, 'webview/index.js'), 'utf8')]); } catch { continue; }
+    }
+  }
+  if (!pages.length) return t.skip('no Claude Code extension installed here');
+  for (const [version, source] of pages) {
+    for (const anchor of CHAT_MARKS_ANCHORS) assert.match(source, anchor, `chat-marks: ${version} has no ${anchor}`);
+  }
+});
+
 test('a directory with no such extension in it is not an error', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ct-extension-'));
   assert.deepEqual(patchExtensions(dir), []);
