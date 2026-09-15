@@ -1,14 +1,17 @@
 // A take's marks, turned into what compose reads: which stretches play and how fast, where the
-// camera and the cursor go, what the captions, labels and keycaps say, and when the buzz sounds.
-// Source times are seconds from the take's first frame. --part leaves the end card off, for a
-// render that tools/join.mjs will put in the middle of a longer one.
-// usage: node build.mjs <name> [--part]
+// camera and the cursor go, what the captions, labels and keycaps say, and where the narrator and
+// the app's buzz sound. Source times are seconds from the take's first frame. --part leaves the end
+// card off, for a render join.mjs puts ahead of another; --draft renders at 1080p, for a quick look.
+// usage: node build.mjs <name> [--part] [--draft]
 import fs from 'node:fs';
 
 import { WORK } from './world.mjs';
 
 const NAME = process.argv[2];
 const PART = process.argv.includes('--part');
+const DRAFT = process.argv.includes('--draft');
+// join.mjs's cross-fade, which fades a line still speaking inside it along with the picture.
+const FADE = 0.6;
 const take = JSON.parse(fs.readFileSync(`${WORK}raw/${NAME}.json`, 'utf8'));
 const marks = take.marks.map((entry) => ({ ...entry, t: entry.wall - take.firstWall }));
 const at = (kind) => marks.find((entry) => entry.kind === kind).t;
@@ -42,7 +45,9 @@ const outputOf = (source) => {
   }
   return running;
 };
+const length = outputOf(end);
 
+// A narrated line is its own caption, held until the next one.
 const texts = [];
 let caption = null;
 let title = null;
@@ -50,7 +55,7 @@ const labels = new Map();
 const close = (text, t) => { if (text) texts.push({ ...text, until: t }); };
 for (const entry of marks) {
   const { kind, t } = entry;
-  if (kind === 'caption') { close(caption, t); caption = { at: t, text: entry.text }; }
+  if (kind === 'caption' || kind === 'say') { close(caption, t); caption = { at: t, text: entry.text }; }
   if (kind === 'caption-off') { close(caption, t); caption = null; }
   if (kind === 'title') { title = { at: t, text: entry.text, sub: entry.sub, style: 'title' }; }
   if (kind === 'title-off') { close(title, t); title = null; }
@@ -74,15 +79,27 @@ const cursor = marks.filter((entry) => entry.x !== undefined && ['click', 'move'
 
 const chimes = (take.chimes || []).map((wall) => wall - take.firstWall).filter((t) => t >= start && t <= end);
 
+// The voice plays at its own pace over a squeezed stretch, so a line said just before one can run
+// into the next line, or past the end of the part.
+const lines = marks.filter((entry) => entry.kind === 'say').map((entry) => ({ at: outputOf(entry.t), file: entry.file, seconds: entry.seconds, text: entry.text }));
+lines.forEach((cue, index) => {
+  const limit = lines[index + 1]?.at ?? length - (PART ? FADE : 0);
+  const over = cue.at + cue.seconds - limit;
+  if (over > 0.05) console.warn(`warning: "${cue.text}" runs ${over.toFixed(2)} s into ${lines[index + 1] ? 'the next line' : 'the end'}`);
+});
+
+const draft = DRAFT ? 'draft-' : '';
 const timeline = {
   source: `raw/${NAME}.mov`,
-  output: PART ? `out/part-${NAME}.mp4` : `out/code-tiles-${NAME}.mp4`,
+  output: PART ? `out/${draft}part-${NAME}.mp4` : `out/${draft}code-tiles-${NAME}.mp4`,
   window: take.window,
   fps: 60,
+  scale: DRAFT ? 1 : 2,
   segments: kept,
   texts,
   cursor,
   camera,
+  voice: lines.map(({ at: time, file }) => ({ at: time, file })),
   audio: { file: new URL('../../src/shell/buzz.wav', import.meta.url).pathname, at: chimes.map(outputOf), volume: 0.7 },
   outro: PART ? null : {
     duration: 3.6,
@@ -91,10 +108,11 @@ const timeline = {
     icon: new URL('../../assets/icon.png', import.meta.url).pathname,
   },
 };
-const file = `${WORK}timeline-${NAME}${PART ? '-part' : ''}.json`;
+const file = `${WORK}timeline-${draft}${NAME}${PART ? '-part' : ''}.json`;
 fs.writeFileSync(file, `${JSON.stringify(timeline, null, 2)}\n`);
 
-console.log(`${file}: video ${outputOf(end).toFixed(1)} s${PART ? '' : ` + outro ${timeline.outro.duration} s`}, ${chimes.length} buzz(es) at ${timeline.audio.at.map((t) => t.toFixed(1)).join(', ')}`);
+console.log(`${file}: video ${length.toFixed(1)} s${PART ? '' : ` + outro ${timeline.outro.duration} s`}, ${lines.length} line(s), `
+  + `${chimes.length} buzz(es) at ${timeline.audio.at.map((t) => t.toFixed(1)).join(', ')}`);
 for (const entry of marks.filter((mark) => !['click', 'drag-start', 'drag-end', 'move'].includes(mark.kind))) {
   console.log(outputOf(entry.t).toFixed(2).padStart(7), entry.kind.padEnd(11), entry.text || '');
 }

@@ -1,7 +1,6 @@
 // The take, framed: reads the raw window capture and a timeline, writes the finished video - a
-// backdrop, the window under a camera that can push in, a cursor, captions and an end card.
-// Everything is drawn with CoreGraphics in a top-left space: canvas pixels, or window points.
-//
+// backdrop, the window under a camera that can push in, a cursor, captions and an end card. It
+// draws top-left, in canvas points (1920x1080, at the timeline's scale: 2 is 4K) or window points.
 //   compose <timeline.json>                     the video
 //   compose <timeline.json> --stills <dir> t…   PNGs of single output frames, for checking
 import AppKit
@@ -36,6 +35,7 @@ struct Timeline: Decodable {
   let camera: [CameraKey]
   let outro: Card?
   let fps: Int?
+  let scale: Double?
 }
 
 // MARK: - time
@@ -144,19 +144,17 @@ func image(of buffer: CVPixelBuffer) -> CGImage? {
                  shouldInterpolate: true, intent: .defaultIntent)
 }
 
-func pixel(of buffer: CVPixelBuffer, x: Int, y: Int) -> CGColor {
-  let base = CVPixelBufferGetBaseAddress(buffer)!.assumingMemoryBound(to: UInt8.self)
-  let offset = y * CVPixelBufferGetBytesPerRow(buffer) + x * 4
-  return CGColor(srgbRed: CGFloat(base[offset + 2]) / 255, green: CGFloat(base[offset + 1]) / 255,
-                 blue: CGFloat(base[offset]) / 255, alpha: 1)
-}
-
 func text(_ string: String, size: CGFloat, weight: NSFont.Weight, color: NSColor) -> NSAttributedString {
   NSAttributedString(string: string, attributes: [
     .font: NSFont.systemFont(ofSize: size, weight: weight),
     .foregroundColor: color,
     .kern: size > 40 ? -1.0 : -0.2,
   ])
+}
+
+// A shadow is measured in device pixels whatever the transform, so it scales by hand.
+func setShadow(_ context: CGContext, y: CGFloat, blur: CGFloat, color: CGColor) {
+  context.setShadow(offset: CGSize(width: 0, height: y * pixelScale), blur: blur * pixelScale, color: color)
 }
 
 // MARK: - the frame
@@ -166,6 +164,9 @@ let stage = CGRect(x: 96, y: 54, width: 1728, height: 972)
 // The window's own corner, in points: macOS rounds a window's content, and the capture's alpha
 // carries it at rest. A camera pushed in clips to this at the stage's edge instead.
 let windowRadius: CGFloat = 13
+// Device pixels per canvas point, from the timeline.
+var pixelScale: CGFloat = 2
+var pixels: (width: Int, height: Int) { (Int(canvas.width * pixelScale), Int(canvas.height * pixelScale)) }
 
 final class Composer {
   let timeline: Timeline
@@ -198,8 +199,9 @@ final class Composer {
   // Four of the demo projects' own hues, faint, on near black: the backdrop says "a colour per
   // project" before the window does.
   static func makeBackdrop() -> CGImage {
-    let context = CGContext(data: nil, width: Int(canvas.width), height: Int(canvas.height), bitsPerComponent: 8,
+    let context = CGContext(data: nil, width: pixels.width, height: pixels.height, bitsPerComponent: 8,
                             bytesPerRow: 0, space: sRGB, bitmapInfo: bgra)!
+    context.scaleBy(x: pixelScale, y: pixelScale)
     context.setFillColor(color(0x0e0f12))
     context.fill(CGRect(origin: .zero, size: canvas))
     let glows: [(CGPoint, UInt32)] = [
@@ -303,7 +305,7 @@ final class Composer {
     let rest = max(0, min(1, Double((view.width - windowSize.width * 0.9) / (windowSize.width * 0.1))))
     if rest > 0 {
       context.saveGState()
-      context.setShadow(offset: CGSize(width: 0, height: 22), blur: 60, color: color(0x000000, 0.55 * rest))
+      setShadow(context, y: 22, blur: 60, color: color(0x000000, 0.55 * rest))
       context.setFillColor(color(0x191a1b))
       context.addPath(CGPath(roundedRect: stage, cornerWidth: windowRadius * scale, cornerHeight: windowRadius * scale, transform: nil))
       context.fillPath()
@@ -320,15 +322,18 @@ final class Composer {
     context.addPath(CGPath(roundedRect: clip, cornerWidth: windowRadius * (zoomed ? 1.4 : scale), cornerHeight: windowRadius * (zoomed ? 1.4 : scale), transform: nil))
     context.clip()
     context.interpolationQuality = .high
-    if let frame = image(of: buffer) { drawImage(context, frame, in: windowRect) }
+    let frame = image(of: buffer)
+    if let frame { drawImage(context, frame, in: windowRect) }
 
-    // macOS badges a window that is being captured with a purple pill where its traffic lights go.
-    // That is the recorder's footprint, not the app's: the strip's own colour over it, and the
-    // lights the window wears when you are the one using it.
+    // macOS badges a window that is being captured with a purple pill where its traffic lights go,
+    // 6 to 26 pt down. The column of strip just right of it is stretched across it, so a tile's glow
+    // reaching up into those rows runs straight through, and the lights go on top. The left side is
+    // no help: in the top rows it is the window's rounded corner.
     context.translateBy(x: windowRect.minX, y: windowRect.minY)
     context.scaleBy(x: scale, y: scale)
-    context.setFillColor(pixel(of: buffer, x: Int(86 * pointToPixel), y: Int(18 * pointToPixel)))
-    context.fill(CGRect(x: 0, y: 0, width: 80, height: 35))
+    let patch = CGRect(x: 5, y: 5, width: 68, height: 22)
+    let beside = CGRect(x: (patch.maxX + 1) * pointToPixel, y: patch.minY * pointToPixel, width: 1, height: patch.height * pointToPixel)
+    if let column = frame?.cropping(to: beside) { drawImage(context, column, in: patch) }
     for (index, (fill, rim)) in [(0xff5f57, 0xe0443e), (0xfebc2e, 0xdea123), (0x28c840, 0x1aab29)].enumerated() {
       let dot = CGRect(x: 13 + Double(index) * 20, y: 12, width: 12, height: 12)
       context.setFillColor(color(UInt32(fill)))
@@ -369,7 +374,7 @@ final class Composer {
     context.setAlpha(CGFloat(alpha))
     for (label, width) in zip(labels, widths) {
       let key = CGRect(x: x, y: y, width: width, height: 68)
-      context.setShadow(offset: CGSize(width: 0, height: 8), blur: 22, color: color(0x000000, 0.5))
+      setShadow(context, y: 8, blur: 22, color: color(0x000000, 0.5))
       context.setFillColor(color(0xb9bac1))
       context.addPath(CGPath(roundedRect: key, cornerWidth: 14, cornerHeight: 14, transform: nil))
       context.fillPath()
@@ -395,7 +400,7 @@ final class Composer {
     let pill = CGRect(x: point.x + 10, y: point.y - size.height / 2 - 9, width: size.width + 32, height: size.height + 18)
     context.saveGState()
     context.setAlpha(CGFloat(alpha))
-    context.setShadow(offset: CGSize(width: 0, height: 6), blur: 18, color: color(0x000000, 0.55))
+    setShadow(context, y: 6, blur: 18, color: color(0x000000, 0.55))
     context.setFillColor(color(0x141518, 0.94))
     context.addPath(CGPath(roundedRect: pill, cornerWidth: pill.height / 2, cornerHeight: pill.height / 2, transform: nil))
     context.fillPath()
@@ -425,7 +430,7 @@ final class Composer {
                       width: imageSize.width * size, height: imageSize.height * size)
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
-    context.setShadow(offset: CGSize(width: 0, height: 3), blur: 8, color: color(0x000000, 0.35 * state.alpha))
+    setShadow(context, y: 3, blur: 8, color: color(0x000000, 0.35 * state.alpha))
     cursorImage.draw(in: rect, from: .zero, operation: .sourceOver, fraction: CGFloat(state.alpha), respectFlipped: true, hints: nil)
     NSGraphicsContext.restoreGraphicsState()
   }
@@ -438,7 +443,7 @@ final class Composer {
                       width: size.width + 52, height: size.height + 26)
     context.saveGState()
     context.setAlpha(CGFloat(alpha))
-    context.setShadow(offset: CGSize(width: 0, height: 10), blur: 30, color: color(0x000000, 0.5))
+    setShadow(context, y: 10, blur: 30, color: color(0x000000, 0.5))
     context.setFillColor(color(0x141518, 0.88))
     context.addPath(CGPath(roundedRect: pill, cornerWidth: pill.height / 2, cornerHeight: pill.height / 2, transform: nil))
     context.fillPath()
@@ -504,16 +509,16 @@ final class Composer {
 func withContext(_ buffer: CVPixelBuffer, _ body: (CGContext) -> Void) {
   CVPixelBufferLockBaseAddress(buffer, [])
   defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
-  let context = CGContext(data: CVPixelBufferGetBaseAddress(buffer), width: Int(canvas.width), height: Int(canvas.height),
+  let context = CGContext(data: CVPixelBufferGetBaseAddress(buffer), width: pixels.width, height: pixels.height,
                           bitsPerComponent: 8, bytesPerRow: CVPixelBufferGetBytesPerRow(buffer), space: sRGB, bitmapInfo: bgra)!
-  context.translateBy(x: 0, y: canvas.height)
-  context.scaleBy(x: 1, y: -1)
+  context.translateBy(x: 0, y: CGFloat(pixels.height))
+  context.scaleBy(x: pixelScale, y: -pixelScale)
   body(context)
 }
 
 func makeBuffer() -> CVPixelBuffer {
   var buffer: CVPixelBuffer?
-  CVPixelBufferCreate(nil, Int(canvas.width), Int(canvas.height), kCVPixelFormatType_32BGRA,
+  CVPixelBufferCreate(nil, pixels.width, pixels.height, kCVPixelFormatType_32BGRA,
                       [kCVPixelBufferIOSurfacePropertiesKey: [:]] as CFDictionary, &buffer)
   return buffer!
 }
@@ -524,6 +529,7 @@ let base = URL(fileURLWithPath: path).deletingLastPathComponent()
 let timeline: Timeline
 do { timeline = try JSONDecoder().decode(Timeline.self, from: Data(contentsOf: URL(fileURLWithPath: path))) }
 catch { fail("timeline: \(error)") }
+pixelScale = CGFloat(timeline.scale ?? 2)
 func resolve(_ file: String) -> URL { URL(fileURLWithPath: file, relativeTo: base).standardizedFileURL }
 
 _ = NSApplication.shared
@@ -559,23 +565,23 @@ Task {
     let writer = try AVAssetWriter(outputURL: out, fileType: .mp4)
     let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
       AVVideoCodecKey: AVVideoCodecType.h264,
-      AVVideoWidthKey: Int(canvas.width),
-      AVVideoHeightKey: Int(canvas.height),
+      AVVideoWidthKey: pixels.width,
+      AVVideoHeightKey: pixels.height,
       AVVideoColorPropertiesKey: [
         AVVideoColorPrimariesKey: AVVideoColorPrimaries_ITU_R_709_2,
         AVVideoTransferFunctionKey: AVVideoTransferFunction_ITU_R_709_2,
         AVVideoYCbCrMatrixKey: AVVideoYCbCrMatrix_ITU_R_709_2,
       ],
       AVVideoCompressionPropertiesKey: [
-        AVVideoAverageBitRateKey: 18_000_000,
+        AVVideoAverageBitRateKey: Int(18_000_000 * pixelScale * pixelScale),
         AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
         AVVideoExpectedSourceFrameRateKey: fps,
       ],
     ])
     let adaptor = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: input, sourcePixelBufferAttributes: [
       kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
-      kCVPixelBufferWidthKey as String: Int(canvas.width),
-      kCVPixelBufferHeightKey as String: Int(canvas.height),
+      kCVPixelBufferWidthKey as String: pixels.width,
+      kCVPixelBufferHeightKey as String: pixels.height,
     ])
     writer.add(input)
     guard writer.startWriting() else { fail("writer: \(writer.error?.localizedDescription ?? "unknown")") }

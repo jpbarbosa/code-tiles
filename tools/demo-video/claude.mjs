@@ -53,10 +53,20 @@ export const clickIn = (tile, expression) => inClaude(tile, `(doc) => {
 
 export const ready = (tile) => inClaude(tile, `(doc) => Boolean(${COMPOSER})`);
 
-export async function typeInto(tile, text, { perKey = 40 } = {}) {
+// Claude Code's one-time cards in a fresh chat, the auto-mode notice and the terminal banner:
+// dismissed once, they stay dismissed.
+export const dismissNotices = (tile) => inClaude(tile, `(doc) => {
+  [...doc.querySelectorAll('[class*="header_"]')].find((el) => el.innerText.includes('Auto mode is now'))
+    ?.querySelector('[aria-label="Close"]')?.click();
+  doc.querySelector('[aria-label="Close banner"]')?.click();
+  return true;
+}`);
+
+// A letter at a time, or with `words` a word at a time: a quick typist, in fewer round trips.
+export async function typeInto(tile, text, { perKey = 40, words = false } = {}) {
   await inClaude(tile, `(doc) => { ${COMPOSER}.focus(); return true; }`);
-  for (const character of text) {
-    await inClaude(tile, `(doc) => doc.execCommand('insertText', false, ${JSON.stringify(character)})`);
+  for (const piece of words ? text.match(/\S+\s*/g) : text) {
+    await inClaude(tile, `(doc) => doc.execCommand('insertText', false, ${JSON.stringify(piece)})`);
     await sleep(perKey);
   }
 }

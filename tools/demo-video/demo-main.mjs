@@ -6,7 +6,7 @@ import { BrowserWindow, Menu, app, screen, shell } from 'electron';
 import { WORK } from './world.mjs';
 
 const DISPLAY = Number(process.env.DEMO_DISPLAY);
-const SIZE = { width: 1600, height: 900 };
+const SIZE = { width: 1920, height: 1080 };
 const DATA = `${WORK}data/`;
 
 app.setName('Code Tiles');

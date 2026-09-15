@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 
 import { META, Page, sleep, waitFor } from './cdp.mjs';
-import { ready } from './claude.mjs';
+import { dismissNotices, ready } from './claude.mjs';
 import { ACTIVITY, CODE } from './world.mjs';
 
 const FOUR = ['orbit', 'fern', 'tidepool', 'atlas'];
@@ -14,8 +14,13 @@ const call = (type, payload = {}) => shell.eval(`window.ct.call(${JSON.stringify
 
 await call('mode:set', { mode: 'grid' });
 await call('project:maximize', { maximized: false });
-await call('project:close', { folder: `${CODE}lumen` });
+for (const name of ['lumen', 'ledger']) await call('project:close', { folder: CODE + name });
 for (const name of FOUR) await call('project:open', { folder: CODE + name });
+// The basics take swaps two tiles, and the grid keeps its order: put it back, or the take's
+// cameras and labels frame the wrong projects.
+for (const [index, name] of FOUR.entries()) await call('project:move', { folder: CODE + name, index });
+const order = await shell.eval(`[...document.querySelectorAll('#chips .chip')].map((chip) => chip.dataset.folder.split('/').pop())`);
+if (order.join() !== FOUR.join()) throw new Error(`tiles are in the order ${order.join(', ')}`);
 await call('grid:reset', {});
 await call('layout:set', { part: 'sideBar', visible: false });
 await call('layout:set', { part: 'panel', visible: false });
@@ -40,6 +45,8 @@ for (const [name, file] of Object.entries(CHATS)) {
   await quickOpen(tile, file);
   await quickOpen(tile, '>Claude Code: Open in New Tab');
   await waitFor(() => ready(tile), { timeout: 60000 });
+  await sleep(1500);
+  await dismissNotices(tile);
   console.log(name, 'chat ready');
   tile.close();
 }

@@ -19,6 +19,8 @@ WORK = os.path.join(REPO, ".claude", "work", "demo-video")
 HOME = "/Users/Shared/alex"
 DATA = os.path.join(WORK, "data")
 CODE = os.path.join(HOME, "code")
+# A design mock in fern for a chat link to open as an image, once mock-card.swift has drawn it.
+CARD = os.path.join(WORK, "assets", "fern-screenshot.png")
 REAL_HOME = os.path.expanduser("~")
 
 AUTHOR = ("Alex Kim", "alex@example.com")
@@ -32,6 +34,10 @@ def write(root, files):
     for name, content in files.items():
         path = os.path.join(root, name)
         os.makedirs(os.path.dirname(path), exist_ok=True)
+        if isinstance(content, bytes):
+            with open(path, "wb") as handle:
+                handle.write(content)
+            continue
         with open(path, "w") as handle:
             handle.write(content.lstrip("\n"))
 
@@ -50,8 +56,14 @@ def project(name, commits, branch="main", branch_at=None, dirty=None):
     if ONLY and name not in ONLY:
         return
     root = os.path.join(CODE, name)
-    shutil.rmtree(root, ignore_errors=True)
-    os.makedirs(root)
+    # Emptied rather than deleted, so a window that has the folder open keeps watching the same one.
+    os.makedirs(root, exist_ok=True)
+    for entry in os.listdir(root):
+        path = os.path.join(root, entry)
+        if os.path.isdir(path) and not os.path.islink(path):
+            shutil.rmtree(path)
+        else:
+            os.remove(path)
     git(root, "init", "-q", "-b", "main")
     for index, (days_ago, message, files) in enumerate(commits):
         if index == branch_at:
@@ -509,6 +521,7 @@ project("fern", commits=[
         }, indent=2) + "\n",
         ".gitignore": "node_modules/\ndist/\n",
         "public/favicon.svg": FERN_ICON,
+        **({"docs/plant-card.png": open(CARD, "rb").read()} if os.path.exists(CARD) else {}),
         "index.html": r'''
 <!doctype html>
 <html lang="en">
