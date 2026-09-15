@@ -91,6 +91,11 @@ goes a level deeper.
 Arrow keys move the selection, Return opens it, and the right arrow steps into a folder without
 opening it. Opening a project that is already open just focuses its tile.
 
+With no project open, the window offers up to eight of the projects you have opened before, four
+to a row. Click to tick the ones you want and the button under them opens them all; double-click
+one to open just that one. With nothing ticked the button is **Open Project**, the same search
+field, which is how you reach a folder the app has never opened.
+
 Close a project with the **×** in its top right corner, the **×** on its chip, or the keyboard.
 Closing keeps it in the list, so reopening is one click; a folder you have deleted since drops off
 the list on its own.
@@ -139,6 +144,12 @@ Claude Code's extension gets three fixes: a new session opens as a tab rather th
 column split off to the right, a chat link to an image, sound or video opens it, and the onboarding
 checklist and announcements are gone. If an extension update moves what a fix hooks into, a warning
 mark in the strip names the one that stopped applying.
+
+An image attached to a Claude chat can be marked up before it goes. Click it in the message box
+and its preview has a pencil beside the ×: crop it, or draw an arrow, a box or a circle, in magenta
+or one of five other colours. **Done** swaps the attachment for the marked-up copy, **Undo** or
+`⌘Z` (`Ctrl+Z`) takes back a step, and Escape cancels. This one is in the tiles only:
+`npm run patch-vscode` does not bring it to your desktop VS Code.
 
 Your setup comes with you: every profile in your desktop VS Code is copied over - settings,
 keybindings and extensions - and each project opens on the profile your desktop already uses for
