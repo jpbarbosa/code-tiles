@@ -39,7 +39,8 @@ main process ─┬─ code-server child (one, shared, 127.0.0.1:<port>, --auth 
 One server, so settings, keybindings, extensions and the GitHub session are shared without
 syncing anything. One partition, because code-server keeps that session browser-side keyed by
 origin: same origin plus same partition is what makes the login shared. The port is persisted
-and reused so the origin, and therefore the login, survives a restart.
+and reused so the origin, and therefore the login, survives a restart: a start waits for the saved
+port, and a stand-in taken because something else keeps it is never saved.
 
 Each view still gets its own editor window: its own terminals, its own extension host, its
 own agent session.

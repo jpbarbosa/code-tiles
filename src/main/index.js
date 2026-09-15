@@ -4,7 +4,7 @@ import { app, dialog, nativeTheme, session } from 'electron';
 import { Activity } from './activity.js';
 import { hooksWriteInto } from './activity-hooks.js';
 import { killStragglers } from './coalition.js';
-import { CodeServer } from './server.js';
+import { CodeServer, portHolder } from './server.js';
 import { Desk } from './desk.js';
 import { Extensions } from './extensions.js';
 import { ExtensionPatches } from './patches.js';
@@ -59,6 +59,19 @@ app.on('second-instance', () => {
   raise();
   app.focus({ steal: true });
 });
+
+// The one start that cannot keep its origin says so, because nothing else would: every tile opens
+// without its login, its extensions' secrets and its editors, and merely looks fresh.
+function warnStandIn(parent, savedPort, serverPort) {
+  const holder = portHolder(savedPort);
+  dialog.showMessageBox(parent, {
+    type: 'warning',
+    message: `Port ${savedPort} is taken, so the tiles run on ${serverPort} for now`,
+    detail: 'Logins, extension licenses and open editors are kept per port, so every tile starts '
+      + `without them this time. The next start goes back to ${savedPort} if it is free.`
+      + (holder ? `\n\nHeld by ${holder}` : ''),
+  });
+}
 
 app.whenReady().then(async () => {
   // The app's half of dark: the traffic lights, the file dialog and every guest's
@@ -124,7 +137,11 @@ app.whenReady().then(async () => {
 
   const store = new Store(paths.state);
   server = new CodeServer({ bin, paths });
-  store.update({ serverPort: await server.start(store.state.serverPort) });
+  // Only a first start picks the port. A stand-in, taken because something kept the saved one, is
+  // this session's alone: saving it would abandon every tile's browser state for good.
+  const savedPort = store.state.serverPort;
+  const serverPort = await server.start(savedPort);
+  if (!savedPort) store.update({ serverPort });
 
   // Before the first tile, and after the server is up because the registry lives on its origin.
   // A tile whose URL names a profile the registry has not been seeded with renders blank rather
@@ -173,6 +190,7 @@ app.whenReady().then(async () => {
   // arrives late would draw once on its path's hash and again in its own colour.
   await learn(projects.sources());
   window = createWindow({ cornerShape: store.state.corners });
+  if (savedPort && serverPort !== savedPort) warnStandIn(window, savedPort, serverPort);
   const tiles = new Tiles({ window, server, onFollow: (from, to) => desk.follow(from, to) });
   const preferences = new Preferences({ store, parent: window });
   const desk = new Desk({ window, projects, tiles, activity, preferences });

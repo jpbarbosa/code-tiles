@@ -178,6 +178,14 @@ the view's session partition, not in the server's user data directory. One share
 therefore needs the same origin *and* the same partition for every tile, which is why the port
 is persisted and reused. *[inherited]*
 
+**Every tile's browser state is keyed by the port, not only the login.** Extension secrets (one
+localStorage blob, `secrets.provider`), each profile's `globalState` and each window's layout live
+per origin too, so a start on another port opens every tile on an empty browser profile, and saving
+that port abandons the old one for good. A start therefore waits for the saved port and never saves
+a stand-in. **[checked]** - a start that probed the moment it killed a crashed run's server lost
+that race every time, and until the quit killed `out/node/entry` (it outlives a TERM to its parent)
+every restart found the port held: 68 origins in three days.
+
 **A window's layout is remembered per workspace, in the partition, and outranks a setting.**
 `workbench.auxiliaryBar.hidden` and its siblings live in an IndexedDB database per workspace
 (`vscode-web-state-db-<workspace>-<profile>`) inside the tile partition, not in the server's user

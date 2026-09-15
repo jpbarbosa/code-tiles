@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import net from 'node:net';
 
-import { CodeServer, descendants } from '../src/main/server.js';
+import { CodeServer, descendants, waitUntilFree } from '../src/main/server.js';
 
 // `ps -Ao pid=,ppid=` as the app reads it: the server under launchd, a pty host under the server,
 // a shell under that, and a dev server the shell started - the one that used to survive a quit.
@@ -49,4 +50,39 @@ test('a window that closed its own folder is standing on no project', () => {
 test('the profile a tile carries does not disturb the folder in front of it', () => {
   const url = 'http://127.0.0.1:8080/?folder=%2Ftmp%2Fa&payload=%5B%5B%22profile%22%2C%22Web%22%5D%5D';
   assert.equal(server.folderOf(url), '/tmp/a');
+});
+
+// A port with something listening on it, and the way to let it go: the server a start has just
+// killed, as the start sees it.
+function hold() {
+  return new Promise((resolve) => {
+    const holder = net.createServer().listen(0, '127.0.0.1', () => resolve({
+      port: holder.address().port,
+      release: () => new Promise((done) => holder.close(done)),
+    }));
+  });
+}
+
+test('a saved port that is free is kept without waiting', async () => {
+  const { port, release } = await hold();
+  await release();
+  assert.equal(await waitUntilFree(port, 0), true);
+});
+
+test('a saved port let go of while the start waits is still the one it keeps', async () => {
+  const { port, release } = await hold();
+  setTimeout(release, 300);
+  assert.equal(await waitUntilFree(port, 5000), true);
+});
+
+test('a saved port something else keeps is given up on, not waited for forever', async () => {
+  const { port, release } = await hold();
+  const started = Date.now();
+  assert.equal(await waitUntilFree(port, 300), false);
+  assert.ok(Date.now() - started < 2000);
+  await release();
+});
+
+test('a first start has no saved port to wait for', async () => {
+  assert.equal(await waitUntilFree(null), false);
 });

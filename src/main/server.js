@@ -7,6 +7,7 @@ import path from 'node:path';
 import { IS_WINDOWS, serverCommand } from './platform.js';
 
 const HEALTH_TIMEOUT_MS = 40000;
+const RELEASE_TIMEOUT_MS = 5000;
 
 // One code-server for the whole app. Every tile is a window of it, which is what makes the
 // login, the settings and the extensions shared without anything syncing them.
@@ -45,7 +46,7 @@ export class CodeServer {
 
   async start(preferredPort) {
     this.#reapOrphan();
-    this.#port = (await isFree(preferredPort)) ? preferredPort : await freePort();
+    this.#port = (await waitUntilFree(preferredPort)) ? preferredPort : await freePort();
 
     // Detached so the child leads its own process group: one kill takes the server and every
     // pty and extension host under it, which a plain kill of the parent does not. Windows has no
@@ -189,6 +190,33 @@ function isFree(port) {
     probe.once('error', () => resolve(false));
     probe.listen(port, '127.0.0.1', () => probe.close(() => resolve(true)));
   });
+}
+
+// The saved port IS the tiles' origin: their login, every extension's secrets and each window's
+// layout are keyed by it, so any other port opens them all on an empty browser profile. What holds
+// it at a start is nearly always our own server, killed a moment earlier and still letting go -
+// polled, because a process that is not our child has no exit to await.
+export async function waitUntilFree(port, timeout = RELEASE_TIMEOUT_MS) {
+  if (!port) return false;
+  const deadline = Date.now() + timeout;
+  while (!(await isFree(port))) {
+    if (Date.now() >= deadline) return false;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  return true;
+}
+
+// Who is listening, as `ps` names it, for the warning a stand-in port raises. Null wherever that
+// cannot be told, Windows included: there is no lsof to ask.
+export function portHolder(port) {
+  try {
+    const pid = execFileSync('lsof', ['-nP', '-t', `-iTCP:${port}`, '-sTCP:LISTEN'], { encoding: 'utf8' })
+      .trim().split('\n')[0];
+    const command = execFileSync('ps', ['-o', 'command=', '-p', pid], { encoding: 'utf8' }).trim();
+    return `${command.slice(0, 160)} (pid ${pid})`;
+  } catch {
+    return null;
+  }
 }
 
 function freePort() {
