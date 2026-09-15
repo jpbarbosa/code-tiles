@@ -51,8 +51,8 @@ What the tree does today, what comes next, and what to check when the server is 
   are single view's, so the grid had `⌃⌘W` and nothing else.
 - The empty stage offers what it already knows: up to eight projects as tiles, four to a row, in
   the app's one project order. Clicking them ticks them and the button under them counts what is
-  ticked; nothing ticked leaves it the picker, which is still the only way to a folder this app
-  has never opened.
+  ticked, while a double-click opens that one project on the spot; nothing ticked leaves the
+  button the picker, which is still the only way to a folder this app has never opened.
 - The shell: strip, view control, the focused tile's glow, the empty state - and the chips, each
   wearing the same mark its window wears on its badge inside: the project's favicon, or its
   initial on its own hue, with the Claude ring around it either way.

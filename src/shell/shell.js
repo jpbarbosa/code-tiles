@@ -412,6 +412,12 @@ document.getElementById('add').addEventListener('click', () => call('project:pic
 emptyProjects.addEventListener('click', (event) => {
   const folder = event.target.closest('.project-tile')?.dataset.folder;
   if (!folder) return;
+  // The second click of a double one opens, leaving the tick where the first put it. Not a
+  // dblclick listener: that fires after both clicks have toggled, so the tile blinks off first.
+  if (event.detail > 1) {
+    if (event.detail === 2) call('project:open', { folder });
+    return;
+  }
   if (!selected.delete(folder)) selected.add(folder);
   render();
 });
