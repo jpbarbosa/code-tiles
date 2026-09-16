@@ -42,6 +42,17 @@ if [[ $1 != --render ]]; then
     for i in {1..90}; do shell_page && break; sleep 1; done
     shell_page || fail "demo instance did not come up (demo.log)"
     sleep 6
+  else
+    # A kept instance draws the shell it loaded at launch, not the one in src/shell. A reload keeps
+    # the usage sign-in that a relaunch loses; a change in src/main or src/guest still needs a quit.
+    node --input-type=module -e "
+      import { Page, waitFor } from '$T/cdp.mjs';
+      const shell = await Page.open((target) => target.url.endsWith('/shell/index.html'));
+      await shell.eval('window.stale = true');
+      await shell.send('Page.reload', { ignoreCache: true });
+      await waitFor(() => shell.eval(\"!window.stale && document.getElementById('usage').dataset.connected === 'true'\"), { timeout: 30000 }).catch(() => {});
+      process.exit(0);
+    " || fail "could not reload the demo instance's shell"
   fi
   log "demo instance up"
   node --input-type=module -e "
