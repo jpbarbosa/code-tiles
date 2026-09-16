@@ -139,7 +139,7 @@ function neighbours(projects, needle, home) {
   return [...found];
 }
 
-// A query with a separator in it is about the PATH, which is the whole reason `sites/orbit` finds
+// A query with a separator in it is about the PATH, which is the whole reason `work/api` finds
 // a folder that no single name matches. Without one it is a name, and a path would match half
 // your files by the directory they happen to sit in.
 const fits = (folder, name, needle) => (needle.includes(path.sep)

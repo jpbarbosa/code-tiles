@@ -52,7 +52,7 @@ alone, run it (`take-claude.mjs` after `prep-claude.mjs`), then `--render`.
 ## The script
 
 The narration is the `say()` lines in the takes. Each is synthesized with Microsoft's neural voices
-(the stack orbit's and lumen's demos use), cached in `voice/`, shown as the caption, and waited for, so
+(through edge-tts), cached in `voice/`, shown as the caption, and waited for, so
 a line's length paces what happens under it: edit a line and film again. `TTS_VOICE` (default
 `en-US-AndrewMultilingualNeural`) and `TTS_RATE` (e.g. `-5%`) choose the voice. `build.mjs` warns
 when a line runs into the next one, which a stretch squeezed right after it can cause. The

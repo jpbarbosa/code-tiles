@@ -87,12 +87,12 @@ draws nothing, and being a hit it stops the search before anything real is found
 list that walks a project needs the size check, not just the `statSync`. **[checked]**
 
 **A favicon's canvas is not its mark.** Seven of the nine favicons the app draws on this machine
-keep a transparent margin inside their own canvas - 2px a side of lumen's 48px `.ico`, 5 to 8 of 48
-round `atlas`'s - and every place a mark is drawn contains the whole canvas in its box, so each draws
+keep a transparent margin inside their own canvas - 2px a side of one project's 48px `.ico`, 5 to 8 of 48
+round another's - and every place a mark is drawn contains the whole canvas in its box, so each draws
 smaller than a full-bleed neighbour by the width of that margin, and off-centre by any difference
 between its sides. The sampler cuts a mark to the square its ink fills, centred on the ink, once
 that gains a pixel of the 24px badge; a mark whose ink already reaches the canvas ships as its own
-file. What a cut cannot give back is detail: `atlas`'s largest frame is 32px, so filling the badge
+file. What a cut cannot give back is detail: that second one's largest frame is 32px, so filling the badge
 with it is an enlargement, and softer than the file drawn small. Nor does the re-encode want an
 `imageSmoothingQuality`: a 512px favicon cut to 64 matches an exact box filter to 0.02/255 on
 average at `low`, `medium` and `high` alike. **[checked]** - margins read by ink at the badge's 48
@@ -710,8 +710,8 @@ and an animated layer: 8 layers round, 9 as a squircle, the ninth 602x402 and dr
 
 **A `statSync` on a symlink can block for TWENTY milliseconds, and one on a missing path costs 3.6
 to build the error it throws.** Both are why the picker's search walks $HOME without ever
-resolving a link: two deploy symlinks under `~/Sites` (a `current` in each of `atlas-prod` and
-`_config/atlas-prod`) were 40 ms of a 68 ms keystroke, and eleven broken links were most of the rest.
+resolving a link: two deploy symlinks under `~/Sites` (a `current` in each of two deploy
+checkouts) were 40 ms of a 68 ms keystroke, and eleven broken links were most of the rest.
 A link is followed only where the user navigated to it - the one directory a path query lists.
 `{ throwIfNoEntry: false }` is the other half; a home directory always has broken links in it.
 Measured, so the numbers hold for this machine and the shape holds everywhere: **[checked]**

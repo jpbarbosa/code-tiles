@@ -56,7 +56,7 @@ window.read = (url, shrink) => new Promise((done) => {
   img.src = url;
 });
 
-// A margin inside the file is drawn by every consumer as a smaller mark: lumen's 48px .ico keeps
+// A margin inside the file is drawn by every consumer as a smaller mark: one project's 48px .ico keeps
 // 2px clear a side, a plate 2px short of its neighbours on the 24px badge. So the mark is cut to
 // the square its ink fills, centred on the ink - or null, where that would gain nothing.
 function inkSquare(img, placed) {

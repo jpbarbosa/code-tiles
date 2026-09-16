@@ -1,5 +1,5 @@
-// The narrator: Microsoft's neural voices through edge-tts (`uv tool install edge-tts`), the stack
-// orbit's and lumen's demos use. A line is synthesized once and kept by its text, voice and rate.
+// The narrator: Microsoft's neural voices through edge-tts (`uv tool install edge-tts`).
+// A line is synthesized once and kept by its text, voice and rate.
 // Override with TTS_VOICE and TTS_RATE (e.g. -5%); a new voice changes every line's length, so
 // film again after one.
 import { execFileSync } from 'node:child_process';

@@ -37,7 +37,7 @@ test('the root wins over public/, and a project with neither has no icon', () =>
 });
 
 test('a sub-app never outranks the project it sits in', () => {
-  // Both runtime-tinted marks on this machine - ledger's #000000 Blade template and orbit's
+  // Both runtime-tinted marks on this machine - a #000000 mark a Blade template recolours and a
   // prefers-color-scheme swap - are a sub-app's SVG beside a coloured .ico at the root. Taking
   // the nearer directory first is what leaves those two projects their colour.
   const monorepo = folderWith({ 'favicon.ico': PNG, 'frontend/public/favicon.svg': '<svg/>' });

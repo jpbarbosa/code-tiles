@@ -121,7 +121,7 @@ What the tree does today, what comes next, and what to check when the server is 
 - Typing in the picker searches one list, not two: the projects that match, then folders on disk
   that no project has claimed - four levels under $HOME and beside a project you keep somewhere
   else, skipping `Library`, `node_modules` and `vendor`. A query with a `/` in it is matched
-  against the PATH, so `sites/orbit` finds a folder that no single name matches; without one it is
+  against the PATH, so `work/api` finds a folder that no single name matches; without one it is
   a name. A query that STARTS like a path is read as one instead, so `~/Sites/` lists what is in
   it and every `/` walks a level down; a child that is already a project keeps its icon and its ×. The field holds the focus the whole time, so the arrows move a selection rather
   than the focus, → at the end of the text steps INTO the selected folder without opening it and
