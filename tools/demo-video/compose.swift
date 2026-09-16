@@ -480,19 +480,22 @@ final class Composer {
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
     // Only where the take asks for it: a chapter's card names the chapter, and the end card draws
-    // this same mark itself. It sits above a title that stays put, so nothing below it moves.
-    if item.icon == true, let icon {
-      icon.draw(in: CGRect(x: canvas.width / 2 - 80, y: 60, width: 160, height: 160), from: .zero,
-                operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
-    }
+    // this same mark itself.
+    let mark = item.icon == true ? icon : nil
+    let markSide: CGFloat = 160, markGap: CGFloat = 30, lineGap: CGFloat = 8
     let title = text(item.text, size: 76, weight: .bold, color: .white)
     let titleSize = title.size()
-    title.draw(at: CGPoint(x: canvas.width / 2 - titleSize.width / 2, y: 250))
-    if let sub = item.sub {
-      let line = text(sub, size: 30, weight: .regular, color: NSColor(white: 0.72, alpha: 1))
-      let lineSize = line.size()
-      line.draw(at: CGPoint(x: canvas.width / 2 - lineSize.width / 2, y: 250 + titleSize.height + 8))
+    let line = item.sub.map { text($0, size: 30, weight: .regular, color: NSColor(white: 0.72, alpha: 1)) }
+    let lineSize = line?.size() ?? .zero
+    let height = (mark == nil ? 0 : markSide + markGap) + titleSize.height + (line == nil ? 0 : lineGap + lineSize.height)
+    var y = stage.midY - height / 2
+    if let mark {
+      mark.draw(in: CGRect(x: canvas.width / 2 - markSide / 2, y: y, width: markSide, height: markSide), from: .zero,
+                operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+      y += markSide + markGap
     }
+    title.draw(at: CGPoint(x: canvas.width / 2 - titleSize.width / 2, y: y))
+    line?.draw(at: CGPoint(x: canvas.width / 2 - lineSize.width / 2, y: y + titleSize.height + lineGap))
     NSGraphicsContext.restoreGraphicsState()
     context.restoreGState()
   }
