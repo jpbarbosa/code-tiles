@@ -71,6 +71,7 @@ soundtrack, voice and the app's own buzz, is brought to YouTube's -14 LUFS.
 | `render.mjs <timeline>` | one timeline on every core: a compose per stretch, joined without re-encoding |
 | `mux.mjs <timeline>` | the narrator and the app's own buzz, where the app played it |
 | `join.mjs <out> <parts…>` | takes cross-faded into one video |
+| `poster.swift <frame> <icon> <out> [title] [line]` | the still to lead with: a frame blurred and dimmed under the icon, the name and one line in the film's type; `POSTER_BLUR` and `POSTER_SCRIM` set how much of the app shows through |
 | `layout.mjs`, `review.sh`, `still.sh` | where everything clickable is; a contact sheet of a render; the window as the recorder sees it |
 
 ## Traps
