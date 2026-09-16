@@ -55,6 +55,12 @@ const paths = await packager({
   arch,
   icon: path.join(ROOT, ICONS[platform]),
   appBundleId: 'io.jp7.codetiles',
+  // Without it macOS never offers the app Local Network access, and every tool in a tile gets
+  // "No route to host" for LAN addresses (docs/CONSTRAINTS.md).
+  extendInfo: {
+    NSLocalNetworkUsageDescription:
+      'Terminals and tools in your projects connect to devices on your local network, such as ssh to another computer.',
+  },
   ignore: IGNORE,
   ...(carriesServer ? { extraResource: [vendored] } : {}),
 });

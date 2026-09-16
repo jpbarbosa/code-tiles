@@ -746,3 +746,17 @@ and it pops up with a check on its first item. So a menu whose honest state can 
 - the Color palette while the hue is Automatic, a separator away from the item that IS checked - is
 built of checkboxes, which macOS draws the same. **[checked]** - `_menuWillShow()` on two unchecked
 radios turned `[false, false]` into `[true, false]`, Electron 44.
+
+**An Electron bundle gets no Local Network row unless its `Info.plist` asks for one.** macOS
+charges a LAN connection to the app responsible for the process that makes it, and a tile's
+terminal is that app's: Code Tiles, through the code-server child (`detached` starts a session, it
+does not disclaim responsibility). The stock Electron plist carries camera, microphone and
+Bluetooth descriptions and no `NSLocalNetworkUsageDescription`, so the app never appeared in
+Privacy & Security > Local Network, and every tool in every tile got `No route to host` for a
+local address - the router included - while the internet and `localhost` worked. The error
+reads as a routing fault on the far machine, which is how it was first misdiagnosed, and another
+app's toggle (VS Code's, which Code Tiles is not) changes nothing. `scripts/package.js` sets the
+key through `extendInfo`. **[unchecked]** - the prompt it should raise can only be seen by quitting
+the app the session that wrote this was running in. What IS checked is the symptom on both sides of
+a sandbox, the responsibility chain from the process tree, and the key landing in the packaged
+bundle's `Info.plist`.
