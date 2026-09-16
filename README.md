@@ -4,6 +4,8 @@
 
 All your projects in one window.
 
+![Four projects in one window: Claude working in orbit, and in tidepool asking a question that waits on you](docs/screenshot.png)
+
 Every tile is a real editor: your extensions, your settings, your keybindings, a working terminal.
 They are all windows onto **one shared code-server**, so you sign in once and every project has it.
 
@@ -64,6 +66,8 @@ Every tile shows a small ring around its project icon, and the ring's **movement
 | blinking | it asked you something and is waiting |
 | slowly breathing | it finished a turn you have not read yet |
 | absent | nothing running |
+
+![One project's ring and chat tab while Claude is working, while it waits on you, and once it is done](docs/rings.png)
 
 The same ring is on the chip in the strip, so you can see a project that is not on screen, and on
 the chat tab inside the editor, where you are already looking. When the whole app is behind
