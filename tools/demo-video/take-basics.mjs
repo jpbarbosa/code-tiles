@@ -48,7 +48,7 @@ await sleep(2500);
 
 await t.record();
 let rects = await t.grounds();
-t.mark('title', { text: 'Code Tiles', sub: 'Several VS Code projects, live, in one window.' });
+t.mark('title', { text: 'Code Tiles', sub: 'All your projects in one window.' });
 await t.say("Code Tiles puts every project you're working on in one window.");
 t.mark('title-off');
 
@@ -83,6 +83,19 @@ await sleep(400);
 t.mark('camera', { x: 0, y: 0, w: 1920, ease: 0.7 });
 await t.shortcut('⌃ ⌘ G', 'Grid');
 await sleep(1200);
+
+// Back to actual size through the command the menu's ⌘0 runs, rather than by counting clicks back:
+// every beat after this one would otherwise film at whatever size the pair was left at.
+line = t.say('Zoom them all together, from the strip or the keyboard.');
+await t.shellClick('.zoom[data-step="-1"]');
+await sleep(800);
+await t.shellClick('.zoom[data-step="-1"]');
+await sleep(1200);
+await t.shellClick('.zoom[data-step="1"]');
+await sleep(800);
+await line;
+await t.call('zoom:step', { step: 0 });
+await sleep(900);
 
 line = t.say('Drag a gutter to resize them,');
 const splitter = await t.shell.eval(`(() => {

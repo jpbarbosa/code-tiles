@@ -520,6 +520,11 @@ project("fern", commits=[
             "devDependencies": {"@vitejs/plugin-react": "^4.4.1", "typescript": "^5.8.2", "vite": "^6.3.0"},
         }, indent=2) + "\n",
         ".gitignore": "node_modules/\ndist/\n",
+        # Nothing is ever installed in this world, so without it the TS server underlines every
+        # react import and every tag, through all the code the camera sees.
+        ".vscode/settings.json": json.dumps({
+            "typescript.validate.enable": False, "javascript.validate.enable": False,
+        }, indent=2) + "\n",
         "public/favicon.svg": FERN_ICON,
         **({"docs/plant-card.png": open(CARD, "rb").read()} if os.path.exists(CARD) else {}),
         "index.html": r'''

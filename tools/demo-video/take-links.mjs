@@ -71,7 +71,7 @@ await clickIn(tiles.fern, LINK);
 await sleep(2600);
 
 t.mark('camera', { x: 0, y: 0, w: WINDOW.width, ease: 0.8 });
-await t.say('Every project, and every agent, in one window.');
+await t.say('All your projects in one window.');
 await sleep(1200);
 await t.finish();
 process.exit(0);
