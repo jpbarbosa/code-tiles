@@ -94,8 +94,8 @@ t.mark('normal');
 await tap('tidepool', SEND);
 await sleep(600);
 
-t.mark('camera', { ...CAMERA.whole, ease: 0.8 });
-t.mark('label', { id: 'orbit', text: 'working', ...badges.orbit });
+// The camera stays on tidepool for its ring's three states: in the whole window a ring is a few
+// pixels, and the spin, the blink and the breath all read as one orange outline.
 t.mark('label', { id: 'tidepool', text: 'working', ...badges.tidepool });
 await t.say('While Claude works, its ring spins.');
 await sleep(800);
@@ -129,11 +129,12 @@ await t.shortcut('⌃ ⌘ G', 'Grid');
 await sleep(1000);
 rects = await t.grounds();
 
-// orbit, meanwhile, finishes a turn nobody has read.
+// Both finish a turn nobody has read. The camera shows tidepool's: orbit's orange mark drowns its ring.
 t.mark('fast', { seconds: 1.0 });
-await waitFor(async () => stateOf('orbit').has('finished') && !stateOf('orbit').has('working'), { timeout: 240000, every: 200 });
+await waitFor(async () => ['orbit', 'tidepool'].every((name) => stateOf(name).has('finished') && !stateOf(name).has('working')), { timeout: 240000, every: 200 });
 t.mark('normal');
-t.mark('label', { id: 'orbit', text: 'done', ...badges.orbit });
+t.mark('camera', { ...CAMERA.tidepool, ease: 0.8 });
+t.mark('label', { id: 'tidepool', text: 'done', ...badges.tidepool });
 await sleep(600);
 await t.say('Done, and not read yet: the ring breathes until you look.');
 await sleep(300);
