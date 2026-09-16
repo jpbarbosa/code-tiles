@@ -57,7 +57,7 @@ for (const entry of marks) {
   const { kind, t } = entry;
   if (kind === 'caption' || kind === 'say') { close(caption, t); caption = { at: t, text: entry.text }; }
   if (kind === 'caption-off') { close(caption, t); caption = null; }
-  if (kind === 'title') { title = { at: t, text: entry.text, sub: entry.sub, style: 'title' }; }
+  if (kind === 'title') { title = { at: t, text: entry.text, sub: entry.sub, style: 'title', icon: entry.icon }; }
   if (kind === 'title-off') { close(title, t); title = null; }
   if (kind === 'label') {
     close(labels.get(entry.id), t);
@@ -101,6 +101,8 @@ const timeline = {
   camera,
   voice: lines.map(({ at: time, file }) => ({ at: time, file })),
   audio: { file: new URL('../../src/shell/buzz.wav', import.meta.url).pathname, at: chimes.map(outputOf), volume: 0.7 },
+  // The end card is left off a part, but the intro's own mark asks for the same image.
+  icon: new URL('../../assets/icon.png', import.meta.url).pathname,
   outro: PART ? null : {
     duration: 3.6,
     title: 'Code Tiles',

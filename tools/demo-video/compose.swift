@@ -20,7 +20,7 @@ struct Timeline: Decodable {
   struct Segment: Decodable { let from: Double; let to: Double; let speed: Double }
   struct Text: Decodable {
     let at: Double, until: Double, text: String
-    let sub: String?, style: String?
+    let sub: String?, style: String?, icon: Bool?
     // A label's anchor, in window points: it rides the camera with the thing it names.
     let x: Double?, y: Double?
   }
@@ -35,6 +35,7 @@ struct Timeline: Decodable {
   let cursor: [CursorKey]
   let camera: [CameraKey]
   let outro: Card?
+  let icon: String?
   let fps: Int?
   let scale: Double?
 }
@@ -198,7 +199,7 @@ final class Composer {
     backdrop = Composer.makeBackdrop()
     cursorImage = NSCursor.arrow.image
     cursorHotSpot = NSCursor.arrow.hotSpot
-    icon = timeline.outro?.icon.flatMap { NSImage(contentsOfFile: $0) }
+    icon = (timeline.icon ?? timeline.outro?.icon).flatMap { NSImage(contentsOfFile: $0) }
     cursorOut = timeline.cursor.map { (clock.output($0.t), $0) }
     cameraOut = timeline.camera.map { (clock.output($0.t), $0) }
   }
@@ -478,6 +479,12 @@ final class Composer {
     context.fillPath()
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
+    // Only where the take asks for it: a chapter's card names the chapter, and the end card draws
+    // this same mark itself. It sits above a title that stays put, so nothing below it moves.
+    if item.icon == true, let icon {
+      icon.draw(in: CGRect(x: canvas.width / 2 - 80, y: 60, width: 160, height: 160), from: .zero,
+                operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+    }
     let title = text(item.text, size: 76, weight: .bold, color: .white)
     let titleSize = title.size()
     title.draw(at: CGPoint(x: canvas.width / 2 - titleSize.width / 2, y: 250))

@@ -43,25 +43,6 @@
         </svg>
       </button>
 
-      <!-- Zoom belongs to the app rather than to a window: one level covers every tile, so the
-           pair sits with the app's own controls and steps the same command the View menu does. -->
-      <div id="zoom-control" role="group" aria-label="Zoom in every project">
-        <button class="zoom" data-step="-1" title="Zoom out (⌘-)" aria-label="Zoom out">
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <path fill-rule="evenodd" d="M6.5 2A4.5 4.5 0 1 0 6.5 11A4.5 4.5 0 1 0 6.5 2ZM6.5 3A3.5 3.5 0 1 1 6.5 10A3.5 3.5 0 1 1 6.5 3Z"/>
-            <path d="M4 6H9V7H4Z"/>
-            <path d="M9.9 10.6L10.6 9.9L14.1 13.4L13.4 14.1Z"/>
-          </svg>
-        </button>
-        <button class="zoom" data-step="1" title="Zoom in (⌘+)" aria-label="Zoom in">
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <path fill-rule="evenodd" d="M6.5 2A4.5 4.5 0 1 0 6.5 11A4.5 4.5 0 1 0 6.5 2ZM6.5 3A3.5 3.5 0 1 1 6.5 10A3.5 3.5 0 1 1 6.5 3Z"/>
-            <path d="M6 4H7V6H9V7H7V9H6V7H4V6H6Z"/>
-            <path d="M9.9 10.6L10.6 9.9L14.1 13.4L13.4 14.1Z"/>
-          </svg>
-        </button>
-      </div>
-
       <!-- The one row that is not this app's own: the same three controls VS Code puts at the
            right of its title bar, driving the same three parts, in every open tile at once. The
            paths are its own codicon pair per part, the filled half being the state. -->

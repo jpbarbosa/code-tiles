@@ -16,9 +16,9 @@ Runs on macOS, Windows and Linux.
 ## The window
 
 A strip across the top, and the rest is the grid. The strip holds one chip per open project, a
-button to open another, a usage meter, a zoom pair that sizes every tile at once, and the layout
-buttons - grid or one project, and the side bar, panel and secondary side bar in every project at
-once. It is also the window's title bar, so your OS draws its own window controls into it.
+button to open another, a usage meter and the layout buttons - grid or one project, and the side
+bar, panel and secondary side bar in every project at once. It is also the window's title bar, so
+your OS draws its own window controls into it.
 
 Tiles are laid out as near square as the count allows. Four projects make two rows of two, nine
 make three of three; where a row would come up short the last tile stretches to fill it, so you
