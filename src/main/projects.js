@@ -91,7 +91,7 @@ export class Projects {
     const chosen = chosenOf(entry);
     return {
       folder: entry.folder,
-      name: path.basename(entry.folder),
+      name: nameOf(entry.folder),
       hue: chosen.hue ?? hueFor(entry.folder, chosen.image),
       icon: chosen.initial ? null : iconFor(entry.folder, chosen.image),
       // What the project's menu checks, null wherever the derivation is in force.
@@ -202,4 +202,14 @@ function chosenOf(entry) {
     initial: chosen.initial === true,
     hue: Number.isFinite(chosen.hue) ? chosen.hue : null,
   };
+}
+
+// A worktree kept as `<repository>.worktrees/<branch>` is that repository on another branch, so it
+// wears the repository's name. The branch is still on screen: the explorer's root folder is it.
+const WORKTREES = '.worktrees';
+
+function nameOf(folder) {
+  const parent = path.basename(path.dirname(folder));
+  const repository = parent.endsWith(WORKTREES) ? parent.slice(0, -WORKTREES.length) : '';
+  return repository || path.basename(folder);
 }

@@ -43,6 +43,16 @@ test('name, hue and Claude state are derived, never read off the entry', () => {
   assert.equal(project.claudeState, 'idle');
 });
 
+test('a worktree is named for its repository, and a bare .worktrees folder for itself', () => {
+  const root = tree('orbit.worktrees/rate-limits', '.worktrees/scratch', 'plain');
+  const projects = new Projects(store({ entries: [
+    open(path.join(root, 'orbit.worktrees', 'rate-limits')),
+    open(path.join(root, '.worktrees', 'scratch')),
+    open(path.join(root, 'plain')),
+  ] }));
+  assert.deepEqual(projects.open().map((p) => p.name), ['orbit', 'scratch', 'plain']);
+});
+
 test('all() is everything ever opened and open() is the tiles', () => {
   const root = tree('a', 'b');
   const projects = new Projects(store({ entries: [
