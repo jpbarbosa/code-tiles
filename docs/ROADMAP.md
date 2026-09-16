@@ -31,7 +31,9 @@ What the tree does today, what comes next, and what to check when the server is 
   opening a stacked project never moves the wide one.
 - Zoom, as one app: `⌘+`, `⌘-` and `⌘0` move every tile together and a project opened
   afterwards comes up at the same size, as does the next launch - the partition persists it by
-  host. The shell is a different origin and stays where it is.
+  host. The shell is a different origin and stays where it is. The strip carries the same two
+  steps beside the layout buttons, since a zoom nobody can see is one only the menu knows about;
+  the pair and the chords are one `zoom:step` command.
   Not the menu's zoom roles - those move whichever window holds the keyboard, and the shell
   holding it would put its gutters somewhere else than the tiles. `⌘0` is the editor's own Focus
   into Primary Side Bar, so the `zoom` seam gives that chord back in every profile's keybindings.

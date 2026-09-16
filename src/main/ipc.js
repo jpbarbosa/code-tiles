@@ -17,7 +17,7 @@ export function installIpc({ desk, usage, popover, picker, preferences, events, 
   // back to the tile BEFORE the command runs, so a screen this opens (the picker, the usage
   // panel) still takes it from there, and the press that dismisses that screen leaves the next
   // keystroke in an editor rather than in the shell page, where it would re-fire the button.
-  const STRIP_COMMANDS = new Set(['layout:set', 'mode:set', 'project:menu', 'project:pick', 'sound:set', 'usage:popover']);
+  const STRIP_COMMANDS = new Set(['layout:set', 'mode:set', 'project:menu', 'project:pick', 'sound:set', 'usage:popover', 'zoom:step']);
 
   const commands = {
     'state': () => { desk.render(); usage.publish(); picker.publish(); patches.publish(); },
@@ -27,6 +27,8 @@ export function installIpc({ desk, usage, popover, picker, preferences, events, 
     // A window saying what its own parts are doing; the strip choosing for every window at once.
     'layout': ({ parts }, folder) => desk.reportParts(folder, parts),
     'layout:set': ({ part, visible }) => desk.setLayout(part, visible),
+    // The strip's pair and the View menu's chords are the one step.
+    'zoom:step': ({ step }) => desk.zoom(step),
     // The panel is a window of its own, so it asks for what it draws and says how tall it got.
     'usage:popover': ({ anchor }) => popover.toggle(anchor),
     'usage:state': () => usage.state,

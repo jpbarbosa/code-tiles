@@ -2,7 +2,7 @@
   "name": "code-tiles",
   "productName": "Code Tiles",
   "version": "0.1.0",
-  "description": "Several VS Code projects as live tiles in one window, on one shared code-server.",
+  "description": "All your projects in one window.",
   "private": true,
   "type": "module",
   "main": "src/main/index.js",

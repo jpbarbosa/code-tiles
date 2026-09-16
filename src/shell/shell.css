@@ -306,15 +306,18 @@ body[data-sorting] .chip .close { cursor: grabbing; }
   gap: 10px;
 }
 
-/* The editor's own three controls, in the app's strip because here they drive every window at
-   once. The gap is the one its title bar toolbar sets between them. */
-#layout-control {
+/* Two groups of small buttons: the editor's own three controls, in the app's strip because here
+   they drive every window at once, and the zoom pair, which is the app's own. The gap is the one
+   its title bar toolbar sets between them. */
+#layout-control,
+#zoom-control {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
 .part,
+.zoom,
 #sound {
   width: var(--control);
   height: var(--control);

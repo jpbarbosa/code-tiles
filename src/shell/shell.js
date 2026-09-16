@@ -441,6 +441,12 @@ for (const button of document.querySelectorAll('.part')) {
   }));
 }
 
+// One level for the whole app, so the strip sends a step and main puts it on every tile. Nothing
+// here reads a level back: Chromium keeps it per host and every tile is that one host.
+for (const button of document.querySelectorAll('.zoom')) {
+  button.addEventListener('click', () => call('zoom:step', { step: Number(button.dataset.step) }));
+}
+
 sound.addEventListener('click', () => call('sound:set', {
   rung: sound.getAttribute('aria-pressed') === 'true' ? 'off' : 'on',
 }));
