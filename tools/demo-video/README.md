@@ -43,10 +43,11 @@ sits beside nothing you look at; on another arrangement pick another corner (`ct
 
 The pipeline waits for an unlocked screen, rebuilds the projects Claude edits, launches the demo
 instance on that display (or keeps the one already there), films `take-basics`, `take-claude` and
-`take-claude-more`, and renders them into `out/code-tiles.mp4`.
-`--draft` renders at 1080p, four times quicker; `pipeline.sh --render [--draft]` renders the last
-takes again without filming. To film one take alone, run it (`take-claude.mjs` after
-`prep-claude.mjs`), then `--render`.
+`take-links`, and renders them into `out/code-tiles.mp4`; `--name <label>` writes another file
+instead, leaving earlier videos where they are. Each part is drawn on every core, so a two-minute
+cut takes about three minutes at 4K, and `--draft` renders at 1080p in a quarter of that.
+`pipeline.sh --render [--draft]` renders the last takes again without filming; to film one take
+alone, run it (`take-claude.mjs` after `prep-claude.mjs`), then `--render`.
 
 ## The script
 
@@ -66,7 +67,8 @@ soundtrack, voice and the app's own buzz, is brought to YouTube's -14 LUFS.
 | `prep-claude.mjs` | the Claude take's stage, off camera |
 | `voice.mjs` | the narrator |
 | `build.mjs <take>` | marks to a timeline; `--part` leaves the end card off, `--draft` renders at 1080p |
-| `compose.swift` | the frames: backdrop, the window under a moving camera, cursor, captions, labels, keycaps, end card; `--stills <dir> t…` for single frames |
+| `compose.swift` | the frames: backdrop, the window under a moving camera, cursor, captions, labels, keycaps, end card; `--range <a> <b> <out>` draws one stretch, `--stills <dir> t…` single frames |
+| `render.mjs <timeline>` | one timeline on every core: a compose per stretch, joined without re-encoding |
 | `mux.mjs <timeline>` | the narrator and the app's own buzz, where the app played it |
 | `join.mjs <out> <parts…>` | takes cross-faded into one video |
 | `layout.mjs`, `review.sh`, `still.sh` | where everything clickable is; a contact sheet of a render; the window as the recorder sees it |

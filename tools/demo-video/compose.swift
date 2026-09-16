@@ -1,8 +1,9 @@
 // The take, framed: reads the raw window capture and a timeline, writes the finished video - a
 // backdrop, the window under a camera that can push in, a cursor, captions and an end card. It
 // draws top-left, in canvas points (1920x1080, at the timeline's scale: 2 is 4K) or window points.
-//   compose <timeline.json>                     the video
-//   compose <timeline.json> --stills <dir> t…   PNGs of single output frames, for checking
+//   compose <timeline.json>                        the video
+//   compose <timeline.json> --range <a> <b> <out>  one stretch of it, for rendering in parallel
+//   compose <timeline.json> --stills <dir> t…      PNGs of single output frames, for checking
 import AppKit
 import AVFoundation
 import CoreGraphics
@@ -91,7 +92,9 @@ final class Frames {
   private var upcoming: CMSampleBuffer?
   private var origin = 0.0
 
-  init(url: URL) async throws {
+  // `from` starts the read partway in, for one chunk of a render split across processes. The take's
+  // own clock starts at the file's first frame, which a chunk never reads, so it comes off the track.
+  init(url: URL, from: Double = 0) async throws {
     let asset = AVURLAsset(url: url)
     guard let track = try await asset.loadTracks(withMediaType: .video).first else { fail("no video track in \(url.path)") }
     reader = try AVAssetReader(asset: asset)
@@ -100,9 +103,13 @@ final class Frames {
     ])
     output.alwaysCopiesSampleData = false
     reader.add(output)
+    let start = try await track.load(.timeRange).start.seconds
+    if from > 0 {
+      reader.timeRange = CMTimeRange(start: CMTime(seconds: start + from, preferredTimescale: 600), duration: .positiveInfinity)
+    }
     guard reader.startReading() else { fail("reader: \(reader.error?.localizedDescription ?? "unknown")") }
     upcoming = output.copyNextSampleBuffer()
-    origin = upcoming?.presentationTimeStamp.seconds ?? 0
+    origin = from > 0 ? start : (upcoming?.presentationTimeStamp.seconds ?? 0)
   }
 
   // Monotonic: the take is only ever read forwards, which is what lets a sped-up segment skip.
@@ -160,7 +167,9 @@ func setShadow(_ context: CGContext, y: CGFloat, blur: CGFloat, color: CGColor) 
 // MARK: - the frame
 
 let canvas = CGSize(width: 1920, height: 1080)
-let stage = CGRect(x: 96, y: 54, width: 1728, height: 972)
+// The window sits on the backdrop with a margin, not filling the frame, but a narrow one: the app
+// is what the viewer came to see.
+let stage = CGRect(x: 40, y: 22.5, width: 1840, height: 1035)
 // The window's own corner, in points: macOS rounds a window's content, and the capture's alpha
 // carries it at rest. A camera pushed in clips to this at the stage's edge instead.
 let windowRadius: CGFloat = 13
@@ -524,7 +533,10 @@ func makeBuffer() -> CVPixelBuffer {
 }
 
 let args = Array(CommandLine.arguments.dropFirst())
-guard let path = args.first else { fail("compose <timeline.json> [--stills <dir> t…]") }
+guard let path = args.first else { fail("compose <timeline.json> [--range <a> <b> <out>] [--stills <dir> t…]") }
+// One stretch of the video, written on its own, so render.mjs can draw the rest on other cores.
+let range: (from: Double, to: Double, out: String)? = args.count >= 5 && args[1] == "--range"
+  ? (Double(args[2]) ?? 0, Double(args[3]) ?? 0, args[4]) : nil
 let base = URL(fileURLWithPath: path).deletingLastPathComponent()
 let timeline: Timeline
 do { timeline = try JSONDecoder().decode(Timeline.self, from: Data(contentsOf: URL(fileURLWithPath: path))) }
@@ -538,7 +550,9 @@ NSApp.setActivationPolicy(.prohibited)
 let semaphore = DispatchSemaphore(value: 0)
 Task {
   do {
-    let frames = try await Frames(url: resolve(timeline.source))
+    // A chunk starts reading a little before its first frame, so the reader has one to hand at it.
+    let begin = range.map { max(0, Clock(timeline.segments).source($0.from) - 0.2) } ?? 0
+    let frames = try await Frames(url: resolve(timeline.source), from: begin)
     let composer = Composer(timeline: timeline, frames: frames)
     let fps = timeline.fps ?? 60
 
@@ -559,7 +573,7 @@ Task {
       return
     }
 
-    let out = resolve(timeline.output)
+    let out = range.map { URL(fileURLWithPath: $0.out) } ?? resolve(timeline.output)
     try? FileManager.default.removeItem(at: out)
     try FileManager.default.createDirectory(at: out.deletingLastPathComponent(), withIntermediateDirectories: true)
     let writer = try AVAssetWriter(outputURL: out, fileType: .mp4)
@@ -587,20 +601,21 @@ Task {
     guard writer.startWriting() else { fail("writer: \(writer.error?.localizedDescription ?? "unknown")") }
     writer.startSession(atSourceTime: .zero)
 
-    let count = Int((composer.duration * Double(fps)).rounded())
-    for index in 0..<count {
+    let first = range.map { Int(($0.from * Double(fps)).rounded()) } ?? 0
+    let last = range.map { Int(($0.to * Double(fps)).rounded()) } ?? Int((composer.duration * Double(fps)).rounded())
+    for index in first..<last {
       while !input.isReadyForMoreMediaData { usleep(2000) }
       var pooled: CVPixelBuffer?
       CVPixelBufferPoolCreatePixelBuffer(nil, adaptor.pixelBufferPool!, &pooled)
       let buffer = pooled ?? makeBuffer()
       withContext(buffer) { composer.render(into: $0, output: Double(index) / Double(fps)) }
-      adaptor.append(buffer, withPresentationTime: CMTime(value: CMTimeValue(index), timescale: CMTimeScale(fps)))
-      if index % (fps * 5) == 0 { print("frame \(index)/\(count)") }
+      adaptor.append(buffer, withPresentationTime: CMTime(value: CMTimeValue(index - first), timescale: CMTimeScale(fps)))
+      if (index - first) % (fps * 5) == 0 { print("frame \(index - first)/\(last - first)") }
     }
     input.markAsFinished()
     await writer.finishWriting()
     if writer.status != .completed { fail("writer: \(writer.error?.localizedDescription ?? "unknown")") }
-    print("wrote \(out.path) (\(String(format: "%.1f", composer.duration)) s)")
+    print("wrote \(out.path) (\(String(format: "%.1f", Double(last - first) / Double(fps))) s)")
     semaphore.signal()
   } catch {
     fail("\(error)")

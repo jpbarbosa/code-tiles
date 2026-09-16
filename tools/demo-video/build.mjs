@@ -108,6 +108,8 @@ const timeline = {
     icon: new URL('../../assets/icon.png', import.meta.url).pathname,
   },
 };
+// What render.mjs splits into chunks, one per core.
+timeline.duration = length + (timeline.outro?.duration ?? 0);
 const file = `${WORK}timeline-${draft}${NAME}${PART ? '-part' : ''}.json`;
 fs.writeFileSync(file, `${JSON.stringify(timeline, null, 2)}\n`);
 

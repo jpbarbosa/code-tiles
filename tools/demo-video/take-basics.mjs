@@ -1,10 +1,10 @@
-// The basics, quickly: live VS Code tiles and the colour of the one you are in, the keyboard,
-// single view and its chips, a gutter, the picker making room, and a swap. It stages itself.
+// The basics, quickly: live VS Code tiles, the colour a project takes from its favicon and how to
+// change it, the keyboard, single view and its chips, a gutter, the picker and a swap. Stages itself.
 import fs from 'node:fs';
 
 import { META, Page, sleep } from './cdp.mjs';
 import { doNotDisturb } from './dnd.mjs';
-import { center, take } from './take.mjs';
+import { center, framing, take } from './take.mjs';
 import { ACTIVITY, CODE } from './world.mjs';
 
 const FOUR = ['orbit', 'fern', 'tidepool', 'atlas'];
@@ -58,6 +58,13 @@ await t.tileClick(tiles.fern, rects.fern, Math.round(rects.fern.width * 0.6), 28
 await sleep(1400);
 await t.tileClick(tiles.tidepool, rects.tidepool, Math.round(rects.tidepool.width * 0.6), 280);
 await line;
+
+// The favicon the colour comes from, big enough to see.
+t.mark('camera', { ...framing(rects.tidepool), ease: 0.8 });
+await t.say("The colour comes from the project's own favicon.");
+await sleep(600);
+t.mark('camera', { x: 0, y: 0, w: 1920, ease: 0.7 });
+await sleep(700);
 
 line = t.say('Jump to any of them from the keyboard,');
 await sleep(300);
@@ -140,7 +147,44 @@ await tiles.orbit.mouse('mouseReleased', handle.x + drop.x - grab.x, handle.y + 
 t.mark('drag-end', drop);
 await t.main('globalThis.demoCursor = undefined; globalThis.demoFocused = undefined; true');
 await line;
-await sleep(1200);
+await sleep(600);
+
+// A project's own menu, on the one opened last. Native, so the wrapper opens it on this window
+// rather than at the real mouse, and the choice is made through it once it has been seen.
+rects = await t.grounds();
+t.mark('camera', { ...framing(rects.lumen), ease: 0.8 });
+line = t.say("Right-click a project's icon to give it another colour, or an icon of your own.");
+const badge = center(await tiles.lumen.rect('.part.activitybar .menubar .menubar-menu-button'));
+const onBadge = { x: Math.round(rects.lumen.x + badge.x), y: Math.round(rects.lumen.y + badge.y) };
+await t.main(`globalThis.demoMenuAt = ${JSON.stringify({ x: onBadge.x + 8, y: onBadge.y + 12 })}; true`);
+t.mark('click', onBadge);
+await tiles.lumen.mouse('mouseMoved', badge.x, badge.y, { button: 'none' });
+await tiles.lumen.mouse('mousePressed', badge.x, badge.y, { button: 'right', clickCount: 1, buttons: 2 });
+await tiles.lumen.mouse('mouseReleased', badge.x, badge.y, { button: 'right', clickCount: 1 });
+await sleep(2200);
+const colour = await t.main(`(() => {
+  const menu = globalThis.demoPopup;
+  if (!menu) return 'no menu';
+  menu.closePopup();
+  const hues = menu.items.find((item) => item.label === 'Color').submenu.items
+    .filter((item) => item.type !== 'separator' && item.label !== 'Automatic');
+  const choice = hues.find((item) => /blue|indigo/i.test(item.label)) || hues[Math.floor(hues.length / 2)];
+  choice.click();
+  return choice.label;
+})()`).catch((error) => `menu failed: ${error.message}`);
+console.log('colour chosen:', colour);
+await line;
+await sleep(1600);
+t.mark('camera', { x: 0, y: 0, w: 1920, ease: 0.8 });
+await sleep(1500);
 
 await t.finish();
+
+// Put lumen's own colour back for the next take, off camera, through the same menu.
+await t.main(`globalThis.demoMenuAt = { x: 40, y: 60 }; true`);
+await t.call('project:menu', { folder: `${CODE}lumen` });
+await sleep(800);
+await t.main(`(() => { const menu = globalThis.demoPopup; menu.closePopup();
+  menu.items.find((item) => item.label === 'Color').submenu.items.find((item) => item.label === 'Automatic').click(); return true; })()`)
+  .catch((error) => console.log('could not restore lumen colour:', error.message));
 process.exit(0);
