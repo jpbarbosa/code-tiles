@@ -756,7 +756,9 @@ Privacy & Security > Local Network, and every tool in every tile got `No route t
 local address - the router included - while the internet and `localhost` worked. The error
 reads as a routing fault on the far machine, which is how it was first misdiagnosed, and another
 app's toggle (VS Code's, which Code Tiles is not) changes nothing. `scripts/package.js` sets the
-key through `extendInfo`. **[unchecked]** - the prompt it should raise can only be seen by quitting
-the app the session that wrote this was running in. What IS checked is the symptom on both sides of
-a sandbox, the responsibility chain from the process tree, and the key landing in the packaged
-bundle's `Info.plist`.
+key through `extendInfo`, and the first LAN connection after an install raises the prompt; until
+it is answered, connections fail exactly as before, so a retry that races the dialog proves
+nothing. The grant covers a Claude Code session in a tile too: its `claude` binary is a signed CLI
+with no bundle of its own, and macOS still charges its connections to Code Tiles. **[checked]** -
+before and after on the same session: `No route to host` for the router and another Mac, then a
+refused port and an `ssh` that authenticated.
