@@ -57,6 +57,12 @@ const COLUMN_DERIVED = COLUMN.replace('W=!0}', 'W=K!==O4.ViewColumn.Beside}');
 const OPEN = 'openFile($,Q){let z=E$.Uri.file($);return E$.window.showTextDocument(z).then((W)=>{'
   + 'if(Q?.searchText){W.revealRange(Q.searchText)}else if(Q){W.selection=Q}})}';
 
+// The same open as 2.1.274 spells it: show options worked out from the link and passed alongside.
+const OPEN_PINNED = OPEN
+  .replace('openFile($,Q){', 'openFile($,Q,J){')
+  .replace('return E$', 'let G=J?.pinned?{preview:!1}:void 0;return E$')
+  .replace('showTextDocument(z)', 'showTextDocument(z,G)');
+
 const BUNDLE = `${STRINGS}class T{${ICON_TABLE}${STATE}${COLUMN}${OPEN}}\n`;
 
 function tree(bundle = BUNDLE) {
@@ -91,7 +97,7 @@ test('the seams on one bundle are spent in one pass and every edit survives', ()
   const patched = read(file);
   assert.match(patched, /__CT_CHAT_ICON_2__/);
   assert.match(patched, /__CT_CHAT_COLUMN_2__/);
-  assert.match(patched, /__CT_CHAT_LINKS_1__/);
+  assert.match(patched, /__CT_CHAT_LINKS_2__/);
   assert.equal(read(`${file}.ct-orig`), BUNDLE, 'one pristine copy, not one per seam');
 });
 
@@ -140,21 +146,23 @@ test('the column never moves without the lock flag, nor the flag clears without 
 
 // The link seam's contract, RUN against a fake API whose text editor refuses a binary file the way
 // the real one does, with the message the extension host logs.
-async function click(source, file, { binary = false, location } = {}) {
+async function click(source, file, { binary = false, location, link } = {}) {
   const calls = [];
+  // Recorded only where there are any, so a fixture that passes none reads as the two-part row it is.
+  const call = (kind, at, options) => calls.push(options === undefined ? [kind, at] : [kind, at, options]);
   const E$ = {
     Uri: { file: (at) => at },
     window: {
-      showTextDocument: async (at) => {
+      showTextDocument: async (at, options) => {
         if (binary) throw new Error(`cannot open ${at}. Detail: File seems to be binary and cannot be opened as text`);
-        calls.push(['text', at]);
+        call('text', at, options);
         return { revealRange: (range) => calls.push(['reveal', range]) };
       },
     },
-    commands: { executeCommand: async (command, at) => { calls.push([command, at]); } },
+    commands: { executeCommand: async (command, at, options) => { call(command, at, options); } },
   };
   const T = new Function('E$', `${source}\nreturn T;`)(E$);
-  await Object.create(T.prototype).openFile(file, location);
+  await Object.create(T.prototype).openFile(file, location, link);
   return calls;
 }
 
@@ -171,6 +179,17 @@ test('a chat link the text editor refuses opens in the editor VS Code picks for 
     [['vscode.open', '/work/shot.png']], 'a location in a file with no text threw');
   assert.deepEqual(await click(source, '/work/notes.md', { location: { searchText: 'x' } }),
     [['text', '/work/notes.md'], ['reveal', 'x']], 'a text file no longer opens as text, at its location');
+});
+
+// The open grew show options in 2.1.274, and `vscode.open` takes the same ones in that position: a
+// pinned link that falls through to it has to arrive pinned rather than as a preview tab.
+test('the show options the chat open passes reach the editor VS Code picks for what it refuses', async () => {
+  const { source, refused } = linksSeam.apply(`class T{${OPEN_PINNED}}`);
+  assert.ok(!refused, refused);
+  assert.deepEqual(await click(source, '/work/shot.png', { binary: true, link: { pinned: true } }),
+    [['vscode.open', '/work/shot.png', { preview: false }]], 'a pinned link fell through unpinned');
+  assert.deepEqual(await click(source, '/work/notes.md', { link: { pinned: true } }),
+    [['text', '/work/notes.md', { preview: false }]], 'the options stopped reaching the text open');
 });
 
 // The bundle opens documents as text in other places too; this one is found by the location it goes
@@ -335,7 +354,7 @@ test('a shape that has moved restores the stock bundle rather than leaving an ol
   const moved = BUNDLE
     .replace('this.panelTab.iconPath=', 'this.panelTab.icon=')
     .replace('K=this.findUnusedColumn(),W=!0', 'K=this.pickColumn(),W=!0')
-    .replace('showTextDocument(z).then(', 'showTextDocument(z,{}).then(');
+    .replace('if(Q?.searchText)', 'if(Q?.find)');
   fs.writeFileSync(`${file}.ct-orig`, moved);
 
   assert.deepEqual(patchExtensions(dir), []);
