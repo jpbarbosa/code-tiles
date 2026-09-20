@@ -31,12 +31,23 @@ function bench(markers = {}, { onWaiting } = {}) {
 }
 
 // A marker the way the hook writes one, by a rename, and then long enough for the watcher's debounce.
-async function mark(dir, session, state, cwd) {
+async function mark(dir, session, state, cwd, { transcript = '', message = '' } = {}) {
   const file = path.join(dir, `${session}.json`);
-  fs.writeFileSync(`${file}.tmp`, JSON.stringify({ state, cwd, ts: Date.now() / 1000, transcript: '' }));
+  fs.writeFileSync(`${file}.tmp`, JSON.stringify({ state, cwd, ts: Date.now() / 1000, transcript, message }));
   fs.renameSync(`${file}.tmp`, file);
   await new Promise((resolve) => setTimeout(resolve, 300));
 }
+
+// The two records a background task leaves in the transcript: the id the tool answers with, and
+// the notification that carries the same id back when it lands.
+const launched = (id, at) => `${JSON.stringify({
+  type: 'user', timestamp: new Date(at).toISOString(),
+  message: { content: [{ type: 'tool_result', content: `Command running in background with ID: ${id}. Output is being written to: /tmp/${id}.output` }] },
+})}\n`;
+const landed = (id, at) => `${JSON.stringify({
+  type: 'user', timestamp: new Date(at).toISOString(),
+  message: { content: `<task-notification>\n<task-id>${id}</task-id>\n<summary>the gate</summary>` },
+})}\n`;
 
 test('a session turning to wait on you is heard once per wait, and nothing on disk at launch is', async (t) => {
   const project = path.join(os.tmpdir(), 'w');
@@ -134,6 +145,58 @@ test('a turn you interrupted is over, though no hook ever said so', (t) => {
   assert.equal(activity.states([project])[project], 'active', 'ESC left the ring turning');
 });
 
+test('a turn parked on a background task holds its ring and says nothing', async (t) => {
+  const heard = [];
+  const { base, dir, activity, project } = bench({}, { onWaiting: (marker) => heard.push(marker.state) });
+  t.after(() => activity.stop());
+  const transcript = path.join(base, 'parked.jsonl');
+  fs.writeFileSync(transcript, launched('bvre7292l', Date.now() - 1000));
+
+  await mark(dir, 'one', 'working', project, { transcript });
+  await mark(dir, 'one', 'finished', project, { transcript });
+  assert.equal(activity.states([project])[project], 'working', 'waiting on a task read as a turn that ended');
+  assert.deepEqual(heard, [], 'waiting on a task rang');
+
+  // Claude Code's idle Notification a minute later is that same wait said again.
+  await mark(dir, 'one', 'attention', project, { transcript, message: 'Claude is waiting for your input' });
+  assert.equal(activity.states([project])[project], 'working', 'the idle Notification moved a parked ring');
+  assert.deepEqual(heard, [], 'the idle Notification rang through a park');
+
+  // A permission prompt is a question about the task, not the wait for it.
+  await mark(dir, 'one', 'attention', project, { transcript, message: 'Claude needs your permission to use Bash' });
+  assert.equal(activity.states([project])[project], 'attention');
+  assert.deepEqual(heard, ['attention'], 'a park swallowed a question');
+});
+
+test('a task landing ends the park without announcing a turn that was never announced', async (t) => {
+  const heard = [];
+  const { base, dir, activity, project } = bench({}, { onWaiting: (marker) => heard.push(marker.state) });
+  t.after(() => activity.stop());
+  const transcript = path.join(base, 'landing.jsonl');
+  fs.writeFileSync(transcript, launched('bxz079w41', Date.now() - 1000));
+  await mark(dir, 'one', 'finished', project, { transcript });
+
+  fs.appendFileSync(transcript, landed('bxz079w41', Date.now()));
+  // Any marker refreshes every marker, which is how the park would end between two hooks.
+  await mark(dir, 'other', 'active', path.join(os.tmpdir(), 'ct-elsewhere'));
+  assert.equal(activity.states([project])[project], 'finished', 'the landing never reached the tile');
+  assert.deepEqual(heard, [], 'the same marker read a second time rang');
+});
+
+test('a background task old enough to be forgotten stops holding its turn', (t) => {
+  const { base, dir, activity, project } = bench();
+  t.after(() => activity.stop());
+  const transcript = path.join(base, 'stale.jsonl');
+  fs.writeFileSync(transcript, launched('btb9g0kta', Date.now() - 2 * 60 * 60 * 1000));
+  fs.writeFileSync(path.join(dir, 'one.json'), JSON.stringify({
+    state: 'finished', cwd: project, ts: Date.now() / 1000, transcript,
+  }));
+
+  activity.stop();
+  activity.start();
+  assert.equal(activity.states([project])[project], 'finished', 'a task that never lands held a tile silent');
+});
+
 test('installing the hooks keeps every hook that is not ours', (t) => {
   const { base, activity } = bench();
   t.after(() => activity.stop());
@@ -198,6 +261,10 @@ test('the hook script pins a session to the folder it started in', (t) => {
   // the project it belongs to.
   fire('working', { session_id: 'one', cwd: '/somewhere/else', transcript_path: '/nowhere.jsonl' });
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'one.json'), 'utf8')).cwd, project);
+
+  // A Notification's own message, which is what a park has to tell the idle one from a question.
+  fire('attention', { session_id: 'one', cwd: project, message: 'Claude is waiting for your input' });
+  assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'one.json'), 'utf8')).message, 'Claude is waiting for your input');
 
   fire('end', { session_id: 'one', cwd: project });
   assert.ok(!fs.existsSync(path.join(dir, 'one.json')), 'SessionEnd left the marker behind');

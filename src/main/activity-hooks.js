@@ -170,8 +170,10 @@ if mode == "end":
 # at once, and one that reads a marker mid-write would re-seed it from wherever the session stood.
 cwd = os.environ.get("CLAUDE_PROJECT_DIR") or event.get("cwd") or ""
 
+# Only a Notification carries a message, and which one it is decides whether the ring moves.
 record = {"state": mode, "cwd": cwd, "ts": time.time(),
-          "transcript": event.get("transcript_path") or ""}
+          "transcript": event.get("transcript_path") or "",
+          "message": event.get("message") or ""}
 try:
     os.makedirs(DIR, exist_ok=True)
     # A rename of a file of this hook's own, so a reader never sees half a record: with one shared

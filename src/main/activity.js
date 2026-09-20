@@ -18,7 +18,15 @@ const OPEN_MS = 15 * 60 * 1000;
 const RECHECK_MS = 10 * 1000;
 
 const INTERRUPT = /^\[Request interrupted by user( for tool use)?\]$/;
-const INTERRUPT_TAIL = 64 * 1024;
+// A background task names itself when it starts and again when it lands, which is the only place
+// a turn that parked on one reads differently from a turn that is over.
+const LAUNCHED = /Command running in background with ID: (\w+)/g;
+const LANDED = /<task-id>(\w+)<\/task-id>/g;
+// The cheap reject that keeps the tail from being parsed line by line for nothing.
+const INTERESTING = /Request interrupted by user|running in background with ID|<task-id>/;
+// Claude Code's idle Notification, the exact sentence: a permission prompt's message is another.
+const IDLE_WAIT = 'Claude is waiting for your input';
+const TAIL_BYTES = 64 * 1024;
 
 export class Activity {
   #dir;
@@ -28,7 +36,7 @@ export class Activity {
   #onWaiting;
   #markers = [];
   #seen = new Map();
-  #interrupts = new Map();
+  #tails = new Map();
   #watcher = null;
   #debounce = null;
   #recheck = null;
@@ -102,10 +110,14 @@ export class Activity {
   // Every read but the one at start, which is the baseline: a marker already on disk when the app
   // came up is not news.
   #refresh() {
-    const was = new Map(this.#markers.map((marker) => [marker.session, marker.state]));
+    const was = new Map(this.#markers.map((marker) => [marker.session, marker]));
     this.#read();
     for (const marker of this.#markers) {
-      if (turnedToWait(marker.state, was.get(marker.session))) this.#onWaiting(marker);
+      const before = was.get(marker.session);
+      // What a hook WROTE, never what a read derived: a park ends on the same marker read again,
+      // and the turn it ends was already answered for when that marker arrived.
+      if (before && marker.ts === before.ts) continue;
+      if (turnedToWait(marker.state, before?.state)) this.#onWaiting(marker);
     }
     this.#publish();
   }
@@ -121,21 +133,38 @@ export class Activity {
       cwd: record.cwd,
       ts: (record.ts || 0) * 1000,
       transcript: record.transcript || '',
+      // Only a Notification carries one, and it is what tells the idle one from a permission prompt.
+      message: record.message || '',
     };
     // A turn you stopped yourself is over, but its session is still open: it falls back to the
     // steady state rather than to `finished`, which would announce something you already know.
     if (marker.state === 'working' && this.#interrupted(marker)) marker.state = 'active';
+    // A turn that ended on a background task it launched is parked, not over: the work is still
+    // running, so the state holds where it was and nothing announces anything.
+    else if (parkable(marker) && this.#parked(marker)) marker.state = 'working';
     return marker;
   }
 
   #interrupted(marker) {
-    if (!marker.transcript) return false;
+    const tail = this.#tail(marker);
+    return !!tail && tail.interrupt > marker.ts;
+  }
+
+  // Believed for as long as a marker is: a task that never lands - a `tail -f`, a server - would
+  // otherwise hold its tile silent for the rest of the session.
+  #parked(marker) {
+    const tail = this.#tail(marker);
+    return !!tail && Date.now() - tail.launched < STALE_MS;
+  }
+
+  #tail(marker) {
+    if (!marker.transcript) return null;
     let size;
-    try { size = fs.statSync(marker.transcript).size; } catch { return false; }
-    const cached = this.#interrupts.get(marker.transcript);
-    const at = cached?.size === size ? cached.at : lastInterrupt(marker.transcript, size);
-    this.#interrupts.set(marker.transcript, { size, at });
-    return at > marker.ts;
+    try { size = fs.statSync(marker.transcript).size; } catch { return null; }
+    const cached = this.#tails.get(marker.transcript);
+    const tail = cached?.size === size ? cached : { size, ...readTail(marker.transcript, size) };
+    this.#tails.set(marker.transcript, tail);
+    return tail;
   }
 
   #files() {
@@ -188,6 +217,13 @@ const holds = (folder, cwd) => cwd === folder || cwd.startsWith(folder + path.se
 // and that is one question. So is a finished turn raising Claude Code's idle Notification a minute
 // later, which is the same wait said again.
 const WAITING = ['finished', 'attention'];
+
+// The two ways a turn parked on a background task reaches here: its Stop, and Claude Code's idle
+// Notification a minute later, which suppresses itself for a loop wakeup and for nothing else. A
+// permission prompt is a question about the task, not the wait for it, and keeps its ring.
+const parkable = (marker) => marker.state === 'finished'
+  || (marker.state === 'attention' && marker.message === IDLE_WAIT);
+
 function turnedToWait(state, was) {
   if (!WAITING.includes(state) || state === was) return false;
   return !(state === 'attention' && was === 'finished');
@@ -200,30 +236,41 @@ function state(total, seen) {
   return 'active';
 }
 
-// Epoch ms of the newest interrupt in a transcript, or 0. Only the tail is read: the record is
-// the last thing written when it happens, and a transcript runs to megabytes.
-function lastInterrupt(file, size) {
-  const length = Math.min(size, INTERRUPT_TAIL);
+// Epoch ms of the newest interrupt in a transcript and of the newest background task still
+// running, each 0 for none. Only the tail is read: both records are written where they happen,
+// and a transcript runs to megabytes. One pass, because one read answers both.
+function readTail(file, size) {
+  const length = Math.min(size, TAIL_BYTES);
+  const started = new Map();
+  const landed = new Set();
+  let interrupt = 0;
   let handle = null;
   try {
     handle = fs.openSync(file, 'r');
     const buffer = Buffer.alloc(length);
     fs.readSync(handle, buffer, 0, length, size - length);
-    const lines = buffer.toString('utf8').split('\n');
-    for (let index = lines.length - 1; index >= 0; index--) {
+    for (const line of buffer.toString('utf8').split('\n')) {
       // Cheap reject before parsing, and the first line of the tail is usually a clipped one.
-      if (!lines[index].includes('Request interrupted by user')) continue;
+      if (!INTERESTING.test(line)) continue;
       let record;
-      try { record = JSON.parse(lines[index]); } catch { continue; }
+      try { record = JSON.parse(line); } catch { continue; }
+      // Claude Code writes all three as a user record: what an assistant says about one is talk.
+      if (record?.type !== 'user' || !record.timestamp) continue;
+      const at = Date.parse(record.timestamp) || 0;
+      const body = text(record);
       // The exact sentence and nothing else: a prompt that quotes it is not an interrupt.
-      if (record?.type === 'user' && record.timestamp && INTERRUPT.test(text(record).trim())) {
-        return Date.parse(record.timestamp) || 0;
-      }
+      if (INTERRUPT.test(body.trim())) interrupt = Math.max(interrupt, at);
+      for (const [, id] of body.matchAll(LAUNCHED)) started.set(id, at);
+      for (const [, id] of body.matchAll(LANDED)) landed.add(id);
     }
-  } catch { /* unreadable transcript: no interrupt */ } finally {
+  } catch { /* unreadable transcript: nothing to say about either */ } finally {
     if (handle !== null) { try { fs.closeSync(handle); } catch { /* closing a gone fd */ } }
   }
-  return 0;
+  // Read whole before matched, so a task whose landing the tail holds and whose start it lost is
+  // not read as running.
+  let launched = 0;
+  for (const [id, at] of started) if (!landed.has(id)) launched = Math.max(launched, at);
+  return { interrupt, launched };
 }
 
 // A record's text, whether its content is a string, a list of parts or a tool result - the "for

@@ -90,8 +90,8 @@ What the tree does today, what comes next, and what to check when the server is 
 - Sound, the third preference, on until it is turned off: AwakeBar's buzz each time a session
   turns to waiting on you - a turn ended, or a question. Per session and on the CHANGE, so a
   permission prompt's Notification after its own PermissionRequest is one sound, a finished turn
-  raising Claude Code's idle Notification a minute later is none, and nothing already on disk at
-  launch plays. Main has no audio, so the shell plays it: `src/shell/buzz.wav`, AwakeBar's
+  raising Claude Code's idle Notification a minute later is none, a turn parked on a background
+  task is none until the task lands, and nothing already on disk at launch plays. Main has no audio, so the shell plays it: `src/shell/buzz.wav`, AwakeBar's
   `sound/buzz.aiff` as WAV since Chromium decodes no AIFF, at AwakeBar's default gain of 0.5. Only
   the instance that owns the hooks plays it, since one beside it would double every sound; choosing
   On plays it once, in either. The strip's speaker, between the usage meter and the layout control,
@@ -154,7 +154,15 @@ What the tree does today, what comes next, and what to check when the server is 
   absolutely, because it runs in your login shell where a version manager owns PATH; WHERE that
   is, is `pythonCandidatesFor`. macOS and Linux keep one at a fixed place and Windows ships none,
   so there it is the `py` launcher the python.org installer leaves - and with no interpreter the
-  hooks are not installed at all, which is every ring dark rather than anything broken.
+  hooks are not installed at all, which is every ring dark rather than anything broken. Two
+  states are read out of the transcript rather than taken from a hook, because neither has one:
+  a turn you ESCed is over though nothing said so, and a turn that ended on a background task it
+  launched is PARKED - "Waiting." is a Stop like any other, so the ring would go to finished and
+  the sound would play while the work is still running. A park holds the state where it was and
+  keeps its silence for Claude Code's idle Notification a minute later, which suppresses itself
+  for a loop wakeup and not for a background task; a permission prompt still rings. The tail
+  carries the id a task is given when it starts and the same id back when it lands, and a task
+  that never lands is believed for one hour, so a `tail -f` cannot hold a tile silent all day.
 - Twenty-four seams, verified in a live window rather than from a screenshot:
   `dark` (your desktop's theme, a dark one only as the fallback under it, auto-detect off, and
   the colour scheme of every document the window holds - web's default theme is the light one,
