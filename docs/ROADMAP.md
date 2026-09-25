@@ -272,6 +272,21 @@ What the tree does today, what comes next, and what to check when the server is 
   composer is offered the edit, never a sent image, and the strings it finds the page by are held
   to the installed bundle by a test, since a seam that patches nothing has no refusal to print.
   Your own VS Code has none of it: `patch-vscode` carries bundle patches only),
+  `chat-retina` (a Retina screenshot pasted or dropped into the Claude chat sent at 1x, a quarter of
+  the image tokens, known by the 144 dpi macOS writes into its own PNG rather than by anything
+  guessed, and the full-size one a click away on an `SD` badge beside the pill's thumbnail, which
+  flips to `HD` and back at one width, so nothing moves. It is on the left because the pill lays
+  its × over its own right end on hover, which would cover a badge there and take its click; the
+  pill grows past the page's 180px by the badge, so the name is cut where it was. The Claude Code
+  CLI already caps an image at 2000px, so a full-screen capture saves about a quarter and a window
+  capture about three quarters. A capture under 500 tokens at full size is left whole - the small
+  crop pasted to ask about a pixel, and 3% of what halving saved over 74 real pastes - and so is a
+  PNG at any other density, a JPEG, and a file from the attach button, whose input never enters
+  the page. The halved copy goes back through the composer's own paste or drop handler; the
+  original is stopped AT the page's document, where the page's own drag listeners still run, so
+  the drop overlay still clears. A swap removes the pill and pastes the other version, so it lands
+  at the END of the row. Pills are keyed by position, so the badge is derived from the thumbnail
+  on every change of the row rather than kept against an element),
   `branch` (the branch and its sync as two pills at the bottom of the side bar, mirrored from the
   status bar entries that hiding the bar leaves alive, so a click still checks out or syncs - in
   a footer the side bar is taught to give REAL room to rather than an overlay over the tree),

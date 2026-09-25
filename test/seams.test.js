@@ -421,3 +421,52 @@ test('the chat-calm sheet lands in the Claude page once, and in no other webview
   assert.equal(seam.defaults['claudeCode.hideOnboarding'], true);
   assert.doesNotMatch(plain, /Learn Claude Code/, 'a rule for a button the setting removes');
 });
+
+// A PNG as far as `retina.cjs` reads one: the signature, IHDR, whatever chunks the writer puts
+// before the pixels, and the first IDAT. CRCs are left zero, since nothing reads them.
+function png(width, height, ...chunks) {
+  const chunk = (type, data = Buffer.alloc(0)) => {
+    const head = Buffer.alloc(8);
+    head.writeUInt32BE(data.length, 0);
+    head.write(type, 4, 'latin1');
+    return Buffer.concat([head, data, Buffer.alloc(4)]);
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  const made = chunks.map(([type, data]) => chunk(type, data));
+  return new Uint8Array(Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', header), ...made,
+  ]));
+}
+
+function density(across, down = across, unit = 1) {
+  const data = Buffer.alloc(9);
+  data.writeUInt32BE(across, 0);
+  data.writeUInt32BE(down, 4);
+  data[8] = unit;
+  return ['pHYs', data];
+}
+
+// macOS writes these before its pHYs, the colour profile being the long one.
+const SCREENSHOT = [['iCCP', Buffer.alloc(3144)], ['eXIf', Buffer.alloc(138)], density(5669), ['iTXt', Buffer.alloc(420)], ['iDOT', Buffer.alloc(28)], ['IDAT']];
+
+test('a Retina capture is sent at 1x, and every other PNG as it came', () => {
+  const { targetOf } = require('../src/guest/retina.cjs');
+  assert.deepEqual(targetOf(png(1600, 1000, ...SCREENSHOT)),
+    { width: 800, height: 500, from: { width: 1600, height: 1000 } });
+  assert.deepEqual(targetOf(png(1601, 999, ...SCREENSHOT)),
+    { width: 801, height: 500, from: { width: 1601, height: 999 } });
+
+  // Worth halving is a matter of tokens at full size: 588x588 is 441, 616x616 is 484, 644x644 529.
+  assert.equal(targetOf(png(616, 616, ...SCREENSHOT)), null, 'a small crop lost its detail');
+  assert.ok(targetOf(png(644, 644, ...SCREENSHOT)), 'a capture over the floor was kept whole');
+
+  assert.equal(targetOf(png(1600, 1000, density(2835), ['IDAT'])), null, '72 dpi');
+  assert.equal(targetOf(png(1600, 1000, ['IDAT'])), null, 'no density at all');
+  assert.equal(targetOf(png(1600, 1000, density(5669, 5669, 0), ['IDAT'])), null, 'an aspect ratio, not a density');
+  assert.equal(targetOf(png(1600, 1000, density(5669, 2835), ['IDAT'])), null, 'two densities');
+  assert.equal(targetOf(png(1600, 1000, ['IDAT'], density(5669))), null, 'a pHYs after the pixels');
+  assert.equal(targetOf(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, ...Buffer.alloc(40)])), null, 'a JPEG');
+  assert.equal(targetOf(png(1600, 1000, ...SCREENSHOT).subarray(0, 40)), null, 'a header cut short');
+});

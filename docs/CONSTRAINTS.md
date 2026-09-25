@@ -393,8 +393,10 @@ page's to read rather than an expando on our wrapper: a `DataTransfer` holding a
 on the Claude composer's input, was taken by its React `onPaste` exactly as a real paste of an image
 is - the handler cancelled the event and the pill came up with the image's size. Constructors from
 the page's window and from the preload's own both worked. It is the only way into that composer's
-state from outside the page, and it is how `chat-marks` hands an edited image back. **[checked]** -
-claude-code 2.1.271 on code-server 4.135.0, in a hidden window.
+state from outside the page, and it is how `chat-marks` hands an edited image back. A `drop` built
+the same way, the `DataTransfer` in `DragEvent`'s init, reaches the panel's `onDrop` too, which is
+how `chat-retina` hands back a halved screenshot that was dragged in. **[checked]** - claude-code
+2.1.271 on code-server 4.135.0, in a hidden window; the drop on 2.1.282.
 
 **A key stopped inside a webview never reaches the workbench.** The editor's wrapper forwards a
 webview's keys from a listener on the page's WINDOW, in the bubble phase, so `stopPropagation` on
