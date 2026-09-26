@@ -2,37 +2,38 @@
 
 const { matchCount } = require('../shape.cjs');
 
-// A Claude session opens in the first editor group, not in a split the extension then locks. No
-// setting reaches it: `preferredLocation` picks side bar or editor area. [claude-code 2.1.270]
-const MARKER = '__CT_CHAT_COLUMN_2__';
+// A Claude session opens in the first editor group, not in a split the extension starts for it. No
+// setting reaches the split: `preferredLocation` picks side bar or editor area. [claude-code 2.1.280]
+const MARKER = '__CT_CHAT_COLUMN_3__';
 
-// Anchored on two NAMES, the column-picking method and the key the caller locks on, because
-// minification keeps both; the branch between them is no anchor, and its flag went from `!0` to
-// `column !== Beside` in 2.1.269. Both or neither: the column alone would lock your own group.
-// `1` is `ViewColumn.One` by the API's definition, so no minified namespace is needed.
-const PICK_RE = /this\.findUnusedColumn\(\)/;
-const FLAG_RE = /return\{startedInNewColumn:[\w$]+/;
+// Anchored on the method's NAME, which minification keeps, rather than on its one caller: every
+// path that would run `newGroupRight` for Claude gets the first group instead. It says it starts
+// no group, so the caller never locks it - group one is where your code is. `1` is
+// `ViewColumn.One` by the API's definition, so no minified namespace is needed.
+const START_RE = /(?<![\w$.])startClaudeGroup\(\)\{/;
 
 function apply(source) {
-  for (const [label, re] of [['column pick', PICK_RE], ['lock flag', FLAG_RE]]) {
-    const hits = matchCount(source, re);
-    if (hits !== 1) return { refused: `the ${label} matches ${hits} times, expected 1` };
-  }
+  const hits = matchCount(source, START_RE);
+  if (hits !== 1) return { refused: `the group start matches ${hits} times, expected 1` };
   return {
-    source: source
-      .replace(PICK_RE, `1/*${MARKER}*/`)
-      .replace(FLAG_RE, `return{startedInNewColumn:!1/*${MARKER}*/`),
+    source: source.replace(START_RE,
+      `$&return Promise.resolve({viewColumn:1,startsClaudeGroup:!1})/*${MARKER}*/;`),
   };
 }
 
 module.exports = {
   name: 'chat-column',
+  // The extension's own switch for the lock. A lone empty group still counts as one Claude starts,
+  // and locked, the next file you open splits right.
+  settings: {
+    'claudeCode.lockEditorGroups': false,
+  },
   extension: {
     id: /^anthropic\.claude-code-/,
     file: 'extension.js',
     marker: MARKER,
     stamp: /__CT_CHAT_COLUMN_\d+__/,
-    degrades: 'a session opens split-right in a column of its own, locked',
+    degrades: 'a session opens split-right in a group of its own',
     apply,
   },
 };

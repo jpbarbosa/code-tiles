@@ -43,13 +43,17 @@ const STATE_DECOY = STATE.replace('if(Q){let{anchor:X}',
 const STRINGS = 'var states$=["idle","running","waiting_input"],'
   + 'names$={pending:"claude-logo-pending.svg",done:"claude-logo-done.svg",plain:"claude-logo.svg"};';
 
-// `W` is startedInNewColumn, and the caller locks the group the panel lands in whenever it is true.
-const COLUMN = 'createPanel($,J,Q){let W=!1,K;if(Q!==void 0)K=Q;'
-  + 'else{K=O4.ViewColumn.Beside;let V=ih$();if(V)K=V.viewColumn;else K=this.findUnusedColumn(),W=!0}'
-  + 'let U=O4.window.createWebviewPanel("claudeVSCodePanel","Claude Code",K,{});return{startedInNewColumn:W}}';
-
-// The same flag as 2.1.269 spells it: derived from the column rather than a literal.
-const COLUMN_DERIVED = COLUMN.replace('W=!0}', 'W=K!==O4.ViewColumn.Beside}');
+// The column pick as 2.1.280 spells it: an existing Claude group, else a group started for it with
+// `newGroupRight`. `W` is startedInNewColumn, and the caller locks the group the panel lands in
+// whenever it is true.
+const COLUMN = 'async createPanel($,J,Q){let W=!1,K;if(Q!==void 0)K=Q;'
+  + 'else{let V=O4.window.tabGroups.all,B=ih$(V);if(!B){B=await this.startClaudeGroup()}'
+  + 'K=B?.viewColumn??O4.ViewColumn.Active,W=B?.startsClaudeGroup??!1}'
+  + 'let U=O4.window.createWebviewPanel("claudeVSCodePanel","Claude Code",K,{});return{startedInNewColumn:W}}'
+  + 'startClaudeGroup(){if(this.claudeGroupStart)return this.claudeGroupStart;let $=(async()=>{'
+  + 'await O4.commands.executeCommand("workbench.action.newGroupRight");'
+  + 'return{viewColumn:O4.window.tabGroups.all.length,startsClaudeGroup:!0}})();'
+  + 'this.claudeGroupStart=$;return $}';
 
 // `openFile` as the extension spells it - the file opened as TEXT, then a location sought in it -
 // except that this one RETURNS the chain, so a test can see how it ends. The extension drops it,
@@ -96,52 +100,53 @@ test('the seams on one bundle are spent in one pass and every edit survives', ()
     ['chat-icon + chat-column + chat-links in anthropic.claude-code-9.9.9-darwin-arm64']);
   const patched = read(file);
   assert.match(patched, /__CT_CHAT_ICON_2__/);
-  assert.match(patched, /__CT_CHAT_COLUMN_2__/);
+  assert.match(patched, /__CT_CHAT_COLUMN_3__/);
   assert.match(patched, /__CT_CHAT_LINKS_2__/);
   assert.equal(read(`${file}.ct-orig`), BUNDLE, 'one pristine copy, not one per seam');
 });
 
 // The column seam's contract, RUN against a fake API rather than read out of the patched text, so
 // a later anchor is free to spell its edit however it likes.
-function openPanel(source, { column, claudeGroup } = {}) {
+async function openPanel(source, { column, claudeGroup } = {}) {
   const opened = [];
+  const commands = [];
+  const groups = [{ viewColumn: 1 }];
   const O4 = {
-    ViewColumn: { Beside: -2, One: 1 },
-    window: { createWebviewPanel: (type, title, at) => { opened.push(at); return {}; } },
+    ViewColumn: { Active: -1, Beside: -2, One: 1 },
+    window: {
+      tabGroups: { all: groups },
+      createWebviewPanel: (type, title, at) => { opened.push(at); return {}; },
+    },
+    commands: {
+      executeCommand: async (command) => { commands.push(command); groups.push({ viewColumn: groups.length + 1 }); },
+    },
   };
   const T = new Function('O4', 'ih$', `${source}\nreturn T;`)(O4, () => claudeGroup);
-  const panel = Object.assign(Object.create(T.prototype), { findUnusedColumn: () => 2 });
-  const { startedInNewColumn } = panel.createPanel(undefined, undefined, column);
-  return { column: opened[0], locks: startedInNewColumn };
+  const { startedInNewColumn } = await Object.create(T.prototype).createPanel(undefined, undefined, column);
+  return { column: opened[0], locks: startedInNewColumn, commands };
 }
 
 const columnSeam = declaredExtensions(seams).find((entry) => entry.name === 'chat-column').extension;
 
-// Both spellings of the flag are held, for the reason the icon's are: pinning one is what 2.1.269
-// broke.
-test('a session opens in the first group, unlocked, however the flag is spelled', () => {
-  assert.deepEqual(openPanel(`class T{${COLUMN}}`), { column: 2, locks: true },
+test('a session opens in the first group, unlocked, and starts no group of its own', async () => {
+  assert.deepEqual(await openPanel(`class T{${COLUMN}}`),
+    { column: 2, locks: true, commands: ['workbench.action.newGroupRight'] },
     'the fixture no longer models the split it exists to stop');
-  for (const [label, spelling] of [['literal flag', COLUMN], ['derived flag', COLUMN_DERIVED]]) {
-    const { source, refused } = columnSeam.apply(`class T{${spelling}}`);
-    assert.ok(!refused, `${label}: ${refused}`);
-    assert.deepEqual(openPanel(source), { column: 1, locks: false }, `${label}: a new session`);
-    assert.deepEqual(openPanel(source, { column: 3 }), { column: 3, locks: false },
-      `${label}: an explicit column is no longer honoured`);
-    assert.deepEqual(openPanel(source, { claudeGroup: { viewColumn: 2 } }), { column: 2, locks: false },
-      `${label}: an existing Claude group is no longer reused`);
-  }
+  const { source, refused } = columnSeam.apply(`class T{${COLUMN}}`);
+  assert.ok(!refused, refused);
+  assert.deepEqual(await openPanel(source), { column: 1, locks: false, commands: [] }, 'a new session');
+  assert.deepEqual(await openPanel(source, { column: 3 }), { column: 3, locks: false, commands: [] },
+    'an explicit column is no longer honoured');
+  assert.deepEqual(await openPanel(source, { claudeGroup: { viewColumn: 2, startsClaudeGroup: false } }),
+    { column: 2, locks: false, commands: [] }, 'an existing Claude group is no longer reused');
+  // The locks the extension still takes on its own, a lone empty group among them, are its switch.
+  const seam = seams.find((one) => one.name === 'chat-column');
+  assert.equal(seam.settings['claudeCode.lockEditorGroups'], false);
 });
 
-// Moving the column without clearing the flag would lock the group your code is in.
-test('the column never moves without the lock flag, nor the flag clears without the column', () => {
-  const moved = {
-    'flag moved': COLUMN.replace('return{startedInNewColumn:W}', 'return{panel:U,startedInNewColumn:W}'),
-    'pick moved': COLUMN.replace('this.findUnusedColumn()', 'this.pickColumn()'),
-  };
-  for (const [label, spelling] of Object.entries(moved)) {
-    assert.ok(columnSeam.apply(`class T{${spelling}}`).refused, label);
-  }
+test('a group start the seam cannot find by name is refused, not guessed at', () => {
+  const renamed = COLUMN.replace('startClaudeGroup(){', 'openClaudeGroup(){');
+  assert.ok(columnSeam.apply(`class T{${renamed}}`).refused);
 });
 
 // The link seam's contract, RUN against a fake API whose text editor refuses a binary file the way
@@ -220,7 +225,7 @@ function update(dir, version, bundle = BUNDLE) {
   return path.join(dir, folder, 'extension.js');
 }
 
-const MOVED_COLUMN = BUNDLE.replace('this.findUnusedColumn()', 'this.pickColumn()');
+const MOVED_COLUMN = BUNDLE.replace('startClaudeGroup(){', 'openClaudeGroup(){');
 
 test('what the loaded copy lacks is read off the disk, from the folder the manifest names', () => {
   const { dir } = tree();
@@ -265,7 +270,7 @@ test('an update that lands while the app runs is patched, and the strip is told'
   const file = update(dir, '9.9.10');
   await settle();
   assert.match(read(file), /__CT_CHAT_ICON_2__/, 'the new version was left stock');
-  assert.match(read(file), /__CT_CHAT_COLUMN_2__/, 'the new version was left stock');
+  assert.match(read(file), /__CT_CHAT_COLUMN_3__/, 'the new version was left stock');
   assert.ok(published.length > before, 'the strip was not told');
   assert.deepEqual(published.at(-1), []);
 
@@ -325,11 +330,11 @@ test('a string the seam reads that has moved is reported, not silently obeyed', 
 });
 
 test('one seam whose shape has moved does not take the others down', () => {
-  const { dir, file } = tree(BUNDLE.replace('K=this.findUnusedColumn(),W=!0', 'K=this.pickColumn(),W=!0'));
+  const { dir, file } = tree(BUNDLE.replace('startClaudeGroup(){', 'openClaudeGroup(){'));
   assert.deepEqual(patchExtensions(dir), ['chat-icon + chat-links in anthropic.claude-code-9.9.9-darwin-arm64']);
   const patched = read(file);
   assert.match(patched, /__CT_CHAT_ICON_2__/, 'the seam that still matches was skipped too');
-  assert.doesNotMatch(patched, /__CT_CHAT_COLUMN_2__/);
+  assert.doesNotMatch(patched, /__CT_CHAT_COLUMN_3__/);
 });
 
 test('a patch lands once, keeps the original beside it, and is idempotent', () => {
@@ -353,7 +358,7 @@ test('a shape that has moved restores the stock bundle rather than leaving an ol
   // The next version of the extension, patched by the version of this patcher that is now gone.
   const moved = BUNDLE
     .replace('this.panelTab.iconPath=', 'this.panelTab.icon=')
-    .replace('K=this.findUnusedColumn(),W=!0', 'K=this.pickColumn(),W=!0')
+    .replace('startClaudeGroup(){', 'openClaudeGroup(){')
     .replace('if(Q?.searchText)', 'if(Q?.find)');
   fs.writeFileSync(`${file}.ct-orig`, moved);
 

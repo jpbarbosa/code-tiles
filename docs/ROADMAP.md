@@ -249,10 +249,11 @@ What the tree does today, what comes next, and what to check when the server is 
   its hover pill and the accent an active view wears, and needs no slot cut for it; the restore
   half is `screen-normal`, since `panel-restore` has no icon registered in this build and paints
   nothing),
-  `chat-column` (a Claude session opening in the first group rather than in a locked column of
-  its own - two edits on names minification keeps, the `findUnusedColumn` call and the
-  `startedInNewColumn` its callers read before running `workbench.action.lockEditorGroup`, applied
-  both or neither; an explicit column and an existing Claude group are both left as they were),
+  `chat-column` (a Claude session opening in the first group rather than in a locked group of
+  its own - the extension's `startClaudeGroup`, found by that name, answering with group one and
+  saying it started nothing, where it ran `newGroupRight`; the lock is the extension's own
+  `claudeCode.lockEditorGroups`, off, since a lone empty group still counts as one it started; an
+  explicit column and an existing Claude group are both left as they were),
   `chat-links` (a file link in the Claude chat opening whatever the file is: the extension sends
   every one - a markdown link, a tool row's file name, an @-mention - to `showTextDocument`, which
   rejects an image, a sound or a video with nothing hung on the rejection, so the click did nothing
