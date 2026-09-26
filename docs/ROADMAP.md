@@ -122,7 +122,8 @@ What the tree does today, what comes next, and what to check when the server is 
   that no project has claimed - four levels under $HOME and beside a project you keep somewhere
   else, skipping `Library`, `node_modules` and `vendor`. A query with a `/` in it is matched
   against the PATH, so `work/api` finds a folder that no single name matches; without one it is
-  a name. A query that STARTS like a path is read as one instead, so `~/Sites/` lists what is in
+  a name. Spaces, `-` and `_` are not part of a match on either side, so `jp7 static` and
+  `jp7static` both find `jp7-static`. A query that STARTS like a path is read as one instead, so `~/Sites/` lists what is in
   it and every `/` walks a level down; a child that is already a project keeps its icon and its ×. The field holds the focus the whole time, so the arrows move a selection rather
   than the focus, → at the end of the text steps INTO the selected folder without opening it and
   ← steps back out of it onto the folder you came from, and the home row above the folder dialog

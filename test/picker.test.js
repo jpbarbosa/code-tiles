@@ -110,6 +110,21 @@ test('a folder no project has claimed is found beside the ones that are', () => 
   assert.equal(rows[1].short, path.join('~', 'Sites', 'ledger-admin'));
 });
 
+test('the separator inside a name is not part of the match', () => {
+  const home = temp();
+  const sites = path.join(home, 'Sites');
+  const app = path.join(sites, 'jp7-static');
+  fs.mkdirSync(app, { recursive: true });
+  fs.mkdirSync(path.join(sites, 'jp7_static_assets'));
+
+  for (const query of ['jp7 static', 'jp7static', 'JP7-Static', 'sites/jp7 static']) {
+    assert.deepEqual(pickerRows([project(app)], { home, query }).map((row) => row.name),
+      ['jp7-static', 'jp7_static_assets'], query);
+  }
+  assert.deepEqual(pickerRows([], { home, query: '~/Sites/jp7st' }).map((row) => row.name).sort(),
+    ['jp7-static', 'jp7_static_assets']);
+});
+
 // A folder that is already a project must not come back a second time as a bare folder, in either
 // reading of the query.
 test('a claimed folder is a project row and never also a folder row', () => {

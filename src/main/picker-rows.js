@@ -32,7 +32,7 @@ export function pickerRows(projects, { query = '', home = os.homedir() } = {}) {
   // projects with it.
   const live = projects.filter((project) => isDirectory(project.folder));
   const text = typed(query.trim());
-  if (!text) return live.map((project) => projectRow(project, home));
+  if (!fold(text)) return live.map((project) => projectRow(project, home));
   return isPath(text) ? underPath(text, live, home) : byName(text, live, home);
 }
 
@@ -53,15 +53,20 @@ const typed = (text) => (path.sep === '/' ? text : text.replaceAll('/', path.sep
 // rather than a leading separator, because off POSIX an absolute path starts with a drive.
 const isPath = (text) => path.isAbsolute(text) || text.startsWith('~');
 
+// A name is matched the way it is said, not the way it is spelled: the separator inside one is the
+// part nobody remembers, so `jp7 static` and `jp7static` are both `jp7-static`. Folded on BOTH
+// sides, and never the path separator or a dot, which say where to look and whether it is hidden.
+const fold = (text) => text.toLowerCase().replace(/[\s_-]+/g, '');
+
 function underPath(text, projects, home) {
   const full = expand(text, home);
   // A trailing separator asks for what is INSIDE; anything else completes the last segment.
   const inside = text.endsWith(path.sep) || full === path.sep;
   const directory = inside ? full : path.dirname(full);
-  const prefix = inside ? '' : path.basename(full).toLowerCase();
+  const prefix = inside ? '' : fold(path.basename(full));
   const claimed = new Map(projects.map((project) => [project.folder, project]));
 
-  const keep = (name) => (prefix ? name.toLowerCase().startsWith(prefix) : !name.startsWith('.'));
+  const keep = (name) => (prefix ? fold(name).startsWith(prefix) : !name.startsWith('.'));
 
   return directories(directory, keep)
     .slice(0, PATH_MATCHES)
@@ -72,7 +77,7 @@ function underPath(text, projects, home) {
 }
 
 function byName(text, projects, home) {
-  const needle = text.toLowerCase();
+  const needle = fold(text);
   const matched = projects
     .map((project) => [rank(project, needle), project])
     .filter(([score]) => score > 0)
@@ -91,10 +96,10 @@ function byName(text, projects, home) {
 }
 
 function rank(project, needle) {
-  const name = project.name.toLowerCase();
+  const name = fold(project.name);
   if (name.startsWith(needle)) return 3;
   if (name.includes(needle)) return 2;
-  return project.folder.toLowerCase().includes(needle) ? 1 : 0;
+  return fold(project.folder).includes(needle) ? 1 : 0;
 }
 
 // A total order, so the answer does not move around as the scan order does. Shallower is nearer:
@@ -102,7 +107,7 @@ function rank(project, needle) {
 // you meant.
 function closest(needle) {
   const last = needle.split(path.sep).pop();
-  const leads = (folder) => (path.basename(folder).toLowerCase().startsWith(last) ? 1 : 0);
+  const leads = (folder) => (fold(path.basename(folder)).startsWith(last) ? 1 : 0);
   return (a, b) => (leads(b) - leads(a))
     || (a.split(path.sep).length - b.split(path.sep).length)
     || a.localeCompare(b);
@@ -143,8 +148,8 @@ function neighbours(projects, needle, home) {
 // a folder that no single name matches. Without one it is a name, and a path would match half
 // your files by the directory they happen to sit in.
 const fits = (folder, name, needle) => (needle.includes(path.sep)
-  ? folder.toLowerCase().includes(needle)
-  : name.toLowerCase().includes(needle));
+  ? fold(folder).includes(needle)
+  : fold(name).includes(needle));
 
 const within = (folder, root) => folder.startsWith(root.endsWith(path.sep) ? root : root + path.sep);
 
