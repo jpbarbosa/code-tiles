@@ -262,6 +262,28 @@ const READ = `(() => {
       };
       return walk(document);
     })(),
+    // The chat-offscreen seam, read in the Claude page: its sheet, and how many messages wear it.
+    chatOffscreen: (() => {
+      const walk = (doc) => {
+        if (doc.querySelector('link[href*="anthropic.claude-code-"]')) {
+          const messages = [...doc.querySelectorAll('[class*="turn_"] > [class*="timelineMessage_"]')];
+          return {
+            sheet: Boolean(doc.getElementById('code-tiles-chat-offscreen')),
+            messages: messages.length,
+            skippable: messages.filter((message) =>
+              doc.defaultView.getComputedStyle(message).contentVisibility === 'auto').length,
+          };
+        }
+        let frames;
+        try { frames = doc.querySelectorAll('iframe'); } catch { return null; }
+        for (const frame of frames) {
+          try { if (frame.contentDocument) { const hit = walk(frame.contentDocument); if (hit) return hit; } }
+          catch { /* cross-origin */ }
+        }
+        return null;
+      };
+      return walk(document);
+    })(),
     // The chat-marks seam, read in the Claude page: its sheet, and whether the input it pastes an
     // edit back into still answers to its label. It opens no preview and pastes nothing, since an
     // attachment would land in a real draft.

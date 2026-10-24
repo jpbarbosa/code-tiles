@@ -263,6 +263,9 @@ What the tree does today, what comes next, and what to check when the server is 
   without the plate 2.1.267 put under it, by redefining the extension's own variable on the
   element; its announcement cards hidden by test id, since a dismissal holds for one item of a
   feed; and onboarding off through the extension's own `claudeCode.hideOnboarding`, a default),
+  `chat-offscreen` (a long Claude session no longer slowing every switch that resizes its tile: a
+  message off screen skips style and layout, `content-visibility: auto`, since the extension
+  restyles its whole page from its own animation frames on every resize),
   `chat-marks` (arrow, box and circle drawn on an image attached to the Claude chat, and a crop,
   from a pencil beside its preview's ×, so a screenshot can point at what the message is about:
   outlines in six highlighter colours a model names one way each, magenta first since these screens

@@ -453,6 +453,25 @@ test('what chat-marks finds in the Claude page is still in the bundle this machi
   }
 });
 
+// chat-offscreen patches nothing either: a rename leaves every message rendered again, which only
+// shows as a tile switch getting slower with the length of the session.
+const CHAT_OFFSCREEN_ANCHORS = [/turn:"turn_\w+"/, /timelineMessage:"timelineMessage_\w+"/];
+
+test('what chat-offscreen finds in the Claude page is still in the bundle this machine has', (t) => {
+  const pages = [];
+  for (const dir of INSTALLED) {
+    let names;
+    try { names = fs.readdirSync(dir); } catch { continue; }
+    for (const folder of names.filter((name) => /^anthropic\.claude-code-/.test(name))) {
+      try { pages.push([folder, fs.readFileSync(path.join(dir, folder, 'webview/index.js'), 'utf8')]); } catch { continue; }
+    }
+  }
+  if (!pages.length) return t.skip('no Claude Code extension installed here');
+  for (const [version, source] of pages) {
+    for (const anchor of CHAT_OFFSCREEN_ANCHORS) assert.match(source, anchor, `chat-offscreen: ${version} has no ${anchor}`);
+  }
+});
+
 // chat-retina patches nothing either: a rename makes a Retina paste go through at full size, and a
 // pill lose its plate, with nothing printed. Its composer is the wrapper both rows of pills sit in,
 // the files are what the paste and the drop handlers read, and the plate goes after the thumbnail.
