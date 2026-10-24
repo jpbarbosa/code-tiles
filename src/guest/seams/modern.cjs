@@ -11,5 +11,8 @@ module.exports = {
   name: 'modern',
   settings: {
     'workbench.experimental.modernUI': true,
+    // Tabs as pills, which the design shipped as. 4.143.1 added `connected` - the active tab
+    // joined to its editor by an underline - and made it the default. [code-server 4.143.1]
+    'workbench.experimental.modernUIEditorTabStyle': 'pill',
   },
 };
