@@ -22,15 +22,18 @@ const ROUND = [
   '[class*="actionButton_"]', '[class*="timelineMessage_"]', '[class*="suggestionBullet_"]',
   '[class*="groupCount_"]', '[class*="mcpStatus_"]',
   '.part.activitybar .menubar', '.part.activitybar .menubar .menubar-menu-title',
-].join(', ');
+];
 
 const scaled = (tokens, prefix) => Object.entries(tokens)
   .map(([name, px]) => `  ${prefix}${name}: ${Math.round(px * SCALE * 100) / 100}px;`)
   .join('\n');
 
+// A plain list, never one `:is()`: Chromium files each selector of a list under its class or
+// attribute, but an `:is()` it tests against every element and both its pseudo-elements on every
+// recalc. That doubled a whole workbench's style recalc - the cost of every tile switch.
 const SHAPES = `
 *, *::before, *::after { corner-shape: squircle; }
-:is(${ROUND}), :is(${ROUND})::before, :is(${ROUND})::after { corner-shape: round; }`;
+${ROUND.map((selector) => `${selector}, ${selector}::before, ${selector}::after`).join(',\n')} { corner-shape: round; }`;
 
 // Inside a webview page, whose `html` rule the Claude panel's own tokens are written on.
 const PAGE_CSS = `:root {\n${scaled(PANEL_TOKENS, '--')}\n}\n${SHAPES}`;

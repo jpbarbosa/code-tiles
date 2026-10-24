@@ -45,6 +45,13 @@ says what.
 it cares about (`MutationObserver`, a workbench event) and reacts once. A loop with a pass
 count is a design that could not say what it was waiting for.
 
+**A seam's stylesheet is paid on every recalc of every document it reaches.** A focus change
+rewrites the sheet in two tiles, so a whole-workbench recalc is the cost of a tile switch. A list
+of exceptions is a plain selector list, never one `:is()`: Chromium files each selector of a list
+under its class or attribute but tests an `:is()` against every element. `corners`' 27 exceptions
+in one `:is()` doubled that recalc (10.2 ms to 6.4 ms once unwrapped, 4.5 ms with no corners at
+all). **[checked]**
+
 **A seam proposes a preference, it does not take one.** A setting the app's shape depends on is
 `settings`; a setting that only repairs a web-only default is `defaults`, which loses to your own
 file. Pinning `workbench.colorTheme` cost more than the theme: a theme-scoped
