@@ -530,6 +530,12 @@ window's edge against 4px between parts in a third; 4.143.1 is 4px everywhere, w
 bar inside the side bar's card. Nothing here may depend on that number: the app's gutter is its
 own. **[checked]**
 
+**A bump moves the design, not only the code.** 4.143.1 changed the tab style's default, the
+activity bar's card, the panel's border colour, the side bar's separators and the tabs' close
+buttons, and no shape test sees any of it. `modern` holds the rendition the app was designed on;
+after a bump, compare a tile against the previous build side by side, offscreen at one size,
+element by element (`tools/ux-compare`), before trusting the probe. **[checked]**
+
 **The browser runs `out/vs/code/browser/workbench/workbench.js`, not
 `out/vs/workbench/workbench.web.main.internal.js`.** Both are ~18MB of the same minified code, so
 a patch on the second matches its shape, reports success and is served - and never executes,

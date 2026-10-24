@@ -172,7 +172,9 @@ What the tree does today, what comes next, and what to check when the server is 
   own light-first fallback, on a profile with no theme cached yet, and the webview frame's served
   HTML, which was a fifth of the tile going white for the 31 ms between that frame committing and
   its load),
-  `modern` (the editor's rounded design, so a tile's parts are cards on the shell colour),
+  `modern` (the editor's rounded design, so a tile's parts are cards on the shell colour, held
+  to the 4.135.0 rendition: tabs as pills with every close button showing, the activity bar a
+  column of its own at the tile's edge, the panel edged like the editor, no side bar separators),
   `card` (the window clipped to the radius the shell's glow is already struck for, its corners
   left unpainted over a transparent view, so what is in them is the shell's ground and its glow),
   `corners` (the editor's own corners as the Corners preference has them: its radius tokens and the
