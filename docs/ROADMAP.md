@@ -304,9 +304,6 @@ What the tree does today, what comes next, and what to check when the server is 
   `focus` (a press inside a window claims focus for its project, since a view paints above the
   shell's page and the shell never sees that press - registered on every document the runtime's
   sweep reaches, because a press in the Claude panel lands two frames down in a webview),
-  `frame` (the inset the editor floats its parts in, halved, so the space beside a tile is the
-  app's gutter and not the app's gutter plus the editor's - one share read by the stylesheet and
-  the patch alike; see *The frame inside a tile* below),
   `zoom` (Cmd+0 given back off the editor, which binds it to Focus into Primary Side Bar and
   would otherwise swallow the key before the View menu's Actual Size ever saw it),
   `reveal` (Reveal in Finder back in the explorer's and a tab's context menus, where the desktop
@@ -404,7 +401,7 @@ The pinned version is in `scripts/fetch-code-server.sh`. After a bump, in this o
 3. `npm test` is the gate on the server patches, each matched by SHAPE because every name in
    that bundle is minified: `branch` teaches `Part.create` to adopt the footer it draws, `welcome`
    hands the welcome page an empty walkthrough list, `dark` fixes the light-first fallback and the
-   webview frame, `frame` scales the editor's own inset, and `secrets` makes an extension secret
+   webview frame, and `secrets` makes an extension secret
    write merge instead of overwrite. A shape that no longer matches is re-derived from the code
    around it - `setFooterArea`, `buildGettingStartedWalkthroughsList` - never guessed at. Every
    patch must also ERASE the shape it matched, which the same test checks: a replacement that
@@ -413,20 +410,6 @@ The pinned version is in `scripts/fetch-code-server.sh`. After a bump, in this o
    patches the new bundle and nothing has to remember that it happened.
 4. Try deleting a workaround. Each one names the version it was written against; a bump is the
    only moment anyone will ever check.
-
-## The frame inside a tile
-
-`frame` halves the inset the editor floats its parts in, so the space beside a tile is the app's
-gutter plus 4px rather than plus 8px. `FRAME_SHARE` at the top of the seam is the whole knob, read
-by both the stylesheet and the patch. Scaling the unit catches the seam BETWEEN a window's own
-parts as well, since the editor spells that with the same one, so the seam puts it back: a margin
-sideways, where widths reflow, and a margin plus the layout service's own reservation above the
-panel, since a part's height is what is left of its slot once that reservation is taken.
-
-The activity bar is the one part the scaling lands unevenly on: the column the layout service
-reserves for it shrinks with the unit and the bar's own width does not, so the part beside it gets
-a doubled margin to take the difference back. That part is the side bar, or the editor once the
-side bar is hidden - which is why the doubled margin is written against both.
 
 ## Claude Events, and why the two signals need one window
 

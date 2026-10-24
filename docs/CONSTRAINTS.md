@@ -525,17 +525,10 @@ behind the block they sit in.
 **[checked]**
 
 **The editor's own frame moves between versions.** The inset it floats its parts in was 4px on
-every side in one release and flush left and top with 8px on the right in the next. Nothing
-here may depend on that number: the app's gutter is its own, and the `frame` seam is the only
-place aware such a number exists. *[inherited]*
-
-**That frame is kept TWICE, and the two halves are not equivalent.** A margin says where a part's
-box sits; the layout service sizes the part from a constant in the bundle. Widths reflow on their
-own, so left and right move with a stylesheet alone - heights do not, and halving the top margin
-by itself slid the editor up and stranded its bottom at 12px. Vertical needs the patch. It is why
-`frame` is the one seam that is a stylesheet AND a patch - twice over, since the gap above the
-panel is vertical too: restoring it took the margin and the reservation behind it, or the panel
-hung 2px past the frame's bottom. **[checked]**
+every side in one release, flush left and top with 8px on the right in the next, and 8px at the
+window's edge against 4px between parts in a third; 4.143.1 is 4px everywhere, with the activity
+bar inside the side bar's card. Nothing here may depend on that number: the app's gutter is its
+own. **[checked]**
 
 **The browser runs `out/vs/code/browser/workbench/workbench.js`, not
 `out/vs/workbench/workbench.web.main.internal.js`.** Both are ~18MB of the same minified code, so
@@ -546,9 +539,7 @@ else: check `performance.getEntriesByType('resource')` in a live window, not the
 
 **A patch outlives every `git checkout`,** because it is written into `vendor/`, which is
 gitignored and holds no tracked files. Reverting a seam leaves its patch applied, and only
-`npm run fetch-code-server` or reversing the edit by hand takes it back out. `ct:dark-first` sits
-in `workbench.js` today for exactly this reason, put there by a seam version that no longer names
-that file. **[checked]**
+`npm run fetch-code-server` or reversing the edit by hand takes it back out. **[checked]**
 
 **The server's scan of its built-ins is cached against the mtime of the folder holding them.** It
 is reused while `lib/vscode/extensions` keeps its own mtime and the product is unchanged, so a file

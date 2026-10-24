@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-VERSION="${CODE_SERVER_VERSION:-4.135.0}"
+VERSION="${CODE_SERVER_VERSION:-4.143.1}"
 
 # coder publishes a standalone build for macOS and Linux and none at all for Windows, where a
 # code-server is one you installed from npm yourself and the app finds on PATH.

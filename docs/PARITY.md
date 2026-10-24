@@ -77,7 +77,7 @@ The old tree's inventory is `docs/VSCODE-CUSTOMIZATIONS.md` in that repo. Row fo
 |---|---|---|---|
 | Title bar gone | clipped, measured `--tbh` | **setting** | `window.commandCenter` + `workbench.layoutControl.enabled` + compact menu bar, so the workbench reflows itself |
 | Status bar gone | clipped, measured `--sbh` | **setting** | `workbench.statusBar.visible` |
-| The tile's frame is the app's, not the editor's | yes | yes | `frame`, stylesheet and patch reading one `FRAME_SHARE` |
+| The tile's frame is the app's, not the editor's | yes | yes | the editor's own 4px since code-server 4.143.1, so nothing of ours |
 | Quick Open re-anchored below the clipped edge | yes | **n/a** | nothing is clipped here, so there is nothing to re-anchor |
 | Rail and side bar drawn as one card | hand-built from their own edges | **setting** | `workbench.experimental.modernUI` |
 | Project tint on the parts' backgrounds | yes | yes | |
