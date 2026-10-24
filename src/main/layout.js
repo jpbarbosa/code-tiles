@@ -109,12 +109,12 @@ export function tileRects({
 }) {
   if (count <= 0) return [];
   const { area, cols, xs, ys } = geometry({ width, height, count, mode, sizes, strip, gap });
-  const hidden = { visible: false, x: 0, y: 0, width: 0, height: 0 };
 
+  // A hidden tile keeps the size it will be shown at. Shown at the size it last had, it lays the
+  // workbench out once at that size and again at this one before its first frame: 250 ms there,
+  // against 40 ms for a tile already the right size.
   if (mode === 'single') {
-    return Array.from({ length: count }, (_, i) => (
-      i === focusedIndex ? { visible: true, ...area } : { ...hidden }
-    ));
+    return Array.from({ length: count }, (_, i) => ({ visible: i === focusedIndex, ...area }));
   }
 
   // Maximized: the master takes the left column whole, and the rest keep their order down the

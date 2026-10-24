@@ -40,6 +40,8 @@ test('the last tile takes the empty cells after it', () => {
 test('single view places only the focused project', () => {
   const rects = tileRects({ ...window, count: 4, mode: 'single', focusedIndex: 2 });
   assert.deepEqual(rects.map((r) => r.visible), [false, false, true, false]);
+  // Every hidden one already the size it would be shown at, so showing it is not a relayout.
+  for (const rect of rects) assert.deepEqual({ ...rect, visible: true }, rects[2]);
 });
 
 test('equal shares are the same grid as no shares at all', () => {
@@ -270,6 +272,6 @@ test('a point lands in the tile it is over, and in no gutter', () => {
 test('a hidden tile is no drop target', () => {
   const rects = tileRects({ ...window, count: 3, mode: 'single', focusedIndex: 1 });
   assert.equal(rectAt(rects, window.width / 2, window.height / 2), 1);
-  // Every other rect is the zero one every hidden tile carries, and the origin is inside it.
-  assert.equal(rectAt(rects, 0, 0), -1);
+  // Every hidden tile carries that same rect, and the point is inside it too.
+  assert.equal(rects.filter((rect) => rectAt([rect], window.width / 2, window.height / 2) === 0).length, 1);
 });

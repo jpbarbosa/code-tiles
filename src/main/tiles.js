@@ -37,8 +37,9 @@ export class Tiles {
       added ||= !this.#views.has(project.folder);
       const view = this.#ensure(project);
       const rect = rects[index];
+      // Sized before it is shown, so a window comes up already laid out for where it lands.
+      if (rect.width) view.setBounds({ x: rect.x, y: rect.y, width: rect.width, height: rect.height });
       view.setVisible(rect.visible);
-      if (rect.visible) view.setBounds({ x: rect.x, y: rect.y, width: rect.width, height: rect.height });
       this.setContext(project.folder, project);
     });
 
