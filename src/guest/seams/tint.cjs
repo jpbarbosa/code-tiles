@@ -189,6 +189,9 @@ ${tokens(context)}
   --ct-source-editor: var(--vscode-editor-background);
   --ct-source-editorGroup-empty: var(--vscode-editorGroup-emptyBackground);
   --ct-source-panel: var(--vscode-panel-background);
+  /* The tab row, which 4.143.1 paints from these as an image over the card. [code-server 4.143.1] */
+  --ct-source-tabs: var(--vscode-editorGroupHeader-tabsBackground);
+  --ct-source-noTabs: var(--vscode-editorGroupHeader-noTabsBackground);
   /* A widget floats over a tinted window, so it wears the same veil. Its SURFACE only: half of
      the theme's backgrounds are translucent highlights, and a veil under one paints a line. */
   ${WIDGETS.map((widget) => `--ct-source-${widget}: var(--vscode-${widget}-background);`).join('\n  ')}
@@ -213,6 +216,8 @@ ${tokens(context)}
     --vscode-editor-background: ${veiled('--ct-source-editor')};
     --vscode-editorGroup-emptyBackground: ${veiled('--ct-source-editorGroup-empty')};
     --vscode-panel-background: ${veiled('--ct-source-panel')};
+    --vscode-editorGroupHeader-tabsBackground: ${veiled('--ct-source-tabs')};
+    --vscode-editorGroupHeader-noTabsBackground: ${veiled('--ct-source-noTabs')};
     ${WIDGETS.map((widget) => `--vscode-${widget}-background: ${veiled(`--ct-source-${widget}`)};`).join('\n    ')}
 
     /* The activity bar's icons follow the ground the bar wears, focused or not, and the ink is
@@ -290,12 +295,17 @@ ${tokens(context)}
 
     /* The one in the group you are in wears the halo; another group's active tab stays a plate.
        On a pseudo-element, since the fill's own box-shadow list is the editor's - its border line,
-       and the pinned tabs' last one - and struck round the fill's border box, where the pill is. */
-    & .part.editor .editor-group-container.active .tabs-container > .tab.active > .tab-fill::after {
+       and the pinned tabs' last one - and struck round the fill's border box, where the pill is.
+       4.143.1 draws the pill's bottom border on this same pseudo, 1px high and inset at both ends,
+       which squeezed the halo into a line along the top: the selector matches the editor's weight
+       and the box is said whole. [code-server 4.143.1] */
+    &:not(.modern-ui-connected-editor-tabs) .part.editor .editor-group-container.active .tabs-container > .tab.active > .tab-fill::after {
       content: "";
       position: absolute;
       inset: calc(-1 * var(--vscode-strokeThickness)) 0;
+      height: auto;
       border-radius: inherit;
+      background-color: transparent;
       box-shadow: var(--ct-tab-glow);
       pointer-events: none;
     }
