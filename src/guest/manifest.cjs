@@ -13,6 +13,7 @@ module.exports = [
   require('./seams/welcome.cjs'),
   require('./seams/secrets.cjs'),
   require('./seams/trust.cjs'),
+  require('./seams/typescript.cjs'),
   require('./seams/ground.cjs'),
   require('./seams/tint.cjs'),
   require('./seams/identity.cjs'),

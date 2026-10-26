@@ -200,6 +200,9 @@ What the tree does today, what comes next, and what to check when the server is 
   to re-read inside a per-window queue, and a storage listener keeps the read fresh with it),
   `trust` (restricted mode off, without which an extension that refuses untrusted workspaces -
   Claude Code - is simply absent),
+  `typescript` (one TypeScript server per window instead of a syntax twin beside it, and no
+  @types downloads, as defaults your own settings override: every window has its own extension
+  host, so each project paid for both),
   `ground` (the theme's shell colour reported back so the app's ground matches it),
   `tint` (the project's hue mixed into the parts' own surfaces and their chrome, into every
   active tab, glowing round the one in the group you are in and the terminal strip's, into every
