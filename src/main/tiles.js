@@ -8,6 +8,7 @@ import { routeNavigation, routePopup } from './links.js';
 // size: Chromium clamps neither end, so a held key reaches 3834%.
 const ZOOM_STEP = 0.5;
 const ZOOM_LIMIT = 8;
+const CLOSE_TIMEOUT_MS = 10000;
 
 // The views, and the only place that creates, moves or destroys one. Callers hand it the whole
 // desired state and it reconciles; there is no create-then-place-then-focus sequence to get
@@ -34,6 +35,11 @@ export class Tiles {
 
     let added = false;
     projects.forEach((project, index) => {
+      // An asleep tile has no window to place. One still closing stays out of sight meanwhile.
+      if (project.asleep) {
+        this.#views.get(project.folder)?.setVisible(false);
+        return;
+      }
       added ||= !this.#views.has(project.folder);
       const view = this.#ensure(project);
       const rect = rects[index];
@@ -80,6 +86,28 @@ export class Tiles {
     this.#contexts.delete(folder);
     this.#window.contentView.removeChildView(view);
     view.webContents.close();
+  }
+
+  // A tile's window closed the way a browser tab is, so the editor may refuse: unsaved work vetoes
+  // the unload, and the window stays. Resolves whether it closed. The server keeps its extension
+  // host for the reconnection grace (server.js), then everything that host started goes with it.
+  sleep(folder) {
+    const contents = this.#views.get(folder)?.webContents;
+    if (!contents || contents.isDestroyed()) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      let settled = false;
+      const settle = (slept) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(slept);
+      };
+      // A renderer too busy to answer the unload is a window that did not close.
+      const timer = setTimeout(() => settle(false), CLOSE_TIMEOUT_MS);
+      contents.once('destroyed', () => settle(true));
+      contents.once('will-prevent-unload', () => settle(false));
+      contents.close({ waitForBeforeUnload: true });
+    });
   }
 
   // Sent on CHANGE only. A gutter drag re-renders the desk sixty times a second and a window's

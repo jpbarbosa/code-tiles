@@ -19,6 +19,14 @@ What the tree does today, what comes next, and what to check when the server is 
   `claude` reading and writing ONE login, and simultaneous OAuth refreshes rotate the single-use
   refresh token out from under each other. The focused tile never waits; `CODE_TILES_STAGGER_MS=0`
   turns it off. `src/main/bringup.js`.
+- Idle tiles sleep. A tile you have been away from for 30 minutes closes its window, and the
+  server lets its extension host go two minutes later (`--reconnection-grace-time`, stock three
+  hours), taking its language servers and Claude sessions with it; terminals live in the shared
+  pty host and keep running. Never while its Claude reads working (a parked background task
+  counts), attention or an unseen finished, and never a window that vetoes its unload. Its ground
+  shows the project and wakes it on a click, as does every other way of focusing it. One tile per
+  check, the longest away first; a Preferences dial turns it off. `CT_SLEEP_AFTER_MS` shortens
+  the wait on the dev instance.
 - Gutter resizing: the gutter between two tiles is the handle, a double-click evens its axis and
   `⌃⌘0` evens both. Shares rather than pixels, kept per grid SHAPE, persisted.
 - Maximize: one project takes a column of about seven tenths and the rest stack live beside it,

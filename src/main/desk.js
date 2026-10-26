@@ -19,6 +19,12 @@ const LAYOUT_DEFAULTS = { sideBar: true, panel: false, secondarySideBar: false }
 // held is a hand followed at 33Hz, not a loop waiting for the workbench to agree with itself.
 const DRAG_MS = 30;
 
+// A tile you have been away from this long gives its window back, unless its Claude has something
+// for you. CT_SLEEP_AFTER_MS is for trying it on the dev instance without waiting half an hour.
+const SLEEP_AFTER_MS = Number(process.env.CT_SLEEP_AFTER_MS) || 30 * 60 * 1000;
+const SLEEP_CHECK_MS = Math.min(60 * 1000, Math.max(5 * 1000, SLEEP_AFTER_MS / 4));
+const KEEPS_AWAKE = ['working', 'attention', 'finished'];
+
 // The one place that turns "what is open, in what order, focused where" into views on screen and
 // a picture for the shell. Everything else asks it to render; nothing else places a view.
 export class Desk {
@@ -37,6 +43,12 @@ export class Desk {
   // A rearrangement in progress: which window's grip is held, and the order to put back if the
   // gesture is abandoned. Nothing about it is persisted - it lives and dies with the press.
   #drag = null;
+  // Which tiles are asleep, when each was last left, and when one last refused to close. None of
+  // it is persisted: a launch opens every window, and the clock starts with it.
+  #asleep = new Set();
+  #left = new Map();
+  #refused = new Map();
+  #since = Date.now();
 
   constructor({ window, projects, tiles, activity = null, preferences = null }) {
     this.#window = window;
@@ -47,6 +59,7 @@ export class Desk {
     const saved = projects.sizes;
     const sizes = migrateSizes(saved, projects.open().length);
     if (sizes !== saved) projects.sizes = sizes;
+    setInterval(() => this.#sleepIdle(), SLEEP_CHECK_MS);
   }
 
   get projects() {
@@ -55,7 +68,7 @@ export class Desk {
 
   render() {
     const { open, focused, mode, master, shape, sizes, rects } = this.#placement();
-    const projects = this.#projects.all();
+    const projects = this.#projects.all().map((project) => ({ ...project, asleep: this.#asleep.has(project.folder) }));
 
     // Whether a window is one of SEVERAL tiles, which is what both of the app's own controls
     // inside it hang on: the item that widens this one, and the grip that moves it among the
@@ -68,6 +81,7 @@ export class Desk {
     this.#tiles.sync(
       open.map((project) => ({
         ...project,
+        asleep: this.#asleep.has(project.folder),
         focused: project.folder === focused,
         tint: project.folder === focused ? levels.focused : levels.quiet,
         tiled,
@@ -185,7 +199,11 @@ export class Desk {
       [part, reported?.[part] ?? this.#layout[part]?.visible ?? LAYOUT_DEFAULTS[part]]));
   }
 
+  // Every way onto a tile comes through here, the asleep tile's own ground included, so this is
+  // also what wakes one.
   focus(folder) {
+    this.#leave(folder);
+    this.#asleep.delete(folder);
     this.#projects.focused = folder;
     // Landing on a project is what clears a turn that finished while you were elsewhere. Both
     // ways in say so, because a click into a window is as much an answer as the strip is.
@@ -201,6 +219,7 @@ export class Desk {
     // so it is also the answer to a drag whose release was never reported.
     this.endDrag(false);
     if (folder === this.#projects.focused) return;
+    this.#leave(folder);
     this.#projects.focused = folder;
     this.#activity?.seen(folder);
     this.render();
@@ -285,7 +304,42 @@ export class Desk {
   close(folder) {
     this.#projects.close(folder);
     this.#parts.delete(folder);
+    this.#asleep.delete(folder);
+    this.#left.delete(folder);
+    this.#refused.delete(folder);
     this.render();
+  }
+
+  // The tile focus is leaving starts its clock.
+  #leave(next) {
+    const previous = this.#projects.focused;
+    if (previous && previous !== next) this.#left.set(previous, Date.now());
+  }
+
+  // One tile per check, the longest-idle first, so a desk that has been away all afternoon does
+  // not close every window in the same second. Asleep before it closes, so a render meanwhile
+  // cannot build it again; awake again if its window refused.
+  #sleepIdle() {
+    if (this.#preferences?.sleep !== 'on' || this.#window.isDestroyed()) return;
+    const now = Date.now();
+    const away = (folder) => now - (this.#left.get(folder) ?? this.#since);
+    const candidate = this.#projects.open()
+      .filter((project) => project.folder !== this.#projects.focused
+        && !this.#asleep.has(project.folder)
+        && !KEEPS_AWAKE.includes(project.claudeState)
+        && away(project.folder) >= SLEEP_AFTER_MS
+        && now - (this.#refused.get(project.folder) ?? 0) >= SLEEP_AFTER_MS)
+      .sort((a, b) => away(b.folder) - away(a.folder))[0];
+    if (!candidate) return;
+    const { folder } = candidate;
+    this.#asleep.add(folder);
+    this.render();
+    this.#tiles.sleep(folder).then((slept) => {
+      if (slept) return;
+      this.#asleep.delete(folder);
+      this.#refused.set(folder, Date.now());
+      this.render();
+    });
   }
 
   closeFocused() {

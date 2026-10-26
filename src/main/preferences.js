@@ -3,13 +3,14 @@ import { files } from './paths.js';
 import { corners as shapes, rungNames } from '../guest/manifest-settings.js';
 
 // The app's preferences: how much of its own colour a window wears, on the tile you are in and on
-// the tiles you are not, the shape of every corner it draws, and whether a Claude session waiting
-// on you is heard. The first two are NAMES here - what one is worth is the guest's business - read
+// the tiles you are not, the shape of every corner it draws, whether a Claude session waiting on
+// you is heard, and whether an idle tile sleeps. The first two are NAMES here - what one is worth is the guest's business - read
 // from there, so a rung or a shape this app offers is one a window can actually wear.
 const RUNGS = rungNames();
 const DIALS = ['focused', 'quiet'];
 const DEFAULT = 'medium';
 const SOUNDS = ['on', 'off'];
+const SLEEPS = ['on', 'off'];
 const WIDTH = 380;
 
 // A window rather than a panel in the shell page, for the reason the usage panel and the picker
@@ -47,10 +48,18 @@ export class Preferences {
     return this.#store.state.sound === 'off' ? 'off' : 'on';
   }
 
+  // Whether a tile left alone long enough gives its window back: the desk's to decide which.
+  get sleep() {
+    return this.#store.state.sleep === 'off' ? 'off' : 'on';
+  }
+
   // What the page is shown and handed back: both dials, the corners, and what those are worth to
   // it - its own corners follow at once, while every other window hears it from the desk.
   get state() {
-    return { ...this.levels, corners: this.corners, cornerValues: shapes.cornerValues(this.corners), sound: this.sound };
+    return {
+      ...this.levels, corners: this.corners, cornerValues: shapes.cornerValues(this.corners),
+      sound: this.sound, sleep: this.sleep,
+    };
   }
 
   set(dial, value) {
@@ -59,6 +68,8 @@ export class Preferences {
       panelCorners(value);
     } else if (dial === 'sound' && SOUNDS.includes(value)) {
       this.#store.update({ sound: value });
+    } else if (dial === 'sleep' && SLEEPS.includes(value)) {
+      this.#store.update({ sleep: value });
     } else if (DIALS.includes(dial) && RUNGS.includes(value)) {
       this.#store.update({ tint: { ...this.levels, [dial]: value } });
     }

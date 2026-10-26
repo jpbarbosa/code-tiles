@@ -8,6 +8,9 @@ import { IS_WINDOWS, serverCommand } from './platform.js';
 
 const HEALTH_TIMEOUT_MS = 40000;
 const RELEASE_TIMEOUT_MS = 5000;
+// How long a window's extension host outlives it: stock is 3 h, which a sleeping tile held its
+// language servers and Claude sessions for. On loopback, gone two minutes is gone. [code-server 4.143.1]
+const RECONNECTION_GRACE_S = 120;
 
 // One code-server for the whole app. Every tile is a window of it, which is what makes the
 // login, the settings and the extensions shared without anything syncing them.
@@ -56,6 +59,7 @@ export class CodeServer {
       '--bind-addr', `127.0.0.1:${this.#port}`,
       '--disable-telemetry',
       '--disable-update-check',
+      '--reconnection-grace-time', String(RECONNECTION_GRACE_S),
       // What a window calls the thing it is: code-server serves this flag to the workbench as
       // its `nameLong`, so it names the welcome page, the document title and the About dialog
       // at once. The `welcome` seam is the rest of that page.

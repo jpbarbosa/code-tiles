@@ -192,9 +192,23 @@ function renderGrounds(open) {
     ground.style.top = `${rect.y - state.strip}px`;
     ground.style.width = `${rect.width}px`;
     ground.style.height = `${rect.height}px`;
+    // An asleep tile has no window over its ground, so the ground says whose it is and wakes it.
+    if (project.asleep) {
+      ground.classList.add('asleep');
+      ground.dataset.folder = project.folder;
+      const hint = document.createElement('span');
+      hint.className = 'hint';
+      hint.textContent = 'Asleep · click to wake';
+      ground.append(emptyTile(project), hint);
+    }
     return [ground];
   }));
 }
+
+grounds.addEventListener('click', (event) => {
+  const ground = event.target.closest('.ground.asleep');
+  if (ground) call('project:focus', { folder: ground.dataset.folder });
+});
 
 function renderGlow(open) {
   const index = open.findIndex((project) => project.folder === state.focused);

@@ -444,6 +444,20 @@ body[data-sorting] .chip .close { cursor: grabbing; }
   pointer-events: none;
   /* No share means no tint, rather than an invalid color-mix and no ground at all. */
   background: color-mix(in oklab, var(--bg) var(--survives, 100%), oklch(0.62 0.15 var(--hue)));
+
+  /* Asleep, nothing paints over the ground, so it is what you click to bring the window back. */
+  &.asleep {
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 8px;
+    pointer-events: auto;
+    cursor: pointer;
+
+    /* The empty state's tile, at the width its grid gives it there. */
+    & .project-tile { width: 120px; cursor: pointer; }
+    & .hint { color: var(--ink-quiet); font-size: 12px; }
+  }
 }
 
 /* The focus mark that lives OUTSIDE the tile. The view paints over the middle of this element,
@@ -474,13 +488,17 @@ body[data-sorting] .chip .close { cursor: grabbing; }
 
 /* The gutters, as things you can take hold of. 8px is all there is: a view swallows every press
    inside its own rect, so a hit area wider than the gutter would be a hit area under a tile. */
+/* Over the whole stage, so it passes presses through to an asleep tile's ground: only the handles
+   take them, and a drag holds its own capture. */
 #splitters {
   position: absolute;
   inset: 0;
+  pointer-events: none;
 }
 
 .splitter {
   position: absolute;
+  pointer-events: auto;
   touch-action: none;
 
   &[data-axis="cols"] { cursor: col-resize; }
