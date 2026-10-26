@@ -454,8 +454,13 @@ body[data-sorting] .chip .close { cursor: grabbing; }
     pointer-events: auto;
     cursor: pointer;
 
-    /* The empty state's tile, at the width its grid gives it there. */
-    & .project-tile { width: 120px; cursor: pointer; }
+    /* The empty state's tile laid out as a row: the mark, then the name beside it. */
+    & .project-tile {
+      grid-auto-flow: column;
+      height: auto;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
     & .hint { color: var(--ink-quiet); font-size: 12px; }
   }
 }
