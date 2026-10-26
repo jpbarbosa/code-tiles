@@ -182,6 +182,17 @@ export class Tiles {
       if (routed.external) openExternal(routed.external);
     });
 
+    // A page can end without destroy(): its own window.close(), or a debugger closing it. Electron
+    // then answers view.webContents with undefined, and the next render crashed main reading it.
+    // Out of the map, the next render builds the tile again instead.
+    view.webContents.once('destroyed', () => {
+      const folder = this.#folderOf(view);
+      if (!folder) return;
+      this.#views.delete(folder);
+      this.#contexts.delete(folder);
+      if (!this.#window.isDestroyed()) this.#window.contentView.removeChildView(view);
+    });
+
     this.#views.set(project.folder, view);
     this.#window.contentView.addChildView(view);
     // Up a staircase rather than all at once - src/main/bringup.js is why. Placed first, so a
