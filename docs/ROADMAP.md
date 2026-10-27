@@ -402,6 +402,16 @@ What the tree does today, what comes next, and what to check when the server is 
 - Per-project settings through `settings.json`. One server is one settings file; a per-project
   difference is a seam or a profile.
 
+## Ideas, measured and parked
+
+- **One renderer for every tile.** `--renderer-process-limit=1` works as it stands: the tiles are
+  one origin, so Chromium puts every workbench in one process, and two tiles measured 485 MB
+  against 624 MB apart (the GPU process unchanged). Only the per-process overhead is shared; each
+  workbench keeps its own DOM and heap, so it is ~110-140 MB per tile past the first. Parked
+  because every tile would then type on one main thread, one crash would take them all, and a
+  sleeping tile would hand back less, since a shared process keeps what its closed document
+  freed. Worth trying as an opt-in dial, judged by typing latency with four or five tiles busy.
+
 ## When the server is bumped
 
 The pinned version is in `scripts/fetch-code-server.sh`. After a bump, in this order:
