@@ -74,6 +74,10 @@ module.exports = {
     /* The editor pads this 8px a side for a row of text menus, leaving 20px - which squeezes a
        24px badge, and which widens the title past the bar's clipped edge if the badge refuses. */
     padding: 0;
+    /* 4.143.1 sizes this box 4px inside its button, and the ring is drawn on it: at 32px the ring
+       closes to 1px off the badge and its edge runs into the badge's corners. */
+    width: 100%;
+    height: 100%;
     /* The editor already positions this box, and the ring is placed against it; said again so a
        build that stopped puts the ring nowhere rather than in the window's top left corner. */
     position: relative;
