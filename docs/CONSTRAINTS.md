@@ -405,6 +405,21 @@ the same way, the `DataTransfer` in `DragEvent`'s init, reaches the panel's `onD
 how `chat-retina` hands back a halved screenshot that was dragged in. **[checked]** - claude-code
 2.1.271 on code-server 4.135.0, in a hidden window; the drop on 2.1.282.
 
+**`system-ui` is not proportional to its size in Chromium on macOS.** One string measured 447 at
+36px and 412 at 18px doubled, 9% apart, and `BlinkMacSystemFont` is the same; `font-optical-sizing`
+does nothing and `text-rendering: geometricPrecision` moves it instead of removing it. So anything
+laid out at one scale and shown at another names `"Helvetica Neue"`, which measured 481.4 at every
+size: `chat-text` stretches a line to Vision's box, and `chat-marks` shows at the panel's scale what
+it draws at the image's. ⚠ **`-apple-system` is not an escape: it resolves to Times Bold here**, and
+measures perfectly proportional because of it. A width proves nothing about a face;
+`CSS.getPlatformFontsForNode` names the one really used. **[checked]** - Electron 44.
+
+**A drag that ends outside the Claude preview's image is a click on its overlay.** A click lands on
+the nearest ancestor of the press and the release, and the overlay closes on a click whose target
+is itself, so a text selection dragged past the image's edge would dismiss it. `chat-text` stops that
+click while a selection stands; a plain click on the backdrop has none left, its press collapsed it.
+**[checked]** - claude-code 2.1.316, by real input.
+
 **A key stopped inside a webview never reaches the workbench.** The editor's wrapper forwards a
 webview's keys from a listener on the page's WINDOW, in the bubble phase, so `stopPropagation` on
 any element below it keeps a key out of the editor's keybindings entirely. That is what lets the

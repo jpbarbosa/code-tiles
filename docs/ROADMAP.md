@@ -279,7 +279,7 @@ What the tree does today, what comes next, and what to check when the server is 
   `chat-offscreen` (a long Claude session no longer slowing every switch that resizes its tile: a
   message off screen skips style and layout, `content-visibility: auto`, since the extension
   restyles its whole page from its own animation frames on every resize),
-  `chat-marks` (arrow, box and circle drawn on an image attached to the Claude chat, and a crop,
+  `chat-marks` (arrow, box, circle and text put on an image attached to the Claude chat, and a crop,
   from a pencil beside its preview's ×, so a screenshot can point at what the message is about:
   outlines in six highlighter colours a model names one way each, magenta first since these screens
   already carry red, picked from one button that wears the current colour, at a stroke scaled to the
@@ -289,7 +289,17 @@ What the tree does today, what comes next, and what to check when the server is 
   outside the page - so it replaces the original at the END of the row. Only a pill still in the
   composer is offered the edit, never a sent image, and the strings it finds the page by are held
   to the installed bundle by a test, since a seam that patches nothing has no refusal to print.
+  Text is typed in place on the image, Enter or a click away places it, Shift+Enter breaks a line,
+  Escape drops it and ⌘Z undoes it as one mark; it wraps at the image's right edge and wears a black
+  outline, so it reads on any screenshot.
   Your own VS Code has none of it: `patch-vscode` carries bundle patches only),
+  `chat-text` (the text in an image selectable in its Claude preview, as in macOS Preview: drag,
+  double-click for a word, ⌘C. Apple's Vision reads the image on the Mac, in a helper main starts
+  when a preview opens, sent or not, so nothing leaves the machine and an image nobody opens costs
+  nothing. The first read on a Mac compiles the model, 23 to 47 s measured, and the rest take about
+  a tenth of a second; the preview shows at once either way and the text arrives when it is ready.
+  Text is held as lines, so a selection is exact at each end of one and approximate inside a
+  proportional font, and angled text is not followed),
   `chat-retina` (a Retina screenshot pasted or dropped into the Claude chat sent at 1x, a quarter of
   the image tokens, known by the 144 dpi macOS writes into its own PNG rather than by anything
   guessed, and the full-size one a click away on an `SD` badge beside the pill's thumbnail, which

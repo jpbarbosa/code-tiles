@@ -31,6 +31,12 @@ export function desktopPaths() {
   };
 }
 
+// Packaged it rides as a resource, from source it is what scripts/build-image-text.sh left in vendor.
+export function imageTextBinary() {
+  const binary = path.join(app.isPackaged ? process.resourcesPath : path.join(ROOT, 'vendor'), 'read-image-text');
+  return fs.existsSync(binary) ? binary : null;
+}
+
 export function userPaths() {
   const base = app.getPath('userData');
   return {

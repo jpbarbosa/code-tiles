@@ -472,6 +472,31 @@ test('what chat-offscreen finds in the Claude page is still in the bundle this m
   }
 });
 
+// chat-text patches nothing either: a rename makes a preview an image again, with nothing printed.
+// The last two are why a selection dragged past the image needs holding: the overlay closes on a
+// click that lands on it, and the image is what the layer is laid over.
+const CHAT_TEXT_ANCHORS = [
+  /previewOverlay:"previewOverlay_\w+"/,
+  /previewImage:"previewImage_\w+"/,
+  /if\(\w+\.target===\w+\.currentTarget\)\w+\(\)/,
+  /[\w$]+\("img",\{src:[\w$]+,alt:[\w$]+,className:[\w$]+\.previewImage\}\)/,
+];
+
+test('what chat-text finds in the Claude page is still in the bundle this machine has', (t) => {
+  const pages = [];
+  for (const dir of INSTALLED) {
+    let names;
+    try { names = fs.readdirSync(dir); } catch { continue; }
+    for (const folder of names.filter((name) => /^anthropic\.claude-code-/.test(name))) {
+      try { pages.push([folder, fs.readFileSync(path.join(dir, folder, 'webview/index.js'), 'utf8')]); } catch { continue; }
+    }
+  }
+  if (!pages.length) return t.skip('no Claude Code extension installed here');
+  for (const [version, source] of pages) {
+    for (const anchor of CHAT_TEXT_ANCHORS) assert.match(source, anchor, `chat-text: ${version} has no ${anchor}`);
+  }
+});
+
 // chat-retina patches nothing either: a rename makes a Retina paste go through at full size, and a
 // pill lose its plate, with nothing printed. Its composer is the wrapper both rows of pills sit in,
 // the files are what the paste and the drop handlers read, and the plate goes after the thumbnail.
@@ -482,7 +507,7 @@ const CHAT_RETINA_ANCHORS = [
   /attachedFilesContainer:"attachedFilesContainer_\w+"/,
   /clipboardData\?\.items/,
   /dataTransfer\?\.files/,
-  /F\("img",\{src:[\w$]+,alt:"",className:[\w$]+\.thumbIcon\}\)/,
+  /[\w$]+\("img",\{src:[\w$]+,alt:"",className:[\w$]+\.thumbIcon\}\)/,
 ];
 
 test('what chat-retina finds in the Claude page is still in the bundle this machine has', (t) => {

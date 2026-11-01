@@ -128,6 +128,7 @@ const api = {
   whenPresent,
   eachDocument(callback) { documentListeners.add(callback); sweep(document); },
   send(type, payload) { ipcRenderer.send('ct:call', { type, payload, folder: context.folder }); },
+  ask(type, payload) { return ipcRenderer.invoke('ct:call', { type, payload, folder: context.folder }); },
 };
 
 ipcRenderer.on('ct:event', (_event, message) => {

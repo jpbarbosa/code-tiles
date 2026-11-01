@@ -1,5 +1,7 @@
 import { ipcMain } from 'electron';
 
+import { readImageText } from './image-text.js';
+import { imageTextBinary } from './paths.js';
 import { homeRow, pickerRows } from './picker-rows.js';
 
 // The whole surface between the app's three layers: one channel, one table. A new feature adds
@@ -50,6 +52,8 @@ export function installIpc({ desk, usage, popover, picker, preferences, events, 
     // The Claude Events log, which is a window of its own for the reason the other three are.
     // A window reporting what its own chat tab wears - the one half of that seam the app can see.
     'claude:icon': ({ icons }, folder) => events.icons(folder, icons),
+    // A window asking what an image says, since only main can start the helper that reads it.
+    'image:text': ({ image }) => readImageText(imageTextBinary(), image),
     'events:state': () => events.state,
     'events:clear': () => events.clear(),
     'mode:set': ({ mode }) => desk.setMode(mode),

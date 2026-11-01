@@ -16,6 +16,7 @@
     "package:linux": "node scripts/package.js linux",
     "install-app": "bash scripts/install.sh",
     "fetch-code-server": "bash scripts/fetch-code-server.sh",
+    "build-image-text": "bash scripts/build-image-text.sh",
     "patch-vscode": "node scripts/patch-vscode-claude.js",
     "icon": "bash scripts/icon.sh",
     "icon:ico": "node scripts/icon-ico.js"

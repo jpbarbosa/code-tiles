@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Packages the app for this host's platform, or for the one named as an argument. Cross-packaging
-// works because nothing here is compiled; what does not cross is signing, which is why macOS has
-// scripts/install.sh beside this one and the other two do not.
+// works because the app itself is not compiled; what does not cross is signing, which is why macOS
+// has scripts/install.sh beside this one and the other two do not.
 
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -47,6 +48,12 @@ if (carriesServer) {
   if (placed.length) console.log(`placed ${placed.join(', ')} into the vendored server`);
 }
 
+// The one compiled piece. It rides the way the server does, and only on the Mac that can build it.
+const imageText = path.join(ROOT, 'vendor/read-image-text');
+const carriesImageText = native && platform === 'darwin';
+if (carriesImageText) execFileSync('bash', [path.join(ROOT, 'scripts/build-image-text.sh')], { stdio: 'inherit' });
+const resources = [...(carriesServer ? [vendored] : []), ...(carriesImageText ? [imageText] : [])];
+
 const paths = await packager({
   dir: ROOT,
   out: path.join(ROOT, 'dist'),
@@ -62,7 +69,7 @@ const paths = await packager({
       'Terminals and tools in your projects connect to devices on your local network, such as ssh to another computer.',
   },
   ignore: IGNORE,
-  ...(carriesServer ? { extraResource: [vendored] } : {}),
+  ...(resources.length ? { extraResource: resources } : {}),
 });
 
 for (const built of paths) console.log(`packaged ${path.relative(ROOT, built)}`);

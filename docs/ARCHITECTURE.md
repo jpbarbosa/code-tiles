@@ -257,6 +257,7 @@ src/main/coalition.js   what had already left that tree by quit, found in the ap
 src/main/window.js      the BrowserWindow and the shell page
 src/main/tiles.js       WebContentsView per project: create, place, focus, destroy
 src/main/layout.js      pure geometry, and which tile a point is in
+src/main/image-text.js  runs scripts/read-image-text.swift's helper on an image, one read at a time
 src/main/order.js       pure ordering: what each drag gesture means, and the slots a closed
                         project keeps while the open ones are rearranged around it
 src/main/projects.js    the project list and its ordering

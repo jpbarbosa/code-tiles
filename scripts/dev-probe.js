@@ -305,6 +305,21 @@ const READ = `(() => {
       };
       return walk(document);
     })(),
+    // The chat-text seam, read in the Claude page: only its sheet, since it opens no preview, and a
+    // preview is what makes it read an image.
+    chatText: (() => {
+      const walk = (doc) => {
+        if (doc.querySelector('link[href*="anthropic.claude-code-"]')) return Boolean(doc.getElementById('code-tiles-chat-text'));
+        let frames;
+        try { frames = doc.querySelectorAll('iframe'); } catch { return null; }
+        for (const frame of frames) {
+          try { if (frame.contentDocument) { const hit = walk(frame.contentDocument); if (hit !== null) return hit; } }
+          catch { /* cross-origin */ }
+        }
+        return null;
+      };
+      return walk(document);
+    })(),
     // The chat-retina seam, read in the Claude page: its sheet, the composer it watches for pills,
     // and how many pills in the draft carry its badge. It pastes nothing, for the same reason.
     chatRetina: (() => {
