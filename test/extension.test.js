@@ -67,7 +67,13 @@ const OPEN_PINNED = OPEN
   .replace('return E$', 'let G=J?.pinned?{preview:!1}:void 0;return E$')
   .replace('showTextDocument(z)', 'showTextDocument(z,G)');
 
-const BUNDLE = `${STRINGS}class T{${ICON_TABLE}${STATE}${COLUMN}${OPEN}}\n`;
+// The panel's report as 2.1.316 spells it: the branches that bind nothing, then the binding, which
+// writes the panel into the map whether or not it is still open.
+const PANELS = 'reported(e,m,{isFarewell:b}){if(b){this.states.push(m);return}'
+  + 'let w=this.sessionPanels.get(m)===e,T=this.panelLastReportedSession.get(e)===m;'
+  + 'this.sessionPanels.set(m,e);this.states.push(m)}';
+
+const BUNDLE = `${STRINGS}class T{${ICON_TABLE}${STATE}${COLUMN}${OPEN}${PANELS}}\n`;
 
 function tree(bundle = BUNDLE) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ct-extension-'));
@@ -81,7 +87,7 @@ const read = (file) => fs.readFileSync(file, 'utf8');
 
 test('every extension patch declares what the mechanism needs of it', () => {
   const declared = declaredExtensions(seams);
-  assert.deepEqual(declared.map((entry) => entry.name), ['chat-icon', 'chat-column', 'chat-links']);
+  assert.deepEqual(declared.map((entry) => entry.name), ['chat-icon', 'chat-column', 'chat-links', 'chat-panels']);
   for (const { name, extension } of declared) {
     for (const key of ['id', 'file', 'marker', 'stamp', 'degrades', 'apply']) {
       assert.ok(extension[key], `${name}: an extension patch without ${key}`);
@@ -97,11 +103,12 @@ test('every extension patch declares what the mechanism needs of it', () => {
 test('the seams on one bundle are spent in one pass and every edit survives', () => {
   const { dir, file } = tree();
   assert.deepEqual(patchExtensions(dir),
-    ['chat-icon + chat-column + chat-links in anthropic.claude-code-9.9.9-darwin-arm64']);
+    ['chat-icon + chat-column + chat-links + chat-panels in anthropic.claude-code-9.9.9-darwin-arm64']);
   const patched = read(file);
   assert.match(patched, /__CT_CHAT_ICON_2__/);
   assert.match(patched, /__CT_CHAT_COLUMN_3__/);
   assert.match(patched, /__CT_CHAT_LINKS_2__/);
+  assert.match(patched, /__CT_CHAT_PANELS_1__/);
   assert.equal(read(`${file}.ct-orig`), BUNDLE, 'one pristine copy, not one per seam');
 });
 
@@ -147,6 +154,39 @@ test('a session opens in the first group, unlocked, and starts no group of its o
 test('a group start the seam cannot find by name is refused, not guessed at', () => {
   const renamed = COLUMN.replace('startClaudeGroup(){', 'openClaudeGroup(){');
   assert.ok(columnSeam.apply(`class T{${renamed}}`).refused);
+});
+
+// The panel seam's contract, RUN rather than read: a panel the dispose handler has cleared stays out
+// of the map, while one still open binds and a closing panel's last word still lands.
+const panelsSeam = declaredExtensions(seams).find((entry) => entry.name === 'chat-panels').extension;
+
+function report(source, { open, farewell = false }) {
+  const T = new Function(`${source}; return T`)();
+  const panel = {};
+  const host = Object.assign(Object.create(T.prototype), {
+    sessionPanels: new Map(),
+    panelComms: new Map(open ? [[panel, {}]] : []),
+    panelLastReportedSession: new Map(),
+    states: [],
+  });
+  host.reported(panel, 'session', { isFarewell: farewell });
+  return { bound: host.sessionPanels.has('session'), states: host.states };
+}
+
+test('a report from a closed panel does not write it back into the session map', () => {
+  const stock = `class T{${PANELS}}`;
+  assert.equal(report(stock, { open: false }).bound, true, 'the fixture no longer models the write');
+  const { source, refused } = panelsSeam.apply(stock);
+  assert.ok(!refused, refused);
+  assert.deepEqual(report(source, { open: false }), { bound: false, states: [] });
+  assert.deepEqual(report(source, { open: true }), { bound: true, states: ['session'] }, 'an open panel');
+  assert.deepEqual(report(source, { open: false, farewell: true }), { bound: false, states: ['session'] },
+    'a closing panel lost its last word');
+});
+
+test('a binding the seam cannot find is refused, not guessed at', () => {
+  assert.ok(panelsSeam.apply(`class T{${PANELS.replace('panelLastReportedSession', 'lastSession')}}`).refused);
+  assert.ok(panelsSeam.apply(`class T{${PANELS}${PANELS}}`).refused);
 });
 
 // The link seam's contract, RUN against a fake API whose text editor refuses a binary file the way
@@ -231,7 +271,8 @@ test('what the loaded copy lacks is read off the disk, from the folder the manif
   const { dir } = tree();
   assert.deepEqual(missingPatches(dir), [], 'a folder no manifest names is not the copy the server runs');
   update(dir, '9.9.10');
-  assert.deepEqual(missingPatches(dir).map((entry) => entry.seam), ['chat-icon', 'chat-column', 'chat-links']);
+  assert.deepEqual(missingPatches(dir).map((entry) => entry.seam),
+    ['chat-icon', 'chat-column', 'chat-links', 'chat-panels']);
   patchExtensions(dir);
   assert.deepEqual(missingPatches(dir), []);
 });
@@ -331,7 +372,7 @@ test('a string the seam reads that has moved is reported, not silently obeyed', 
 
 test('one seam whose shape has moved does not take the others down', () => {
   const { dir, file } = tree(BUNDLE.replace('startClaudeGroup(){', 'openClaudeGroup(){'));
-  assert.deepEqual(patchExtensions(dir), ['chat-icon + chat-links in anthropic.claude-code-9.9.9-darwin-arm64']);
+  assert.deepEqual(patchExtensions(dir), ['chat-icon + chat-links + chat-panels in anthropic.claude-code-9.9.9-darwin-arm64']);
   const patched = read(file);
   assert.match(patched, /__CT_CHAT_ICON_2__/, 'the seam that still matches was skipped too');
   assert.doesNotMatch(patched, /__CT_CHAT_COLUMN_3__/);
@@ -359,7 +400,8 @@ test('a shape that has moved restores the stock bundle rather than leaving an ol
   const moved = BUNDLE
     .replace('this.panelTab.iconPath=', 'this.panelTab.icon=')
     .replace('startClaudeGroup(){', 'openClaudeGroup(){')
-    .replace('if(Q?.searchText)', 'if(Q?.find)');
+    .replace('if(Q?.searchText)', 'if(Q?.find)')
+    .replace('panelLastReportedSession', 'lastSession');
   fs.writeFileSync(`${file}.ct-orig`, moved);
 
   assert.deepEqual(patchExtensions(dir), []);

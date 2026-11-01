@@ -267,6 +267,11 @@ What the tree does today, what comes next, and what to check when the server is 
   saying it started nothing, where it ran `newGroupRight`; the lock is the extension's own
   `claudeCode.lockEditorGroups`, off, since a lone empty group still counts as one it started; an
   explicit column and an existing Claude group are both left as they were),
+  `chat-panels` (a Claude tab closed as it starts no longer blanks every later Claude tab in its
+  window: a report landing after the dispose handler wrote the closed panel back into
+  `sessionPanels`, `persistPanelSessions` then threw `Webview is disposed` on its title inside
+  every `init`, and a tab that never finishes `init` is a header over an empty body, with no input;
+  the report now stops at the binding when `panelComms` no longer holds the panel),
   `chat-links` (a file link in the Claude chat opening whatever the file is: the extension sends
   every one - a markdown link, a tool row's file name, an @-mention - to `showTextDocument`, which
   rejects an image, a sound or a video with nothing hung on the rejection, so the click did nothing
@@ -471,7 +476,7 @@ and only `requestAnimationFrame` stops outright there.
 ## When the Claude Code extension updates
 
 It updates itself, into a fresh versioned directory, so every patch on it - `chat-icon`,
-`chat-column` and `chat-links` - is gone and the next start applies them again to a bundle nobody
+`chat-column`, `chat-links` and `chat-panels` - is gone and the next start applies them again to a bundle nobody
 has read. They share the file, so they are spent in ONE pass over one pristine source: patched a
 seam at a time from the backup, each would start over and only the last edit would survive. A seam
 whose shape has moved is skipped by name and the others still land.
