@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { clipboard, ClipboardItem, ipcMain } from 'electron';
 
 import { readImageText } from './image-text.js';
 import { imageTextBinary } from './paths.js';
@@ -54,6 +54,8 @@ export function installIpc({ desk, usage, popover, picker, preferences, events, 
     'claude:icon': ({ icons }, folder) => events.icons(folder, icons),
     // A window asking what an image says, since only main can start the helper that reads it.
     'image:text': ({ image }) => readImageText(imageTextBinary(), image),
+    // A window's preview copying its picture, which a copy event cannot carry: it takes only text.
+    'image:copy': ({ image }) => clipboard.write([new ClipboardItem({ 'image/png': new Blob([image], { type: 'image/png' }) })]),
     'events:state': () => events.state,
     'events:clear': () => events.clear(),
     'mode:set': ({ mode }) => desk.setMode(mode),

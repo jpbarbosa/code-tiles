@@ -420,6 +420,11 @@ is itself, so a text selection dragged past the image's edge would dismiss it. `
 click while a selection stands; a plain click on the backdrop has none left, its press collapsed it.
 **[checked]** - claude-code 2.1.316, by real input.
 
+**Chromium fires no `copy` event over an empty selection**, so a copy listener alone never sees a
+Copy with nothing selected: `chat-text` selects the preview's image first. ⚠ **Electron 44's
+`clipboard` has no `readImage`/`writeImage`**: an image goes in as `write([new ClipboardItem(...)])`,
+and an item from `read()` cannot be written back. **[checked]** - Electron 44.1.1, hidden window.
+
 **A key stopped inside a webview never reaches the workbench.** The editor's wrapper forwards a
 webview's keys from a listener on the page's WINDOW, in the bubble phase, so `stopPropagation` on
 any element below it keeps a key out of the editor's keybindings entirely. That is what lets the

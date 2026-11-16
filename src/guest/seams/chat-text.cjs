@@ -6,6 +6,7 @@ const CLAUDE_PAGE = 'link[href*="anthropic.claude-code-"]';
 // Strings the extension's minifier keeps. test/extension.test.js holds them to the bundle this
 // machine has. [claude-code 2.1.316]
 const PREVIEW = '[class*="previewOverlay_"]';
+const PREVIEW_BOX = '[class*="previewContainer_"]';
 const PREVIEW_IMAGE = 'img[class*="previewImage_"]';
 
 // Not system-ui, whose width is not proportional to its size in Chromium on macOS: 411 at 18px
@@ -64,12 +65,56 @@ async function read(api, doc, preview) {
   preview.addEventListener('click', keepOpen, true);
 }
 
+const previewImage = (doc) => doc.querySelector(`${PREVIEW} ${PREVIEW_IMAGE}`);
+
+function hasSelection(doc) {
+  const field = doc.activeElement;
+  if (field && 'selectionStart' in field && field.selectionStart !== field.selectionEnd) return true;
+  return !doc.getSelection().isCollapsed;
+}
+
+// Chromium fires no copy event over an empty selection, so the webview's Copy item and ⌘C did
+// nothing over a preview. With nothing selected they get the picture itself to copy. Focus goes to
+// the preview's own dialog box, because the Copy item refocuses the last focused element when the
+// body has focus, and refocusing the message box would take the selection with it.
+function selectPicture(event) {
+  const doc = event.target.ownerDocument;
+  const image = previewImage(doc);
+  if (!image || hasSelection(doc)) return;
+  if (event.type === 'keydown' && !(event.metaKey && event.key === 'c')) return;
+  if (event.type === 'contextmenu' && !image.closest(PREVIEW).contains(event.target)) return;
+  image.closest(PREVIEW_BOX)?.focus({ preventScroll: true });
+  const range = doc.createRange();
+  range.selectNode(image);
+  doc.getSelection().removeAllRanges();
+  doc.getSelection().addRange(range);
+}
+
+// A copy event carries only strings, so main puts the picture on the clipboard. Text selected on
+// the image's layer or in a field never contains the image, so it still copies as text.
+function copyPicture(api) {
+  return (event) => {
+    const doc = event.target.ownerDocument;
+    const image = previewImage(doc);
+    const selection = doc.getSelection();
+    // Not containsNode: under the page's user-select: none it denies an image selected whole.
+    if (!image || !selection.rangeCount || !selection.getRangeAt(0).intersectsNode(image)) return;
+    event.preventDefault();
+    bytesOf(doc, image)
+      .then((bytes) => api.ask('image:copy', { image: bytes }))
+      .catch((error) => console.error('[code-tiles] chat-text:', error));
+  };
+}
+
 // The preview is a portal straight onto the page's body. Kept against the BODY, which a rewrite of
 // the document replaces, so a rewritten page is watched afresh rather than through a detached one.
 function watch(api, doc) {
   const body = doc.body;
   if (!body || watched.has(body)) return;
   watched.add(body);
+  body.addEventListener('contextmenu', selectPicture, true);
+  body.addEventListener('keydown', selectPicture, true);
+  body.addEventListener('copy', copyPicture(api));
   new MutationObserver((records) => {
     for (const record of records) {
       for (const node of record.addedNodes) {

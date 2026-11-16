@@ -299,7 +299,8 @@ What the tree does today, what comes next, and what to check when the server is 
   outline, so it reads on any screenshot.
   Your own VS Code has none of it: `patch-vscode` carries bundle patches only),
   `chat-text` (the text in an image selectable in its Claude preview, as in macOS Preview: drag,
-  double-click for a word, ⌘C. Apple's Vision reads the image on the Mac, in a helper main starts
+  double-click for a word, ⌘C; with nothing selected, ⌘C or the menu's Copy copies the picture,
+  through main, since a copy event carries only text. Apple's Vision reads the image on the Mac, in a helper main starts
   when a preview opens, sent or not, so nothing leaves the machine and an image nobody opens costs
   nothing. The first read on a Mac compiles the model, 23 to 47 s measured, and the rest take about
   a tenth of a second; the preview shows at once either way and the text arrives when it is ready.

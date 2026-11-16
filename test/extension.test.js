@@ -516,10 +516,12 @@ test('what chat-offscreen finds in the Claude page is still in the bundle this m
 
 // chat-text patches nothing either: a rename makes a preview an image again, with nothing printed.
 // The last two are why a selection dragged past the image needs holding: the overlay closes on a
-// click that lands on it, and the image is what the layer is laid over.
+// click that lands on it, and the image is what the layer is laid over. Copy with nothing selected
+// focuses the box, which only works while it is the focusable dialog.
 const CHAT_TEXT_ANCHORS = [
   /previewOverlay:"previewOverlay_\w+"/,
   /previewImage:"previewImage_\w+"/,
+  /className:[\w$]+\.previewContainer,role:"dialog","aria-label":[\w$]+,tabIndex:-1/,
   /if\(\w+\.target===\w+\.currentTarget\)\w+\(\)/,
   /[\w$]+\("img",\{src:[\w$]+,alt:[\w$]+,className:[\w$]+\.previewImage\}\)/,
 ];
