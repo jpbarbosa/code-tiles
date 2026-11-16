@@ -302,11 +302,16 @@ export class Desk {
   }
 
   close(folder) {
+    const wasFocused = folder === this.#projects.focused;
     this.#projects.close(folder);
     this.#parts.delete(folder);
     this.#asleep.delete(folder);
     this.#left.delete(folder);
     this.#refused.delete(folder);
+    // The list hands focus to the first open tile, which may be asleep: a focused tile with no
+    // window is the glow painted over its whole ground. Landing there is a way onto it like any other.
+    const next = this.#projects.focused;
+    if (wasFocused && next) return void this.focus(next);
     this.render();
   }
 
