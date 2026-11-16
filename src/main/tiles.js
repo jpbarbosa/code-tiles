@@ -1,8 +1,9 @@
-import { WebContentsView, shell } from 'electron';
+import { Menu, WebContentsView, shell } from 'electron';
 
 import { BringUp } from './bringup.js';
 import { PARTITION, files } from './paths.js';
 import { routeNavigation, routePopup } from './links.js';
+import { spellingTemplate } from './spelling.js';
 
 // Half a level per press, as every browser's zoom steps, and a ceiling either side of actual
 // size: Chromium clamps neither end, so a held key reaches 3834%.
@@ -177,6 +178,18 @@ export class Tiles {
     view.webContents.on('did-finish-load', () => {
       const context = this.#contexts.get(this.#folderOf(view));
       if (context) view.webContents.send('ct:event', { type: 'context', payload: context });
+    });
+
+    // Every right-click the page left uncancelled, which a webview's is only when the spelling
+    // seam held it back from the editor's menu - so the window is told whether this one was taken.
+    view.webContents.on('context-menu', (_event, params) => {
+      const contents = view.webContents;
+      const template = spellingTemplate(params, {
+        replace: (suggestion) => contents.replaceMisspelling(suggestion),
+        learn: (word) => contents.session.addWordToSpellCheckerDictionary(word),
+      });
+      if (template) Menu.buildFromTemplate(template).popup({ frame: params.frame });
+      contents.send('ct:event', { type: 'context-menu', payload: { answered: Boolean(template) } });
     });
 
     // A tile is a WINDOW, and a window can re-point itself: File > Open Folder, or a row of the

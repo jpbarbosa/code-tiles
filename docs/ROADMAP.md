@@ -321,6 +321,13 @@ What the tree does today, what comes next, and what to check when the server is 
   the drop overlay still clears. A swap removes the pill and pastes the other version, so it lands
   at the END of the row. Pills are keyed by position, so the badge is derived from the thumbnail
   on every change of the row rather than kept against an element),
+  `spelling` (a right-click on a misspelled word in a webview's text field, the Claude prompt
+  among them, opens a native menu of corrections, Learn Spelling and Cut/Copy/Paste. The webview
+  host cancels every right-click for the editor's own menu, and a cancelled one never reaches
+  Chromium, the only thing that knows the word is wrong; so in a field the seam stops it short of
+  the host, main draws spelling over a misspelling and otherwise says not, and the seam replays
+  the right-click to the host. Over a misspelling the extension's own items are not offered, as in
+  any macOS app; everywhere else the editor's menu is as it was),
   `branch` (the branch and its sync as two pills at the bottom of the side bar, mirrored from the
   status bar entries that hiding the bar leaves alive, so a click still checks out or syncs - in
   a footer the side bar is taught to give REAL room to rather than an overlay over the tree),

@@ -4,9 +4,9 @@
 // in every document that view ever loads: no re-application after a reload, no key to remember,
 // no host guessing when a document is ready.
 //
-// It does four things and nothing else: hold the project context, keep ONE style element last
-// in <head>, give the seams a ready workbench to work against, and hand them every document the
-// window holds.
+// It does four things and nothing else: hold the project context and pass on
+// what else main tells the window, keep ONE style element last in <head>, give the seams a
+// ready workbench to work against, and hand them every document the window holds.
 
 const { ipcRenderer } = require('electron');
 
@@ -16,6 +16,7 @@ const SWEEP_MS = 1000;
 
 let context = readContext();
 const contextListeners = new Set();
+const eventListeners = new Map();
 const documentListeners = new Set();
 const watchedRoots = new WeakSet();
 const wiredFrames = new WeakSet();
@@ -124,6 +125,10 @@ const whenWorkbench = (callback) => whenPresent(document.documentElement, '.mona
 const api = {
   get context() { return context; },
   onContext(callback) { contextListeners.add(callback); return () => contextListeners.delete(callback); },
+  onEvent(type, callback) {
+    if (!eventListeners.has(type)) eventListeners.set(type, new Set());
+    eventListeners.get(type).add(callback);
+  },
   whenWorkbench,
   whenPresent,
   eachDocument(callback) { documentListeners.add(callback); sweep(document); },
@@ -132,7 +137,10 @@ const api = {
 };
 
 ipcRenderer.on('ct:event', (_event, message) => {
-  if (message?.type !== 'context') return;
+  if (message?.type !== 'context') {
+    for (const listener of eventListeners.get(message?.type) ?? []) listener(message.payload);
+    return;
+  }
   context = { ...context, ...message.payload };
   render();
   for (const listener of contextListeners) listener(context);
