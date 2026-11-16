@@ -18,6 +18,8 @@
   --chip-radius: calc(7px * var(--corner-scale));
   --accent: #4a8cff;
   --claude: #d97757;
+  /* The dark theme's charts.red, which the window's own × wears. */
+  --close-red: #f14c4c;
   /* The usage ramp, green while there is room and red at the cap. */
   --ok: #3fb950;
   --warn: #f0883e;
@@ -462,6 +464,31 @@ body[data-sorting] .chip .close { cursor: grabbing; }
       cursor: pointer;
     }
     & .hint { color: var(--ink-quiet); font-size: 12px; }
+
+    /* The window's × from src/guest/seams/close.cjs, at its size, inset and red, sunk at rest and
+       brought out whole by the hand, so waking or sleeping never moves it. */
+    & .close {
+      position: absolute;
+      top: 10px; /* off-ladder(spacing): the window ×'s INSET, close.cjs */
+      right: 10px; /* off-ladder(spacing): the window ×'s INSET, close.cjs */
+      width: 22px; /* off-ladder(spacing): the window ×'s SIZE, the editor's action button */
+      height: 22px; /* off-ladder(spacing): the window ×'s SIZE, the editor's action button */
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: calc(4px * var(--corner-scale));
+      background: color-mix(in oklab, var(--close-red) 12%, transparent);
+      color: color-mix(in oklab, var(--close-red) 60%, var(--bg));
+      font-size: 16px;
+      line-height: 1;
+      cursor: default;
+
+      &:hover,
+      &:focus-visible {
+        background: var(--close-red);
+        color: #fff;
+      }
+    }
   }
 }
 

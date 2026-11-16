@@ -199,7 +199,13 @@ function renderGrounds(open) {
       const hint = document.createElement('span');
       hint.className = 'hint';
       hint.textContent = 'Asleep · click to wake';
-      ground.append(emptyTile(project), hint);
+      // The window's own × is in this corner while the tile is awake, so asleep it stays put, and
+      // closing a tile no longer means waking it first.
+      const close = document.createElement('button');
+      close.className = 'close';
+      close.textContent = '×';
+      close.title = 'Close project';
+      ground.append(emptyTile(project), hint, close);
     }
     return [ground];
   }));
@@ -207,7 +213,10 @@ function renderGrounds(open) {
 
 grounds.addEventListener('click', (event) => {
   const ground = event.target.closest('.ground.asleep');
-  if (ground) call('project:focus', { folder: ground.dataset.folder });
+  if (!ground) return;
+  const { folder } = ground.dataset;
+  if (event.target.closest('.close')) call('project:close', { folder });
+  else call('project:focus', { folder });
 });
 
 function renderGlow(open) {
