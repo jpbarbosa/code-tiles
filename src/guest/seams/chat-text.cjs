@@ -46,14 +46,6 @@ function layerFor(doc, image, lines) {
   return layer;
 }
 
-// The overlay closes on a click that lands on it, and a drag begun on the image and released past
-// its edge is a click on their common ancestor, which is the overlay. A click that only dismisses
-// has no selection left: its press collapsed it.
-function keepOpen(event) {
-  if (event.target !== event.currentTarget || event.view.getSelection().isCollapsed) return;
-  event.stopPropagation();
-}
-
 async function read(api, doc, preview) {
   const image = preview.querySelector(PREVIEW_IMAGE);
   if (!image) return;
@@ -62,7 +54,6 @@ async function read(api, doc, preview) {
   if (!lines.length || !image.isConnected) return;
   // Before the plates that follow the image, so the ones sitting over its corner stay on top.
   image.after(layerFor(doc, image, lines));
-  preview.addEventListener('click', keepOpen, true);
 }
 
 const previewImage = (doc) => doc.querySelector(`${PREVIEW} ${PREVIEW_IMAGE}`);

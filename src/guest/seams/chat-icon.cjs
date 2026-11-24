@@ -73,14 +73,16 @@ const ICON_RE = /this\.panelTab\.iconPath=([\w$]+)\.Uri\.file\(([\w$]+)\.join\(t
 // The update_session_state branch, newest spelling first. 2.1.238 rewrote it from a comma
 // expression into a block that decodes the request into a local, which moved the state to read;
 // 2.1.258 then grew a body between that decode and the call, which the first shape spans lazily.
-// Both end at this.onSessionStateChanged, which is where the call goes.
+// Both end at this.onSessionStateChanged, which is where the call goes. 2.1.331 added a conjunct
+// to the decode's guard (`if(n&&!this.shutDown)`), so further `&&` terms are accepted, accessor
+// chains only, never a call.
 //
 // The lookahead is what makes the lazy span safe: it requires the occurrence it lands on to be a
 // CALL, so a guard or a hoist on the same property earlier in the body cannot take the call's
 // place. Landing on one would be valid syntax and a silent inversion - `if(!CALL,handler)return`
 // is `if(handler)return` - which neither the exactly-once check nor node --check can see.
 const STATE_SHAPES = [
-  { re: /([\w$]+)\.request\.type==="update_session_state"\)\{let ([\w$]+)=[\w$]+\(\1\.request\);if\(\2\)\{?[\s\S]{0,600}?this\.onSessionStateChanged(?=\??\.?\()/,
+  { re: /([\w$]+)\.request\.type==="update_session_state"\)\{let ([\w$]+)=[\w$]+\(\1\.request\);if\(\2(?:&&!?(?:this\.)?[\w$]+(?:\.[\w$]+)*)*\)\{?[\s\S]{0,600}?this\.onSessionStateChanged(?=\??\.?\()/,
     state: (match) => `${match[2]}.state` },
   { re: /([\w$]+)\.request\.type==="update_session_state"\)return this\.onSessionStateChanged(?=\??\.?\()/,
     state: (match) => `${match[1]}.request.state` },

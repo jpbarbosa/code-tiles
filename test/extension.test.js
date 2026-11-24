@@ -33,6 +33,9 @@ const STATE = 'onMessage($){if($.request.type==="update_session_state"){let Q=de
   + 'if(Q){let{anchor:X}=badge$(this.tabBadgeAnchor,Q);'
   + 'if(this.tabBadgeAnchor=X,this.onSessionStateChanged?.(Q.sessionId,Q.state))return}}}';
 
+// The same branch as 2.1.331 spells it: a second condition on the decode's guard.
+const STATE_GUARDED = STATE.replace('if(Q){', 'if(Q&&!this.shutDown){');
+
 // The same branch with a guard on the property the shape scans lazily for. Landing the injected
 // call there instead is valid syntax and inverts the guard, so nothing downstream can catch it.
 const STATE_DECOY = STATE.replace('if(Q){let{anchor:X}',
@@ -339,6 +342,12 @@ test('the icon anchor holds a family of spellings, not the one that shipped last
   }
 });
 
+test('the state anchor holds a decode guard that grew a condition', () => {
+  const { dir, file } = tree(BUNDLE.replace(STATE, STATE_GUARDED));
+  assert.equal(patchExtensions(dir).length, 1, 'the guarded branch refused the patch');
+  assert.match(read(file), /if\(Q&&!this\.shutDown\)\{.*\.call\(this,Q\.state\),this\.onSessionStateChanged\?\.\(/);
+});
+
 // The span from the decode to the call is lazy and bounded, so it lands on the FIRST occurrence
 // of the property name inside it. Injecting the call before a guard rather than before the call
 // reads as `if(!spin(),handler)return` - the guard inverted, valid syntax, and invisible to both
@@ -515,14 +524,14 @@ test('what chat-offscreen finds in the Claude page is still in the bundle this m
 });
 
 // chat-text patches nothing either: a rename makes a preview an image again, with nothing printed.
-// The last two are why a selection dragged past the image needs holding: the overlay closes on a
-// click that lands on it, and the image is what the layer is laid over. Copy with nothing selected
-// focuses the box, which only works while it is the focusable dialog.
+// The overlay closes only when the press landed on it too, which is what keeps a selection dragged
+// past the image's edge open. Copy with nothing selected focuses the box, which only works while it
+// is the focusable dialog. The image is what the layer is laid over.
 const CHAT_TEXT_ANCHORS = [
   /previewOverlay:"previewOverlay_\w+"/,
   /previewImage:"previewImage_\w+"/,
   /className:[\w$]+\.previewContainer,role:"dialog","aria-label":[\w$]+,tabIndex:-1/,
-  /if\(\w+\.target===\w+\.currentTarget\)\w+\(\)/,
+  /onPointerDown\(([\w$]+)\)\{([\w$]+)\.current=\1\.target===\1\.currentTarget\}/,
   /[\w$]+\("img",\{src:[\w$]+,alt:[\w$]+,className:[\w$]+\.previewImage\}\)/,
 ];
 
@@ -550,7 +559,7 @@ const CHAT_RETINA_ANCHORS = [
   /inputContainer:"inputContainer_\w+"/,
   /attachedFilesContainer:"attachedFilesContainer_\w+"/,
   /clipboardData\?\.items/,
-  /dataTransfer\?\.files/,
+  /dataTransfer\??\.files/,
   /[\w$]+\("img",\{src:[\w$]+,alt:"",className:[\w$]+\.thumbIcon\}\)/,
 ];
 
