@@ -229,6 +229,9 @@ function renderGlow(open) {
   const bleed = 3;
   glow.hidden = false;
   glow.style.setProperty('--hue', open[index].hue);
+  const share = state.grounds?.focused;
+  if (share) glow.style.setProperty('--survives', share);
+  else glow.style.removeProperty('--survives');
   glow.style.left = `${rect.x - bleed}px`;
   glow.style.top = `${rect.y - state.strip - bleed}px`;
   glow.style.width = `${rect.width + bleed * 2}px`;

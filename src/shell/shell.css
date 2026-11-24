@@ -444,8 +444,6 @@ body[data-sorting] .chip .close { cursor: grabbing; }
   position: absolute;
   border-radius: calc(var(--tile-radius, 7px) + 3px * var(--corner-scale));
   pointer-events: none;
-  /* No share means no tint, rather than an invalid color-mix and no ground at all. */
-  background: color-mix(in oklab, var(--bg) var(--survives, 100%), oklch(0.62 0.15 var(--hue)));
 
   /* Asleep, nothing paints over the ground, so it is what you click to bring the window back. */
   &.asleep {
@@ -504,6 +502,24 @@ body[data-sorting] .chip .close { cursor: grabbing; }
   transition: left 0.12s ease, top 0.12s ease, width 0.12s ease, height 0.12s ease;
   background: oklch(0.45 0.09 var(--hue));
   box-shadow: 0 0 22px 6px oklch(0.45 0.09 var(--hue) / 0.55);
+
+  /* The middle is the tile's own ground at the tile's own corner, so the view covers it exactly.
+     A frame the window drops - a compositor short of memory over a large image or a video skips a
+     layer, and the view is transparent - then shows the colour the tile was painting, where a
+     glow-coloured middle flashed the whole tile in the hue. */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 3px; /* off-ladder(spacing): the glow's bleed, renderGlow in shell.js */
+    border-radius: var(--tile-radius, 7px);
+  }
+}
+
+/* A tile's ground, under its window and in the middle of the glow. No share means no tint, rather
+   than an invalid color-mix and no ground at all. */
+.ground,
+#glow::before {
+  background: color-mix(in oklab, var(--bg) var(--survives, 100%), oklch(0.62 0.15 var(--hue)));
 }
 
 /* A screen over the stage is a window, and it stops where the stage does so the traffic lights
